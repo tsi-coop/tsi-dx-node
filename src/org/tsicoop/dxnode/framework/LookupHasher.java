@@ -40,7 +40,7 @@ public class LookupHasher {
         digest.update(globalSaltBytes);
         byte[] hashedBytes = digest.digest(data.getBytes(java.nio.charset.StandardCharsets.UTF_8));
 
-        return Base64.getEncoder().encodeToString(hashedBytes);
+        return Base64.encodeToString(hashedBytes);
     }
 
     /**

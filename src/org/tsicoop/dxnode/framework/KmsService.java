@@ -85,7 +85,7 @@ public class KmsService {
                     .build();
 
             EncryptResponse encryptResponse = kmsClient.encrypt(encryptRequest);
-            return Base64.getEncoder().encodeToString(encryptResponse.ciphertextBlob().asByteArray());
+            return Base64.encodeToString(encryptResponse.ciphertextBlob().asByteArray());
 
         } catch (KmsException e) {
             System.err.println("KMS Encryption Error: " + e.getMessage());
@@ -103,7 +103,7 @@ public class KmsService {
      */
     public String decryptDataWithKms(String ciphertextBase64, Map<String, String> encryptionContext) {
         try {
-            byte[] ciphertextBytes = Base64.getDecoder().decode(ciphertextBase64);
+            byte[] ciphertextBytes = Base64.decode(ciphertextBase64);
 
             DecryptRequest decryptRequest = DecryptRequest.builder()
                     .ciphertextBlob(SdkBytes.fromByteArray(ciphertextBytes))
@@ -136,8 +136,8 @@ public class KmsService {
             GenerateDataKeyResponse response = kmsClient.generateDataKey(generateDataKeyRequest);
 
             Map<String, String> keys = new HashMap<>();
-            keys.put("plaintextDataKey", Base64.getEncoder().encodeToString(response.plaintext().asByteArray()));
-            keys.put("encryptedDataKey", Base64.getEncoder().encodeToString(response.ciphertextBlob().asByteArray()));
+            keys.put("plaintextDataKey", Base64.encodeToString(response.plaintext().asByteArray()));
+            keys.put("encryptedDataKey", Base64.encodeToString(response.ciphertextBlob().asByteArray()));
             return keys;
 
         } catch (KmsException e) {
@@ -156,7 +156,7 @@ public class KmsService {
      */
     public String decryptDataKey(String encryptedDataKeyBase64) {
         try {
-            byte[] encryptedDataKeyBytes = Base64.getDecoder().decode(encryptedDataKeyBase64);
+            byte[] encryptedDataKeyBytes = Base64.decode(encryptedDataKeyBase64);
 
             DecryptRequest decryptRequest = DecryptRequest.builder()
                     .ciphertextBlob(SdkBytes.fromByteArray(encryptedDataKeyBytes))
@@ -164,7 +164,7 @@ public class KmsService {
                     .build();
 
             DecryptResponse response = kmsClient.decrypt(decryptRequest);
-            return Base64.getEncoder().encodeToString(response.plaintext().asByteArray());
+            return Base64.encodeToString(response.plaintext().asByteArray());
 
         } catch (KmsException e) {
             System.err.println("KMS DecryptDataKey Error: " + e.getMessage());
@@ -248,7 +248,7 @@ public class KmsService {
 
             // Encrypt using the master AES key
             byte[] encryptedDataBytes = kmsService.aesEncrypt(originalSensitiveData.getBytes(StandardCharsets.UTF_8), masterKey);
-            String encryptedDataB64 = Base64.getEncoder().encodeToString(encryptedDataBytes);
+            String encryptedDataB64 = Base64.encodeToString(encryptedDataBytes);
             System.out.println("Original Data: " + originalSensitiveData);
             System.out.println("Encrypted Data (Base64): " + encryptedDataB64);
 

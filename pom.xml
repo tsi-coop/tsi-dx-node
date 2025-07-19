@@ -135,6 +135,27 @@
             <version>2.20.100</version>
         </dependency>
 
+        <!-- Bouncy Castle Provider for Java Cryptography Architecture (JCA) -->
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk18on</artifactId>
+            <version>1.78</version> <!-- Use the latest stable version compatible with your JDK -->
+        </dependency>
+
+        <!-- Bouncy Castle PKIX/CMS/OpenSSL for X.509 certificates, CSRs, and PEM parsing -->
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcpkix-jdk18on</artifactId>
+            <version>1.78</version> <!-- Use the same version as bcprov-jdk18on -->
+        </dependency>
+
+        <!-- For JSON parsing (assuming org.json.simple.JSONObject is used) -->
+        <dependency>
+            <groupId>com.googlecode.json-simple</groupId>
+            <artifactId>json-simple</artifactId>
+            <version>1.1.1</version> <!-- Or the version you are currently using -->
+        </dependency>
+
     </dependencies>
 
     <build>
