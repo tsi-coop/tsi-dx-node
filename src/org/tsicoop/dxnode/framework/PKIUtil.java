@@ -16,12 +16,11 @@ import org.bouncycastle.pkcs.PKCS10CertificationRequestBuilder;
 import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequest;
 import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemWriter;
-import org.bouncycastle.util.test.FixedSecureRandom;
 import org.json.simple.JSONObject;
 
 import java.io.StringReader;
 import java.io.StringWriter;
-import org.bouncycastle.util.test.FixedSecureRandom.BigInteger;
+import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
@@ -229,13 +228,15 @@ public class PKIUtil {
             X500Name issuer = new X500Name("CN=Test CA, O=TestOrg");
             X500Name subject = new X500Name("CN=testnode.example.com, O=TestOrg"); // Matches CSR subject
 
-            //FixedSecureRandom.BigInteger serial = new BigInteger().valueOf(System.currentTimeMillis());
+            BigInteger serial = BigInteger.valueOf(System.currentTimeMillis());
             Date notBefore = Date.from(Instant.now().minusSeconds(3600)); // 1 hour ago
             Date notAfter = Date.from(Instant.now().plusSeconds(365 * 24 * 3600)); // 1 year from now
 
-         /*   X509v3CertificateBuilder certBuilder = new X509v3CertificateBuilder(
+            // Corrected line: Use selfSignedKeyPair.getPublic() directly as SubjectPublicKeyInfo.getInstance() argument
+            SubjectPublicKeyInfo publicKeyInfo = SubjectPublicKeyInfo.getInstance(selfSignedKeyPair.getPublic().getEncoded());
+            X509v3CertificateBuilder certBuilder = new X509v3CertificateBuilder(
                     issuer, serial, notBefore, notAfter, subject,
-                    SubjectPublicKeyInfo.getInstance(selfSignedKeyPair.getPublic().getEncoded())
+                    publicKeyInfo // Corrected: Pass the SubjectPublicKeyInfo object
             );
 
             ContentSigner certSigner = new JcaContentSignerBuilder("SHA256withRSA")
@@ -270,7 +271,7 @@ public class PKIUtil {
 
             // Test getCertificateDetails
             JSONObject certDetails = getCertificateDetails(selfSignedCertPem);
-            System.out.println("\nCertificate Details: " + certDetails.toJSONString());*/
+            System.out.println("\nCertificate Details: " + certDetails.toJSONString());
 
         } catch (Exception e) {
             e.printStackTrace();
