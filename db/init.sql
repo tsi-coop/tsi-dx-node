@@ -1,5 +1,11 @@
 -- init.sql
 -- Database initialization script for TSI DX Node PostgreSQL database.
+-- This script will be executed automatically by the PostgreSQL Docker image
+-- when the container starts for the first time.
+
+-- Ensure UUID generation function is available (for PostgreSQL 12 and older, if not already enabled)
+-- For PostgreSQL 13+, gen_random_uuid() is built-in and doesn't require this extension.
+-- It's safe to run this command as it will only create the extension if it doesn't exist.
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Set timezone for consistency
@@ -23,22 +29,6 @@ CREATE TABLE partners (
 CREATE INDEX idx_partners_node_id ON partners (node_id);
 CREATE INDEX idx_partners_fqdn ON partners (fqdn);
 
--- 2. `users` Table
--- Stores information about local users who can access the Admin App.
-CREATE TABLE users (
-    user_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    username VARCHAR(100) NOT NULL UNIQUE,
-    email VARCHAR(255) NOT NULL UNIQUE,
-    password_hash VARCHAR(255) NOT NULL,
-    status VARCHAR(50) NOT NULL DEFAULT 'Active', -- 'Active', 'Inactive', 'Locked'
-    last_login_at TIMESTAMP WITH TIME ZONE NULL,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
-);
-
--- Index for users table
-CREATE INDEX idx_users_username ON users (username);
-
 -- 3. `roles` Table
 -- Defines different roles within the Admin App.
 CREATE TABLE roles (
@@ -50,13 +40,26 @@ CREATE TABLE roles (
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
--- 4. `user_roles` Table
--- Junction table to assign multiple roles to users (Many-to-Many relationship).
-CREATE TABLE user_roles (
-    user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
-    role_id UUID NOT NULL REFERENCES roles(role_id) ON DELETE CASCADE,
-    PRIMARY KEY (user_id, role_id)
+-- 2. `users` Table (MODIFIED)
+-- Stores information about local users who can access the Admin App.
+-- Now includes a direct role_id foreign key, ensuring each user has exactly one role.
+CREATE TABLE users (
+    user_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    username VARCHAR(100) NOT NULL UNIQUE,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    role_id UUID NOT NULL REFERENCES roles(role_id) ON DELETE RESTRICT, -- Foreign key to the roles table
+    status VARCHAR(50) NOT NULL DEFAULT 'Active', -- 'Active', 'Inactive', 'Locked'
+    last_login_at TIMESTAMP WITH TIME ZONE NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
+
+-- Index for users table
+CREATE INDEX idx_users_username ON users (username);
+CREATE INDEX idx_users_role_id ON users (role_id); -- New index for the role_id
+
+-- 4. `user_roles` Table (REMOVED - This table is no longer needed)
 
 -- 5. `role_permissions` Table
 -- Stores granular permissions for each role.
@@ -116,7 +119,7 @@ CREATE TABLE data_contracts (
 CREATE INDEX idx_data_contracts_sender_partner_id ON data_contracts (sender_partner_id);
 CREATE INDEX idx_data_contracts_receiver_partner_id ON data_contracts (receiver_partner_id);
 
--- 13. `bulk_uploads` Table
+-- 9. `bulk_uploads` Table
 -- Tracks the overall status and details of bulk data upload operations.
 CREATE TABLE bulk_uploads (
     bulk_upload_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -132,7 +135,7 @@ CREATE TABLE bulk_uploads (
     error_summary TEXT NULL
 );
 
--- 9. `data_transfers` Table
+-- 10. `data_transfers` Table
 -- Records details of each data transfer event.
 CREATE TABLE data_transfers (
     transfer_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -161,7 +164,7 @@ CREATE INDEX idx_data_transfers_status ON data_transfers (status);
 CREATE INDEX idx_data_transfers_bulk_upload_id ON data_transfers (bulk_upload_id);
 
 
--- 10. `audit_logs` Table
+-- 11. `audit_logs` Table
 -- Records all significant events within the DX Node for auditing purposes.
 CREATE TABLE audit_logs (
     log_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -181,7 +184,7 @@ CREATE INDEX idx_audit_logs_timestamp ON audit_logs (timestamp DESC);
 CREATE INDEX idx_audit_logs_event_type ON audit_logs (event_type);
 CREATE INDEX idx_audit_logs_actor_id ON audit_logs (actor_id);
 
--- 11. `received_sequence_tracker` Table
+-- 12. `received_sequence_tracker` Table
 -- Tracks the last successfully processed sequence number from each sender for replay protection.
 CREATE TABLE received_sequence_tracker (
     tracker_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -197,7 +200,7 @@ CREATE TABLE received_sequence_tracker (
 -- Index for received_sequence_tracker table
 CREATE INDEX idx_received_sequence_tracker_sender_node_id ON received_sequence_tracker (sender_node_id);
 
--- 12. `pii_rules` Table
+-- 13. `pii_rules` Table
 -- Stores rules for Personally Identifiable Information (PII) anonymization.
 CREATE TABLE pii_rules (
     rule_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -205,6 +208,34 @@ CREATE TABLE pii_rules (
     anonymization_method VARCHAR(50) NOT NULL, -- 'HASH', 'MASK', 'TOKENIZE', 'REDACT'
     config JSONB NULL, -- JSON object for method-specific configurations
     description TEXT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+-- 14. `node_config` Table (Added for NodeManagement class)
+-- Stores the single configuration entry for the local DX Node.
+CREATE TABLE node_config (
+    config_id UUID PRIMARY KEY DEFAULT '00000000-0000-0000-0000-000000000001', -- Singleton ID
+    node_id VARCHAR(255) NOT NULL UNIQUE,
+    fqdn VARCHAR(255) NOT NULL UNIQUE,
+    network_port INT NOT NULL,
+    storage_active_path TEXT NOT NULL,
+    storage_archive_path TEXT NOT NULL,
+    logging_level VARCHAR(50) NOT NULL DEFAULT 'INFO', -- e.g., INFO, DEBUG, ERROR
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+-- 15. `node_certificates` Table (Added for NodeManagement class to store PKI assets)
+-- Stores certificates and private keys associated with the local DX Node.
+CREATE TABLE node_certificates (
+    cert_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    node_config_id UUID NOT NULL REFERENCES node_config(config_id) ON DELETE CASCADE,
+    certificate_pem TEXT NULL, -- Can be null if only private key is stored initially (e.g., after CSR generation)
+    private_key_pem TEXT NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT FALSE,
+    issued_at TIMESTAMP WITH TIME ZONE NULL,
+    expires_at TIMESTAMP WITH TIME ZONE NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
@@ -250,6 +281,14 @@ FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_pii_rules_updated_at
 BEFORE UPDATE ON pii_rules
+FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_node_config_updated_at
+BEFORE UPDATE ON node_config
+FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_node_certificates_updated_at
+BEFORE UPDATE ON node_certificates
 FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Note: data_transfers and bulk_uploads tables typically do not have an updated_at trigger

@@ -1,19 +1,25 @@
 package org.tsicoop.dxnode.api.admin;
 
+import org.tsicoop.dxnode.framework.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.json.simple.JSONObject;
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.json.simple.JSONObject;
-import org.tsicoop.dxnode.framework.*;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
+
 public class Register implements REST {
 
-
+    private final ObjectMapper objectMapper = new ObjectMapper();
     private final PasswordHasher passwordHasher = new PasswordHasher(); // Assuming this handles secure hashing (e.g., bcrypt)
 
     // Regex for password complexity: At least 8 chars, 1 uppercase, 1 lowercase, 1 digit, 1 special char
@@ -31,7 +37,6 @@ public class Register implements REST {
     public void post(HttpServletRequest req, HttpServletResponse res) {
         JSONObject input = null;
         JSONObject output = null;
-        // JSONArray outputArray = null; // Not used for this endpoint
 
         try {
             // 1. Check if the node has already been initialized with an administrator
@@ -46,6 +51,8 @@ public class Register implements REST {
             String email = (String) input.get("email");
             String password = (String) input.get("password");
             String confirmPassword = (String) input.get("confirm_password");
+            // The 'role' attribute from input in the original template is not strictly needed here
+            // as this endpoint *always* registers an 'Administrator'.
 
             // 2. Input Validation
             String validationError = validateRegistrationInput(username, email, password, confirmPassword);
@@ -65,12 +72,15 @@ public class Register implements REST {
                 return;
             }
 
-            // 5. Save the new admin user and assign role in a transaction
+            // 5. Save the new admin user with the Administrator role
             output = saveAdminUser(username, email, hashedPassword, adminRoleId);
 
             // 6. Return success response
             OutputProcessor.send(res, HttpServletResponse.SC_CREATED, output); // Use SC_CREATED for successful resource creation
 
+        } catch (SQLException e) {
+            e.printStackTrace(); // Log the stack trace
+            OutputProcessor.errorResponse(res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Database Error", "A database error occurred during login: " + e.getMessage(), req.getRequestURI());
         } catch (Exception e) {
             e.printStackTrace();
             OutputProcessor.errorResponse(res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Internal Server Error", "An unexpected error occurred: " + e.getMessage(), req.getRequestURI());
@@ -170,11 +180,12 @@ public class Register implements REST {
     }
 
     /**
-     * Saves the new administrator user and assigns the Administrator role in a single transaction.
+     * Saves the new administrator user and assigns the Administrator role.
+     * This method is now simplified as 'role_id' is directly in the 'users' table.
      * @param username The username for the new admin.
      * @param email The email for the new admin.
      * @param hashedPassword The securely hashed password.
-     * @param adminRoleId The UUID of the Administrator role.
+     * @param adminRoleId The UUID of the Administrator role to assign.
      * @return A JSONObject containing the new user's ID.
      * @throws SQLException if a database access error occurs.
      */
@@ -182,12 +193,11 @@ public class Register implements REST {
         JSONObject output = new JSONObject();
         Connection conn = null;
         PreparedStatement pstmtUser = null;
-        PreparedStatement pstmtUserRole = null;
         ResultSet rs = null;
         PoolDB pool = new PoolDB();
 
-        String insertUserSql = "INSERT INTO users (username, email, password_hash, status) VALUES (?, ?, ?, ?) RETURNING user_id";
-        String insertUserRoleSql = "INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)";
+        // Modified SQL: Include role_id directly in the users table insert
+        String insertUserSql = "INSERT INTO users (username, email, password_hash, role_id, status) VALUES (?, ?, ?, ?, ?) RETURNING user_id";
 
         try {
             conn = pool.getConnection();
@@ -198,7 +208,8 @@ public class Register implements REST {
             pstmtUser.setString(1, username);
             pstmtUser.setString(2, email);
             pstmtUser.setString(3, hashedPassword);
-            pstmtUser.setString(4, "Active"); // Default status for new admin user
+            pstmtUser.setObject(4, adminRoleId); // Set the UUID for role_id
+            pstmtUser.setString(5, "Active"); // Default status for new admin user
 
             int affectedRows = pstmtUser.executeUpdate();
             if (affectedRows == 0) {
@@ -217,16 +228,10 @@ public class Register implements REST {
                 throw new SQLException("Creating user failed, no ID obtained.");
             }
 
-            // Assign the Administrator role
-            pstmtUserRole = conn.prepareStatement(insertUserRoleSql);
-            pstmtUserRole.setObject(1, newUserId); // Use setObject for UUID
-            pstmtUserRole.setObject(2, adminRoleId); // Use setObject for UUID
-
-            pstmtUserRole.executeUpdate();
-
             conn.commit(); // Commit transaction
 
-            output.put("_created", true); // Indicate successful creation
+            output.put("success", true); // Consistent with API design
+            output.put("message", "Initial administrator registered successfully.");
 
         } catch (SQLException e) {
             if (conn != null) {
@@ -238,8 +243,7 @@ public class Register implements REST {
             }
             throw e; // Re-throw the exception
         } finally {
-            pool.cleanup(rs, pstmtUser, null); // rs is from pstmtUser
-            pool.cleanup(null, pstmtUserRole, conn); // conn is cleaned up last
+            pool.cleanup(rs, pstmtUser, conn); // conn is cleaned up last
         }
         return output;
     }
