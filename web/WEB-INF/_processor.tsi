@@ -4,7 +4,5 @@
 
 # Admin Handlers
 /api/admin/registeradmin=org.tsicoop.dxnode.api.admin.RegisterAdmin
-/api/admin/login=org.tsicoop.aadhaarvault.api.admin.Login
-/api/admin/clients=org.tsicoop.aadhaarvault.api.admin.Clients
-/api/admin/IDTypes=org.tsicoop.aadhaarvault.api.admin.IDTypes
-/api/admin/audit=org.tsicoop.aadhaarvault.api.admin.Audit
+/api/admin/login=org.tsicoop.dxnode.api.admin.Login
+

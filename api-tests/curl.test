@@ -4,7 +4,7 @@ TSI DX Node - v0.1
 # Register
 curl -X POST -H "Content-Type: application/json" -d @C:\work\tsi-dx-node\api-tests\admin\register_admin.json http://localhost:8080/api/admin/registeradmin
 # Login
-curl -X POST -H "Content-Type: application/json" -d @C:\work\tsi-aadhaar-vault-plus\api-tests\admin\login.json http://localhost:8080/api/admin/login
+curl -X POST -H "Content-Type: application/json" -d @C:\work\tsi-dx-node\api-tests\admin\login.json http://localhost:8080/api/admin/login
 
 ##Client
 # Register
