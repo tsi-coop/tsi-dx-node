@@ -6,12 +6,12 @@
 		version = "5.0"
 		metadata-complete = "false">
 <filter>
-	<filter-name>TSI_Aadhaar_Vault_Plus</filter-name>
-	<filter-class>org.tsicoop.aadhaarvault.framework.InterceptingFilter</filter-class>
+	<filter-name>TSI_DX_Node</filter-name>
+	<filter-class>org.tsicoop.dxnode.framework.InterceptingFilter</filter-class>
 </filter>
 	
 <filter-mapping>
-	<filter-name>TSI_Aadhaar_Vault_Plus</filter-name>
+	<filter-name>TSI_DX_Node</filter-name>
 	<url-pattern>/api/*</url-pattern>
 	<dispatcher>REQUEST</dispatcher>
 	<dispatcher>FORWARD</dispatcher>

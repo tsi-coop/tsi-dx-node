@@ -193,36 +193,40 @@ public class RegisterAdmin implements REST {
         ResultSet rs = null;
         PoolDB pool = new PoolDB();
 
-        // Modified SQL: Include role_id directly in the users table insert
         String insertUserSql = "INSERT INTO users (username, email, password_hash, role_id, status) VALUES (?, ?, ?, ?, ?) RETURNING user_id";
 
         try {
             conn = pool.getConnection();
             conn.setAutoCommit(false); // Start transaction
 
-            // Insert into users table
-            pstmtUser = conn.prepareStatement(insertUserSql);
+            // Fix: Use execute() and then getResultSet() for statements with RETURNING clause
+            pstmtUser = conn.prepareStatement(insertUserSql); // No Statement.RETURN_GENERATED_KEYS needed here if using RETURNING
             pstmtUser.setString(1, username);
             pstmtUser.setString(2, email);
             pstmtUser.setString(3, hashedPassword);
             pstmtUser.setObject(4, adminRoleId); // Set the UUID for role_id
             pstmtUser.setString(5, "Active"); // Default status for new admin user
 
-            int affectedRows = pstmtUser.executeUpdate();
-            if (affectedRows == 0) {
-                throw new SQLException("Creating user failed, no rows affected.");
-            }
+            // Execute the statement and get the ResultSet from the RETURNING clause
+            boolean hasResultSet = pstmtUser.execute(); // Use execute() instead of executeUpdate()
 
-            // Get the generated user_id
-            rs = pstmtUser.getGeneratedKeys();
-            UUID newUserId;
-            if (rs.next()) {
-                newUserId = UUID.fromString(rs.getString(1));
-                output.put("user_id", newUserId.toString());
-                output.put("username", username);
-                output.put("email", email);
+            if (hasResultSet) {
+                rs = pstmtUser.getResultSet(); // Get the ResultSet
+                UUID newUserId;
+                if (rs.next()) {
+                    newUserId = UUID.fromString(rs.getString("user_id")); // Get by column name for clarity
+                    output.put("user_id", newUserId.toString());
+                    output.put("username", username);
+                    output.put("email", email);
+                } else {
+                    // This case indicates execute() returned true (hasResultSet) but the ResultSet was empty.
+                    // This is unexpected for an INSERT ... RETURNING that affected rows.
+                    throw new SQLException("Creating user failed, no ID obtained from RETURNING clause.");
+                }
             } else {
-                throw new SQLException("Creating user failed, no ID obtained.");
+                // This case indicates execute() returned false (no ResultSet), which is also unexpected
+                // for an INSERT ... RETURNING. It might mean 0 rows affected or a driver issue.
+                throw new SQLException("Creating user failed, no ResultSet returned from INSERT statement.");
             }
 
             conn.commit(); // Commit transaction

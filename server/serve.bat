@@ -36,5 +36,5 @@ set POSTGRES_USER=%POSTGRES_USER%
 set POSTGRES_PASSWD=%POSTGRES_PASSWD%
 set JETTY_HOME=%JETTY_HOME%
 set JETTY_BASE=%JETTY_BASE%
-copy %TSI_DX_NODE_HOME%\target\tsi_dx_node.war %JETTY_BASE%\webapps\ROOT.war >NUL
+copy %TSI_DX_NODE_HOME%\target\tsi_dxnode.war %JETTY_BASE%\webapps\ROOT.war >NUL
 java -jar %JETTY_HOME%/start.jar

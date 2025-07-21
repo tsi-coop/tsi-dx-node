@@ -294,3 +294,73 @@ FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 -- Note: data_transfers and bulk_uploads tables typically do not have an updated_at trigger
 -- as their status changes are often captured by specific status updates or end_time.
 -- If a generic updated_at is needed, a trigger can be added.
+
+-- Insert the default 'Administrator' role
+INSERT INTO roles (role_id, name, description, is_system_role)
+VALUES (
+    'a0000000-0000-0000-0000-000000000001', -- A well-known UUID for the Administrator role
+    'Administrator',
+    'Full access to all TSI DX Node administrative functions.',
+    TRUE -- This is a system-defined role
+)
+ON CONFLICT (role_id) DO NOTHING; -- Prevents errors if script is run multiple times
+
+-- Insert permissions for the 'Administrator' role
+INSERT INTO role_permissions (role_id, resource, action) VALUES
+('a0000000-0000-0000-0000-000000000001', 'node', 'view_status'),
+('a0000000-0000-0000-0000-000000000001', 'node', 'view_config'),
+('a0000000-0000-0000-0000-000000000001', 'node', 'update_config'),
+('a0000000-0000-0000-0000-000000000001', 'node', 'generate_csr'),
+('a0000000-0000-0000-0000-000000000001', 'node', 'import_certificate'),
+
+('a0000000-0000-0000-0000-000000000001', 'partner', 'list'),
+('a0000000-0000-0000-0000-000000000001', 'partner', 'get'),
+('a0000000-0000-0000-0000-000000000001', 'partner', 'create'),
+('a0000000-0000-0000-0000-000000000001', 'partner', 'update'),
+('a0000000-0000-0000-0000-000000000001', 'partner', 'delete'),
+
+('a0000000-0000-0000-0000-000000000001', 'contract', 'list'),
+('a0000000-0000-0000-0000-000000000001', 'contract', 'get'),
+('a0000000-0000-0000-0000-000000000001', 'contract', 'create'),
+('a0000000-0000-0000-0000-000000000001', 'contract', 'update'),
+('a0000000-0000-0000-0000-000000000001', 'contract', 'propose'),
+('a0000000-0000-0000-0000-000000000001', 'contract', 'accept'),
+('a0000000-0000-0000-0000-000000000001', 'contract', 'reject'),
+('a0000000-0000-0000-0000-000000000001', 'contract', 'terminate'),
+
+('a0000000-0000-0000-0000-000000000001', 'user', 'list'),
+('a0000000-0000-0000-0000-000000000001', 'user', 'get'),
+('a0000000-0000-0000-0000-000000000001', 'user', 'create'),
+('a0000000-0000-0000-0000-000000000001', 'user', 'update'),
+('a0000000-0000-0000-0000-000000000001', 'user', 'delete'),
+
+('a0000000-0000-0000-0000-000000000001', 'role', 'list'),
+('a0000000-0000-0000-0000-000000000001', 'role', 'get'),
+('a0000000-0000-0000-0000-000000000001', 'role', 'create'),
+('a0000000-0000-0000-0000-000000000001', 'role', 'update'),
+('a0000000-0000-0000-0000-000000000001', 'role', 'delete'),
+
+('a0000000-0000-0000-0000-000000000001', 'transfer', 'list'),
+('a0000000-0000-0000-0000-000000000001', 'transfer', 'get'),
+('a0000000-0000-0000-0000-000000000001', 'transfer', 'resend'),
+('a0000000-0000-0000-0000-000000000001', 'transfer', 'list_bulk'),
+('a0000000-0000-0000-0000-000000000001', 'transfer', 'get_bulk'),
+('a0000000-0000-0000-0000-000000000001', 'transfer', 'initiate_bulk'),
+
+('a0000000-0000-0000-0000-000000000001', 'audit', 'list'),
+('a0000000-0000-0000-0000-000000000001', 'audit', 'get'),
+
+('a0000000-0000-0000-0000-000000000001', 'governance', 'list_pii_rules'),
+('a0000000-0000-0000-0000-000000000001', 'governance', 'create_pii_rule'),
+('a0000000-0000-0000-0000-000000000001', 'governance', 'update_pii_rule'),
+('a0000000-0000-0000-0000-000000000001', 'governance', 'delete_pii_rule'),
+
+('a0000000-0000-0000-0000-000000000001', 'governance', 'list_validation_scripts'),
+('a0000000-0000-0000-0000-000000000001', 'governance', 'get_validation_script'),
+('a0000000-0000-0000-0000-000000000001', 'governance', 'create_validation_script'),
+('a0000000-0000-0000-0000-000000000001', 'governance', 'update_validation_script'),
+('a0000000-0000-0000-0000-000000000001', 'governance', 'delete_validation_script'),
+
+('a0000000-0000-0000-0000-000000000001', 'governance', 'get_archiving_purging_config'),
+('a0000000-0000-0000-0000-000000000001', 'governance', 'update_archiving_purging_config')
+ON CONFLICT (role_id, resource, action) DO NOTHING; -- Prevents errors on re-run
