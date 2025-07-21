@@ -3,7 +3,7 @@
 /api/client/vault=org.tsicoop.aadhaarvault.api.client.Vault
 
 # Admin Handlers
-/api/admin/register=org.tsicoop.aadhaarvault.api.admin.Register
+/api/admin/registeradmin=org.tsicoop.dxnode.api.admin.RegisterAdmin
 /api/admin/login=org.tsicoop.aadhaarvault.api.admin.Login
 /api/admin/clients=org.tsicoop.aadhaarvault.api.admin.Clients
 /api/admin/IDTypes=org.tsicoop.aadhaarvault.api.admin.IDTypes

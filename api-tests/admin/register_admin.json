@@ -1,0 +1,7 @@
+{
+  "_func": "register_admin",
+  "username": "admin_user",
+  "email": "admin@yourcompany.com",
+  "password": "SecurePassword123!",
+  "confirm_password": "SecurePassword123!"
+}

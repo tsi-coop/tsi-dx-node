@@ -1,0 +1,1 @@
+C:\software\PostgreSQL\16\bin\psql -U postgres -d tsi_dx_node -h localhost -p 5433 -f c:\work\tsi-dx-node\db\init.sql

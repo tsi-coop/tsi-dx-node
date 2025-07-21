@@ -10,14 +10,11 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.time.LocalDateTime;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
 
-public class Register implements REST {
+public class RegisterAdmin implements REST {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final PasswordHasher passwordHasher = new PasswordHasher(); // Assuming this handles secure hashing (e.g., bcrypt)
