@@ -1,0 +1,5 @@
+{
+  "_func": "import_node_certificate",
+  "certificate_pem": "-----BEGIN CERTIFICATE-----\nMIIDQjCCAiqgAwIBAgIJANbJ+...\n-----END CERTIFICATE-----",
+  "private_key_pem": "-----BEGIN PRIVATE KEY-----\nMIICdgIBADANBgkqhkiG9w0BAQEFAASC...\n-----END PRIVATE KEY-----"
+}

@@ -1,0 +1,5 @@
+{
+  "_func": "generate_node_csr",
+  "common_name": "dxnode.yourcompany.com",
+  "organization": "Your Company Inc."
+}

@@ -49,17 +49,17 @@ public class Node implements REST {
             }
 
             switch (func.toLowerCase()) { // Case-insensitive comparison for _func
-                case "get_status":
+                case "get_node_status":
                     output = getNodeStatus();
                     OutputProcessor.send(res, HttpServletResponse.SC_OK, output);
                     break;
 
-                case "get_config":
+                case "get_node_config":
                     output = getNodeConfig();
                     OutputProcessor.send(res, HttpServletResponse.SC_OK, output);
                     break;
 
-                case "update_config":
+                case "upsert_node_config":
                     String nodeId = (String) input.get("node_id");
                     String fqdn = (String) input.get("fqdn");
                     int networkPort = (int)(long)input.get("network_port");
@@ -71,11 +71,11 @@ public class Node implements REST {
                         OutputProcessor.errorResponse(res, HttpServletResponse.SC_BAD_REQUEST, "Bad Request", "Missing or invalid required configuration fields for 'update_config'.", req.getRequestURI());
                         return;
                     }
-                    output = updateNodeConfig(nodeId, fqdn, networkPort, storageActivePath, storageArchivePath, loggingLevel);
+                    output = upsertNodeConfig(nodeId, fqdn, networkPort, storageActivePath, storageArchivePath, loggingLevel);
                     OutputProcessor.send(res, HttpServletResponse.SC_OK, output);
                     break;
 
-                case "generate_csr":
+                case "generate_node_csr":
                     String commonName = (String) input.get("common_name");
                     String organization = (String) input.get("organization");
 
@@ -87,7 +87,7 @@ public class Node implements REST {
                     OutputProcessor.send(res, HttpServletResponse.SC_OK, output);
                     break;
 
-                case "import_certificate":
+                case "import_node_certificate":
                     String certificatePem = (String) input.get("certificate_pem");
                     String privateKeyPem = (String) input.get("private_key_pem");
 
@@ -241,6 +241,48 @@ public class Node implements REST {
             if (affectedRows == 0) {
                 throw new SQLException("Node configuration not found or no changes made for ID: " + NODE_CONFIG_SINGLETON_ID);
             }
+        } finally {
+            pool.cleanup(null, pstmt, conn);
+        }
+        return new JSONObject() {{ put("success", true); put("message", "Node configuration updated successfully."); }};
+    }
+
+    /**
+     * Updates or inserts (upserts) the node configuration in the database.
+     * Uses PostgreSQL's INSERT ... ON CONFLICT DO UPDATE.
+     * @param nodeId The node ID.
+     * @param fqdn The FQDN.
+     * @param networkPort The network port.
+     * @param storageActivePath Active storage path.
+     * @param storageArchivePath Archive storage path.
+     * @param loggingLevel Logging level.
+     * @return JSONObject indicating success.
+     * @throws SQLException if a database access error occurs.
+     */
+    private JSONObject upsertNodeConfig(String nodeId, String fqdn, int networkPort, String storageActivePath, String storageArchivePath, String loggingLevel) throws SQLException {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        PoolDB pool = new PoolDB();
+
+        // SQL for UPSERT using ON CONFLICT (config_id)
+        String sql = "INSERT INTO node_config (config_id, node_id, fqdn, network_port, storage_active_path, storage_archive_path, logging_level) VALUES (?, ?, ?, ?, ?, ?, ?) " +
+                "ON CONFLICT (config_id) DO UPDATE SET node_id = EXCLUDED.node_id, fqdn = EXCLUDED.fqdn, network_port = EXCLUDED.network_port, " +
+                "storage_active_path = EXCLUDED.storage_active_path, storage_archive_path = EXCLUDED.storage_archive_path, logging_level = EXCLUDED.logging_level, " +
+                "updated_at = NOW()";
+
+        try {
+            conn = pool.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setObject(1, NODE_CONFIG_SINGLETON_ID); // Set the singleton ID
+            pstmt.setString(2, nodeId);
+            pstmt.setString(3, fqdn);
+            pstmt.setInt(4, networkPort);
+            pstmt.setString(5, storageActivePath);
+            pstmt.setString(6, storageArchivePath);
+            pstmt.setString(7, loggingLevel);
+
+            pstmt.executeUpdate(); // executeUpdate is correct for ON CONFLICT DO UPDATE
+
         } finally {
             pool.cleanup(null, pstmt, conn);
         }

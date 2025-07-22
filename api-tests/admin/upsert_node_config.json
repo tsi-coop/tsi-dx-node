@@ -1,0 +1,9 @@
+{
+  "_func": "upsert_node_config",
+  "node_id": "your-company-dx-node-prod",
+  "fqdn": "dxnode.yourcompany.com",
+  "network_port": 8443,
+  "storage_active_path": "/opt/dxnode/data/active",
+  "storage_archive_path": "/opt/dxnode/data/archive",
+  "logging_level": "INFO"
+}

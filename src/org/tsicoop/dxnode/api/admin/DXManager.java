@@ -27,7 +27,7 @@ import java.util.Optional;
 // import org.tsicoop.aadhaarvault.framework.FileUtil; // For file operations (checksum, storage)
 // import org.tsicoop.aadhaarvault.framework.TransferEngine; // Placeholder for actual P2P transfer logic
 
-public class DXMgmt implements REST {
+public class DXManager implements REST {
 
     // All HTTP methods will now defer to the POST method
     @Override

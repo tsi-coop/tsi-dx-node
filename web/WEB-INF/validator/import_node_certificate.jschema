@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Generated schema for Root",
+  "type": "object",
+  "properties": {
+    "_func": {
+      "type": "string"
+    },
+    "certificate_pem": {
+      "type": "string"
+    },
+    "private_key_pem": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "_func",
+    "certificate_pem",
+    "private_key_pem"
+  ]
+}

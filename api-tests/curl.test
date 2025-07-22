@@ -1,10 +1,23 @@
 TSI DX Node - v0.1
 --------------------------------------------------------------------------------------------
-##Admin
+##Admin - Register/Login
 # Register
 curl -X POST -H "Content-Type: application/json" -d @C:\work\tsi-dx-node\api-tests\admin\register_admin.json http://localhost:8080/api/admin/registeradmin
 # Login
 curl -X POST -H "Content-Type: application/json" -d @C:\work\tsi-dx-node\api-tests\admin\login.json http://localhost:8080/api/admin/login
+
+##Admin - Node Mgmt
+# Get Node Status
+curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiQWRtaW5pc3RyYXRvciIsIm5hbWUiOiJhZG1pbl91c2VyIiwic3ViIjoiN2QwYTY1YzEtZTllNi00MDMyLTljOGQtY2NkZTQ3YWVmZTEyIiwiaWF0IjoxNzUzMTU1NTgwLCJleHAiOjE3NTQwMTk1ODB9.SG2boEn0PFaCPrAHsfeVtGusYA1upXPjjSpExdPpyEQ" -d @C:\work\tsi-dx-node\api-tests\admin\get_node_status.json http://localhost:8080/api/admin/node
+# Get Node Config
+curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiQWRtaW5pc3RyYXRvciIsIm5hbWUiOiJhZG1pbl91c2VyIiwic3ViIjoiN2QwYTY1YzEtZTllNi00MDMyLTljOGQtY2NkZTQ3YWVmZTEyIiwiaWF0IjoxNzUzMTU1NTgwLCJleHAiOjE3NTQwMTk1ODB9.SG2boEn0PFaCPrAHsfeVtGusYA1upXPjjSpExdPpyEQ" -d @C:\work\tsi-dx-node\api-tests\admin\get_node_config.json http://localhost:8080/api/admin/node
+# Update Node Config
+curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiQWRtaW5pc3RyYXRvciIsIm5hbWUiOiJhZG1pbl91c2VyIiwic3ViIjoiN2QwYTY1YzEtZTllNi00MDMyLTljOGQtY2NkZTQ3YWVmZTEyIiwiaWF0IjoxNzUzMTU1NTgwLCJleHAiOjE3NTQwMTk1ODB9.SG2boEn0PFaCPrAHsfeVtGusYA1upXPjjSpExdPpyEQ" -d @C:\work\tsi-dx-node\api-tests\admin\upsert_node_config.json http://localhost:8080/api/admin/node
+# generate node csr
+curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiQWRtaW5pc3RyYXRvciIsIm5hbWUiOiJhZG1pbl91c2VyIiwic3ViIjoiN2QwYTY1YzEtZTllNi00MDMyLTljOGQtY2NkZTQ3YWVmZTEyIiwiaWF0IjoxNzUzMTU1NTgwLCJleHAiOjE3NTQwMTk1ODB9.SG2boEn0PFaCPrAHsfeVtGusYA1upXPjjSpExdPpyEQ" -d @C:\work\tsi-dx-node\api-tests\admin\generate_node_csr.json http://localhost:8080/api/admin/node
+# import node certificate
+curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiQWRtaW5pc3RyYXRvciIsIm5hbWUiOiJhZG1pbl91c2VyIiwic3ViIjoiN2QwYTY1YzEtZTllNi00MDMyLTljOGQtY2NkZTQ3YWVmZTEyIiwiaWF0IjoxNzUzMTU1NTgwLCJleHAiOjE3NTQwMTk1ODB9.SG2boEn0PFaCPrAHsfeVtGusYA1upXPjjSpExdPpyEQ" -d @C:\work\tsi-dx-node\api-tests\admin\import_node_certificate.json http://localhost:8080/api/admin/node
+
 
 ##Client
 # Register
