@@ -6,4 +6,5 @@
 /api/admin/registeradmin=org.tsicoop.dxnode.api.admin.RegisterAdmin
 /api/admin/login=org.tsicoop.dxnode.api.admin.Login
 /api/admin/node=org.tsicoop.dxnode.api.admin.Node
+/api/admin/partners=org.tsicoop.dxnode.api.admin.Partners
 

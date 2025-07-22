@@ -18,6 +18,12 @@ curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer eyJhb
 # import node certificate
 curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiQWRtaW5pc3RyYXRvciIsIm5hbWUiOiJhZG1pbl91c2VyIiwic3ViIjoiN2QwYTY1YzEtZTllNi00MDMyLTljOGQtY2NkZTQ3YWVmZTEyIiwiaWF0IjoxNzUzMTU1NTgwLCJleHAiOjE3NTQwMTk1ODB9.SG2boEn0PFaCPrAHsfeVtGusYA1upXPjjSpExdPpyEQ" -d @C:\work\tsi-dx-node\api-tests\admin\import_node_certificate.json http://localhost:8080/api/admin/node
 
+##Admin - Node Mgmt
+# List Partners
+curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiQWRtaW5pc3RyYXRvciIsIm5hbWUiOiJhZG1pbl91c2VyIiwic3ViIjoiN2QwYTY1YzEtZTllNi00MDMyLTljOGQtY2NkZTQ3YWVmZTEyIiwiaWF0IjoxNzUzMTY2NDM3LCJleHAiOjE3NTQwMzA0Mzd9.ktdtPEK92lcumPVE7ykRvhNX7m3nnRhT5FZQa1rjFy4" -d @C:\work\tsi-dx-node\api-tests\admin\list_partners.json http://localhost:8080/api/admin/partners
+# Create Partner
+curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiQWRtaW5pc3RyYXRvciIsIm5hbWUiOiJhZG1pbl91c2VyIiwic3ViIjoiN2QwYTY1YzEtZTllNi00MDMyLTljOGQtY2NkZTQ3YWVmZTEyIiwiaWF0IjoxNzUzMTY2NDM3LCJleHAiOjE3NTQwMzA0Mzd9.ktdtPEK92lcumPVE7ykRvhNX7m3nnRhT5FZQa1rjFy4" -d @C:\work\tsi-dx-node\api-tests\admin\create_partner.json http://localhost:8080/api/admin/partners
+
 
 ##Client
 # Register

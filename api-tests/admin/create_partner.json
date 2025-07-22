@@ -1,0 +1,7 @@
+{
+  "_func": "create_partner",
+  "name": "Alpha Corporation",
+  "node_id": "alpha-corp-dx-node",
+  "fqdn": "dx.alphacorp.com",
+  "public_key_pem": "-----BEGIN PUBLIC KEY-----MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAsdfaewr34t234t-----END PUBLIC KEY-----"
+}

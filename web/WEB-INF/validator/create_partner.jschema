@@ -1,0 +1,29 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Generated schema for Root",
+  "type": "object",
+  "properties": {
+    "_func": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "node_id": {
+      "type": "string"
+    },
+    "fqdn": {
+      "type": "string"
+    },
+    "public_key_pem": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "_func",
+    "name",
+    "node_id",
+    "fqdn",
+    "public_key_pem"
+  ]
+}

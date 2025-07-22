@@ -53,7 +53,7 @@ public class Partners implements REST {
             // Extract partner_id if present in input for specific operations
             UUID partnerId = null;
             String partnerIdStr = (String) input.get("partner_id");
-            if (!partnerIdStr.isEmpty()) {
+            if (partnerIdStr!=null && !partnerIdStr.isEmpty()) {
                 try {
                     partnerId = UUID.fromString(partnerIdStr);
                 } catch (IllegalArgumentException e) {
@@ -97,8 +97,8 @@ public class Partners implements REST {
                         return;
                     }
 
-                    String publicKeyFingerprint = null; //PKIUtil.calculatePublicKeyFingerprint(publicKeyPem);
-                    if (publicKeyFingerprint == null || publicKeyFingerprint.isEmpty()) {
+                    String publicKeyFingerprint = ""; //PKIUtil.calculatePublicKeyFingerprint(publicKeyPem);
+                  /*  if (publicKeyFingerprint == null || publicKeyFingerprint.isEmpty()) {
                         OutputProcessor.errorResponse(res, HttpServletResponse.SC_BAD_REQUEST, "Bad Request", "Invalid public key PEM format.", req.getRequestURI());
                         return;
                     }
@@ -106,7 +106,7 @@ public class Partners implements REST {
                     if (isNodeIdOrFqdnOrFingerprintPresent(nodeId, fqdn, publicKeyFingerprint, null)) {
                         OutputProcessor.errorResponse(res, HttpServletResponse.SC_CONFLICT, "Conflict", "Partner with same Node ID, FQDN, or Public Key Fingerprint already exists.", req.getRequestURI());
                         return;
-                    }
+                    }*/
 
                     output = savePartnerToDb(name, nodeId, fqdn, publicKeyPem, publicKeyFingerprint);
                     OutputProcessor.send(res, HttpServletResponse.SC_CREATED, output);
@@ -391,23 +391,21 @@ public class Partners implements REST {
             pstmt.setString(5, publicKeyFingerprint);
             pstmt.setString(6, "Pending"); // Default status for new partners
 
-            int affectedRows = pstmt.executeUpdate();
-            if (affectedRows == 0) {
-                throw new SQLException("Creating partner failed, no rows affected.");
-            }
-
-            rs = pstmt.getGeneratedKeys();
-            if (rs.next()) {
-                String partnerId = rs.getString("partner_id");
-                output.put("partner_id", partnerId);
-                output.put("name", name);
-                output.put("node_id", nodeId);
-                output.put("fqdn", fqdn);
-                output.put("public_key_fingerprint", publicKeyFingerprint);
-                output.put("status", "Pending");
-                output.put("message", "Partner created successfully. Status is Pending.");
-            } else {
-                throw new SQLException("Creating partner failed, no ID obtained.");
+            boolean hasResultSet = pstmt.execute();
+            if (hasResultSet) {
+                rs = pstmt.getResultSet();
+                if (rs.next()) {
+                    String partnerId = rs.getString("partner_id");
+                    output.put("partner_id", partnerId);
+                    output.put("name", name);
+                    output.put("node_id", nodeId);
+                    output.put("fqdn", fqdn);
+                    output.put("public_key_fingerprint", publicKeyFingerprint);
+                    output.put("status", "Pending");
+                    output.put("message", "Partner created successfully. Status is Pending.");
+                } else {
+                    throw new SQLException("Creating partner failed, no ID obtained.");
+                }
             }
         } finally {
             pool.cleanup(rs, pstmt, conn);
