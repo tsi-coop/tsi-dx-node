@@ -1,0 +1,70 @@
+# TSI DX Node - Universal Docker Compose (Public Release)
+
+x-db-credentials: &db-credentials
+  POSTGRES_DB: "${POSTGRES_DB:-tsi_dx_node}"
+  POSTGRES_USER: "${POSTGRES_USER:-tsi_admin}"
+  POSTGRES_PASSWORD: "${POSTGRES_PASSWD:-secure_dev_password}"
+
+services:
+  # 1. PostgreSQL Database Service
+  postgres_db:
+    image: postgres:15-alpine
+    container_name: tsi_dx_node_db
+    restart: unless-stopped
+    environment:
+      <<: *db-credentials
+    ports:
+      - "${DB_PORT_MAP:-5434:5432}"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - tsi_internal
+
+  # 2. Java Jetty Web Application Service
+  jetty_app:
+    # Uses the IMAGE_NAME from .env, defaults to latest if not set
+    #image: "${IMAGE_NAME:-tsicoop/tsi-dx-node:latest}"
+    
+    # DEVELOPERS: To build from local source, uncomment the block below
+    build:
+      context: .
+      dockerfile: Dockerfile
+    
+    user: "root"
+    container_name: tsi_dx_node_server
+    restart: unless-stopped
+    
+    ports:
+      - "${APP_PORT_MAP:-8082:8080}"
+    
+    environment:
+      POSTGRES_HOST: "jdbc:postgresql://postgres_db:5434"
+      POSTGRES_DB: "${POSTGRES_DB:-tsi_dx_node}"
+      POSTGRES_USER: "${POSTGRES_USER:-tsi_admin}"
+      POSTGRES_PASSWD: "${POSTGRES_PASSWD:-secure_dev_password}"
+      TSI_DX_NODE_ENV: "${TSI_DX_NODE_ENV:-production}"
+      TSI_EXPORT_PATH: "${TSI_EXPORT_PATH:-/var/lib/tsi/exports/}"
+    
+    volumes:
+      - "tsi_reports_data:${TSI_EXPORT_PATH:-/var/lib/tsi/exports/}:rw"
+    
+    depends_on:
+      postgres_db:
+        condition: service_healthy
+    networks:
+      - tsi_internal
+
+# Infrastructure Definitions
+networks:
+  tsi_internal:
+    driver: bridge
+
+volumes:
+  postgres_data:      
+  tsi_reports_data:

@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TSI DX Node - Administrative Gateway</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+        
+        :root {
+            --dx-primary: #0f172a; /* Slate 900 */
+            --dx-accent: #3b82f6;  /* Blue 500 */
+            --background: #f1f5f9;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background);
+            background-image: 
+                radial-gradient(circle at 2px 2px, #cbd5e1 1px, transparent 0);
+            background-size: 32px 32px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .node-blob {
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.05) 0%, rgba(241, 245, 249, 0) 70%);
+            border-radius: 50%;
+            z-index: -1;
+        }
+
+        .dx-card {
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            border-top: 5px solid var(--dx-primary);
+            position: relative;
+        }
+
+        .input-focus:focus {
+            border-color: var(--dx-accent);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .animated-button {
+            background-color: var(--dx-primary);
+            color: white;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .animated-button:hover:not(:disabled) {
+            background-color: #1e293b;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(15, 23, 42, 0.3);
+        }
+
+        .animated-button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .animated-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(120deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0) 100%);
+            transform: skewX(-25deg);
+        }
+
+        .animated-button:hover::before {
+            animation: shine 1.5s infinite;
+        }
+
+        @keyframes shine {
+            0% { left: -100%; }
+            100% { left: 200%; }
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #10b981;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 6px;
+            box-shadow: 0 0 8px #10b981;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="node-blob" style="top: -100px; left: -100px;"></div>
+<div class="node-blob" style="bottom: -100px; right: -100px;"></div>
+
+<div class="w-full max-w-md p-10 bg-white rounded-2xl dx-card">
+    <div class="text-center mb-10">
+        <div class="inline-flex items-center justify-center p-4 bg-slate-900 rounded-2xl mb-6 shadow-lg">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+            </svg>
+        </div>
+        <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight">TSI DX Node</h2>
+        <div class="flex items-center justify-center mt-2">
+            <span class="status-dot"></span>
+            <span class="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em]">P2P Protocol Active</span>
+        </div>
+    </div>
+
+    <form onsubmit="handleLogin(event)" class="space-y-6">
+        <div>
+            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2 px-1">Email Address</label>
+            <div class="relative">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                        <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                    </svg>
+                </span>
+                <input type="email" id="email" name="email" required
+                    class="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-0 focus:border-slate-900 outline-none transition-all text-sm input-focus"
+                    placeholder="admin@tsicoop.org">
+            </div>
+        </div>
+
+        <div>
+            <div class="flex justify-between mb-2 px-1">
+                <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest">Password</label>
+                <a href="#" class="text-[11px] font-bold text-blue-500 hover:text-blue-700 uppercase transition-colors">Forgot?</a>
+            </div>
+            <div class="relative">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+                    </svg>
+                </span>
+                <input type="password" id="password" name="password" required
+                    class="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-0 focus:border-slate-900 outline-none transition-all text-sm input-focus"
+                    placeholder="••••••••••••">
+            </div>
+        </div>
+
+        <button type="submit" id="login-btn" class="animated-button w-full py-4 rounded-xl font-bold text-xs uppercase tracking-[0.2em] shadow-lg mt-4 disabled:opacity-50 disabled:cursor-not-allowed">
+            Sign In
+        </button>
+
+        <div id="error-container" class="hidden animate-bounce mt-4 p-3 bg-red-50 border border-red-100 rounded-lg">
+             <p id="error-msg" class="text-[10px] font-bold text-red-600 uppercase text-center"></p>
+        </div>
+    </form>
+
+    <div class="mt-10 pt-6 border-t border-slate-100 text-center">
+        <p class="text-[9px] text-slate-400 font-medium uppercase tracking-widest">
+            Node Instance: <span class="text-slate-600 font-bold">DX-PROD-SOUTH-01</span>
+        </p>
+    </div>
+</div>
+
+<script>
+async function handleLogin(event) {
+    event.preventDefault();
+    
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const btn = document.getElementById('login-btn');
+    const errorContainer = document.getElementById('error-container');
+    const errorEl = document.getElementById('error-msg');
+
+    btn.disabled = true;
+    btn.innerText = "Signing In...";
+    errorContainer.classList.add('hidden');
+
+    try {
+        const payload = { 
+            _func: "admin_login", 
+            email: email, 
+            password: password 
+        };
+
+        const response = await fetch('api/admin/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+
+        if (response.ok && (data.success || data._success)) {
+            localStorage.setItem('dx_token', data.token);
+            localStorage.setItem('dx_user_email', data.email);
+            localStorage.setItem('dx_role', data.role);
+            
+            btn.innerText = "Access Granted";
+            btn.classList.replace('bg-slate-900', 'bg-green-600');
+            
+            setTimeout(() => {
+                window.location.href = 'dashboard.html';
+            }, 800);
+        } else {
+            throw new Error(data.message || "Invalid credentials");
+        }
+    } catch (err) {
+        errorEl.innerText = err.message || "Gateway Communication Failure";
+        errorContainer.classList.remove('hidden');
+        btn.disabled = false;
+        btn.innerText = "Sign In";
+    }
+}
+</script>
+
+</body>
+</html>
