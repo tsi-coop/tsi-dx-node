@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Transfers | TSI DX Node</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        :root {
+            --dx-primary: #0f172a;
+            --dx-accent: #3b82f6;
+            --sidebar-width: 280px;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+
+        .sidebar {
+            width: var(--sidebar-width);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .sidebar.collapsed {
+            width: 80px;
+        }
+
+        .sidebar.collapsed .nav-text, 
+        .sidebar.collapsed .nav-badge,
+        .sidebar.collapsed .brand-full {
+            display: none;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            color: #94a3b8;
+            transition: all 0.2s;
+            border-radius: 0.5rem;
+            margin: 0.25rem 0.75rem;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: white;
+        }
+
+        .nav-item.active {
+            background-color: var(--dx-accent);
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .modal-backdrop {
+            background-color: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(4px);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+        /* Tabs */
+        .tab-btn.active {
+            color: var(--dx-accent);
+            border-bottom: 2px solid var(--dx-accent);
+        }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden">
+
+    <!-- Sidebar Navigation -->
+    <aside id="sidebar" class="sidebar bg-slate-900 flex flex-col z-20">
+        <div class="p-6 mb-4">
+            <div class="flex items-center gap-3 brand-container">
+                <div class="brand-icon bg-blue-600 p-2.5 rounded-xl shadow-lg shadow-blue-900/20 flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                    </svg>
+                </div>
+                <div class="brand-full flex flex-col overflow-hidden">
+                    <span class="font-black text-white tracking-tighter text-xl leading-none">TSI DX NODE</span>
+                    <span class="text-[9px] text-blue-400 font-bold uppercase tracking-[0.2em] mt-1">Direct Exchange</span>
+                </div>
+            </div>
+        </div>
+
+        <nav class="flex-1 overflow-y-auto">
+            <div class="px-8 mb-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest nav-text">Operational Hub</div>
+            <a href="dashboard.html" class="nav-item">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+                <span class="nav-text">Dashboard</span>
+            </a>
+            
+            <div class="px-8 mt-6 mb-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest nav-text">Partnership</div>
+            <a href="partners.html" class="nav-item">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                <span class="nav-text">Partner Nodes</span>
+            </a>
+            <a href="contracts.html" class="nav-item">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                <span class="nav-text">Data Contracts</span>
+                <span class="ml-auto bg-blue-600 text-[10px] px-2 py-0.5 rounded-full text-white font-bold nav-badge">2</span>
+            </a>
+            <a href="transfers.html" class="nav-item active">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
+                <span class="nav-text">Transfer Logs</span>
+            </a>
+
+            <div class="px-8 mt-6 mb-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest nav-text">System</div>
+            <a href="audit.html" class="nav-item">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 00-2 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
+                <span class="nav-text">Audit Trail</span>
+            </a>
+            <a href="users.html" class="nav-item">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                <span class="nav-text">Users & Roles</span>
+            </a>
+            <a href="settings.html" class="nav-item">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                <span class="nav-text">Configuration</span>
+            </a>
+        </nav>
+
+        <div class="p-4 border-t border-slate-800">
+            <button onclick="logout()" class="nav-item w-full text-left hover:bg-red-500/10 hover:text-red-400">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                <span class="nav-text">Sign Out</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 flex flex-col min-w-0">
+        <!-- Header -->
+        <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 z-10">
+            <div class="flex items-center gap-4">
+                <button onclick="toggleSidebar()" class="p-2 hover:bg-slate-100 rounded-lg text-slate-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+                </button>
+                <div class="h-8 w-px bg-slate-200 mx-2"></div>
+                <div class="flex flex-col">
+                    <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-tight">Current Node Instance</span>
+                    <span class="text-xs font-black text-slate-900 leading-tight">DX-PROD-SOUTH-01</span>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <div class="flex flex-col items-end">
+                    <span class="text-xs font-bold text-slate-900">Admin User</span>
+                    <span class="text-[10px] text-slate-400 font-medium uppercase tracking-tighter">Node Administrator</span>
+                </div>
+                <div class="h-10 w-10 bg-slate-200 rounded-xl border-2 border-white shadow-sm overflow-hidden">
+                    <img src="https://ui-avatars.com/api/?name=Admin+User&background=0f172a&color=fff" alt="Avatar">
+                </div>
+            </div>
+        </header>
+
+        <!-- Dynamic View Area -->
+        <div class="flex-1 overflow-y-auto p-8 custom-scrollbar">
+            <!-- Breadcrumbs -->
+            <nav class="flex text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">
+                <a href="dashboard.html" class="hover:text-blue-500 transition-colors">TSI DX NODE</a>
+                <span class="mx-2">/</span>
+                <span class="text-slate-900">Transfer Logs</span>
+            </nav>
+
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                <div>
+                    <h1 class="text-2xl font-black text-slate-900 uppercase tracking-tight">Exchange Monitoring</h1>
+                    <p class="text-xs text-slate-500 font-medium">Monitor active protocol sequences and audit historical data transfers.</p>
+                </div>
+                <button onclick="openTransferModal()" class="inline-flex items-center px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-500/20 transition-all transform hover:-translate-y-0.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                    Initiate New Transfer
+                </button>
+            </div>
+
+            <!-- Tabbed Interface -->
+            <div class="mb-6 border-b border-slate-200">
+                <div class="flex gap-8">
+                    <button onclick="switchTab('active')" id="tab-active" class="tab-btn active px-1 py-4 text-xs font-black uppercase tracking-widest transition-all">Active Transfers</button>
+                    <button onclick="switchTab('completed')" id="tab-completed" class="tab-btn px-1 py-4 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-all">Completed</button>
+                    <button onclick="switchTab('failed')" id="tab-failed" class="tab-btn px-1 py-4 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-all">Failed</button>
+                </div>
+            </div>
+
+            <!-- Filters Area (Common) -->
+            <div class="card p-4 mb-6 flex flex-wrap gap-4 items-center">
+                <div class="flex-1 min-w-[240px] relative">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                    <input type="text" placeholder="Search by Transfer ID, partner, or file name..." class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
+                </div>
+                <select class="px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-600 outline-none focus:ring-2 focus:ring-blue-500/20 transition-all">
+                    <option value="">Direction: All</option>
+                    <option value="outgoing">Outgoing</option>
+                    <option value="incoming">Incoming</option>
+                </select>
+                <select class="px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-600 outline-none focus:ring-2 focus:ring-blue-500/20 transition-all">
+                    <option value="">All Contracts</option>
+                    <option value="c1">Loan App Exchange</option>
+                </select>
+            </div>
+
+            <!-- Transfer Table (Active View Example) -->
+            <div id="transfer-container" class="card overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead>
+                            <tr class="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-50">
+                                <th class="px-6 py-4">Transfer Sequence ID</th>
+                                <th class="px-6 py-4">Partner Entity</th>
+                                <th class="px-6 py-4">Payload / File</th>
+                                <th class="px-6 py-4">Direction</th>
+                                <th class="px-6 py-4">Status / Progress</th>
+                                <th class="px-6 py-4 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transfer-table-body" class="divide-y divide-slate-100">
+                            <!-- Example Row: Outgoing Processing -->
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="px-6 py-4">
+                                    <code class="text-[10px] bg-slate-100 px-2 py-1 rounded text-slate-500 font-mono">TX-9128...FA1</code>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-6 h-6 rounded bg-blue-100 flex items-center justify-center text-[10px] text-blue-600 font-black">GL</div>
+                                        <span class="font-bold text-slate-900">Global Logistics</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex flex-col">
+                                        <span class="text-xs font-bold text-slate-700">quarterly_report_q3.csv</span>
+                                        <span class="text-[10px] text-slate-400 uppercase font-bold tracking-tighter">8.4 MB | CSV</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-tighter">Outgoing</span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex flex-col gap-1">
+                                        <div class="flex justify-between items-center text-[10px] font-bold">
+                                            <span class="text-blue-600">ENCRYPTING</span>
+                                            <span class="text-slate-400">65%</span>
+                                        </div>
+                                        <div class="w-full bg-slate-100 h-1 rounded-full overflow-hidden">
+                                            <div class="bg-blue-500 h-full" style="width: 65%"></div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 text-right">
+                                    <button class="p-2 text-slate-300 cursor-not-allowed" disabled title="Download not available during processing">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                                    </button>
+                                </td>
+                            </tr>
+                            <!-- Example Row: Incoming Queued -->
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="px-6 py-4">
+                                    <code class="text-[10px] bg-slate-100 px-2 py-1 rounded text-slate-500 font-mono">TX-0044...BB2</code>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-6 h-6 rounded bg-purple-100 flex items-center justify-center text-[10px] text-purple-600 font-black">NS</div>
+                                        <span class="font-bold text-slate-900">Nordic Solutions</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex flex-col">
+                                        <span class="text-xs font-bold text-slate-700">loan_batch_01.json</span>
+                                        <span class="text-[10px] text-slate-400 uppercase font-bold tracking-tighter">142 KB | JSON</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-tighter">Incoming</span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-2 h-2 rounded-full bg-yellow-400 animate-pulse"></span>
+                                        <span class="text-[11px] font-bold text-yellow-700 uppercase tracking-widest">Validating Signature</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 text-right">
+                                    <button class="p-2 text-slate-400 hover:text-slate-900 transition-all"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Initiate Transfer Modal -->
+    <div id="transferModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop">
+        <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <!-- Modal Header -->
+            <div class="px-8 py-6 bg-slate-900 flex items-center justify-between">
+                <div>
+                    <h3 class="text-xl font-black text-white uppercase tracking-tight">Initiate Data Transfer</h3>
+                    <p class="text-[10px] text-blue-400 font-bold uppercase tracking-[0.2em] mt-1">Store-and-Forward Sequence</p>
+                </div>
+                <button onclick="closeTransferModal()" class="text-slate-400 hover:text-white transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+
+            <!-- Modal Content -->
+            <div class="p-8 overflow-y-auto custom-scrollbar flex-1">
+                <form id="transferForm" class="space-y-6">
+                    <!-- Partner Multi-Select (Broadcast Support) -->
+                    <div>
+                        <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Target Partners (Broadcast enabled)</label>
+                        <div class="space-y-2">
+                            <label class="flex items-center p-3 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:border-blue-400 transition-all">
+                                <input type="checkbox" class="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500">
+                                <span class="ml-3 text-xs font-bold text-slate-700">Global Logistics (dx.global-logistics.net)</span>
+                            </label>
+                            <label class="flex items-center p-3 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:border-blue-400 transition-all">
+                                <input type="checkbox" class="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500">
+                                <span class="ml-3 text-xs font-bold text-slate-700">Nordic Solutions (dx.nordic-sol.io)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Contract Selection -->
+                    <div>
+                        <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Governing Data Contract</label>
+                        <select class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold text-slate-700 outline-none">
+                            <option>Select Contract Schema...</option>
+                            <option>Loan Application Exchange (CTR-9128-B)</option>
+                        </select>
+                    </div>
+
+                    <!-- Transfer Method -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <button type="button" class="p-4 border-2 border-blue-500 bg-blue-50 rounded-xl text-center flex flex-col items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
+                            <span class="text-[10px] font-black uppercase tracking-widest text-blue-700">Upload File</span>
+                        </button>
+                        <button type="button" class="p-4 border-2 border-slate-100 bg-slate-50 rounded-xl text-center flex flex-col items-center gap-2 opacity-50">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>
+                            <span class="text-[10px] font-black uppercase tracking-widest text-slate-500">JSON Payload</span>
+                        </button>
+                    </div>
+
+                    <!-- File Input -->
+                    <div>
+                        <div class="border-2 border-dashed border-slate-200 rounded-2xl p-8 text-center bg-slate-50 hover:bg-slate-100 transition-all cursor-pointer">
+                            <input type="file" class="hidden" id="fileInput">
+                            <p class="text-xs font-bold text-slate-500">Drag & drop files here or <span class="text-blue-600">Browse</span></p>
+                            <p class="text-[10px] text-slate-400 mt-1 uppercase font-bold tracking-widest">Max Size: 500 MB</p>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="px-8 py-6 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-4">
+                <button onclick="closeTransferModal()" class="px-6 py-2.5 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-colors">Cancel</button>
+                <button form="transferForm" type="submit" class="px-8 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-500/20 transition-all">Upload & Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('collapsed');
+        }
+
+        function openTransferModal() {
+            document.getElementById('transferModal').classList.remove('hidden');
+        }
+
+        function closeTransferModal() {
+            document.getElementById('transferModal').classList.add('hidden');
+        }
+
+        function switchTab(tabId) {
+            // Remove active classes
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+                btn.classList.add('text-slate-400');
+            });
+            
+            // Add active class to selected
+            const activeBtn = document.getElementById(`tab-${tabId}`);
+            activeBtn.classList.add('active');
+            activeBtn.classList.remove('text-slate-400');
+
+            // Update Mock Data for demonstration
+            const tbody = document.getElementById('transfer-table-body');
+            if (tabId === 'completed') {
+                tbody.innerHTML = `
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="px-6 py-4"><code class="text-[10px] bg-slate-100 px-2 py-1 rounded text-slate-500 font-mono">TX-0012...X92</code></td>
+                        <td class="px-6 py-4"><div class="flex items-center gap-2"><div class="w-6 h-6 rounded bg-blue-100 flex items-center justify-center text-[10px] text-blue-600 font-black">GL</div><span class="font-bold text-slate-900">Global Logistics</span></div></td>
+                        <td class="px-6 py-4"><div class="flex flex-col"><span class="text-xs font-bold text-slate-700">inventory_sync.json</span><span class="text-[10px] text-slate-400 uppercase font-bold tracking-tighter">12 KB | JSON</span></div></td>
+                        <td class="px-6 py-4"><span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-tighter">Outgoing</span></td>
+                        <td class="px-6 py-4"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-green-100 text-green-700">Delivered</span></td>
+                        <td class="px-6 py-4 text-right"><button class="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-slate-200">Re-send</button></td>
+                    </tr>
+                `;
+            } else if (tabId === 'failed') {
+                 tbody.innerHTML = `
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="px-6 py-4"><code class="text-[10px] bg-slate-100 px-2 py-1 rounded text-slate-500 font-mono">TX-8821...W11</code></td>
+                        <td class="px-6 py-4"><div class="flex items-center gap-2"><div class="w-6 h-6 rounded bg-purple-100 flex items-center justify-center text-[10px] text-purple-600 font-black">NS</div><span class="font-bold text-slate-900">Nordic Solutions</span></div></td>
+                        <td class="px-6 py-4"><div class="flex flex-col"><span class="text-xs font-bold text-slate-700">client_audit.zip</span><span class="text-[10px] text-slate-400 uppercase font-bold tracking-tighter">142 MB | ZIP</span></div></td>
+                        <td class="px-6 py-4"><span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-tighter">Incoming</span></td>
+                        <td class="px-6 py-4"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-red-100 text-red-700">Signature Mismatch</span></td>
+                        <td class="px-6 py-4 text-right"><button class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-blue-700">Retry Fetch</button></td>
+                    </tr>
+                `;
+            } else {
+                window.location.reload(); // Quick reset to Active for static demo
+            }
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>

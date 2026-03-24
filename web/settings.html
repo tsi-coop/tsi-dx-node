@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuration | TSI DX Node</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        :root {
+            --dx-primary: #0f172a;
+            --dx-accent: #3b82f6;
+            --sidebar-width: 280px;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+
+        .sidebar {
+            width: var(--sidebar-width);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .sidebar.collapsed {
+            width: 80px;
+        }
+
+        .sidebar.collapsed .nav-text, 
+        .sidebar.collapsed .nav-badge,
+        .sidebar.collapsed .brand-full {
+            display: none;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            color: #94a3b8;
+            transition: all 0.2s;
+            border-radius: 0.5rem;
+            margin: 0.25rem 0.75rem;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: white;
+        }
+
+        .nav-item.active {
+            background-color: var(--dx-accent);
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .sub-nav-item.active {
+            background-color: #eff6ff;
+            color: var(--dx-accent);
+            border-right: 3px solid var(--dx-accent);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+        /* Code Editor Simulation */
+        .code-editor {
+            background-color: #1e293b;
+            color: #e2e8f0;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden">
+
+    <!-- Sidebar Navigation -->
+    <aside id="sidebar" class="sidebar bg-slate-900 flex flex-col z-20">
+        <div class="p-6 mb-4">
+            <div class="flex items-center gap-3 brand-container">
+                <div class="brand-icon bg-blue-600 p-2.5 rounded-xl shadow-lg shadow-blue-900/20 flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                    </svg>
+                </div>
+                <div class="brand-full flex flex-col overflow-hidden">
+                    <span class="font-black text-white tracking-tighter text-xl leading-none">TSI DX NODE</span>
+                    <span class="text-[9px] text-blue-400 font-bold uppercase tracking-[0.2em] mt-1">Direct Exchange</span>
+                </div>
+            </div>
+        </div>
+
+        <nav class="flex-1 overflow-y-auto">
+            <div class="px-8 mb-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest nav-text">Operational Hub</div>
+            <a href="dashboard.html" class="nav-item">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+                <span class="nav-text">Dashboard</span>
+            </a>
+            
+            <div class="px-8 mt-6 mb-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest nav-text">Partnership</div>
+            <a href="partners.html" class="nav-item">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 116 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                <span class="nav-text">Partner Nodes</span>
+            </a>
+            <a href="contracts.html" class="nav-item">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                <span class="nav-text">Data Contracts</span>
+                <span class="ml-auto bg-blue-600 text-[10px] px-2 py-0.5 rounded-full text-white font-bold nav-badge">2</span>
+            </a>
+            <a href="transfers.html" class="nav-item">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
+                <span class="nav-text">Transfer Logs</span>
+            </a>
+
+            <div class="px-8 mt-6 mb-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest nav-text">System</div>
+            <a href="audit.html" class="nav-item">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 00-2 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
+                <span class="nav-text">Audit Trail</span>
+            </a>
+            <a href="users.html" class="nav-item">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                <span class="nav-text">Users & Roles</span>
+            </a>
+            <a href="settings.html" class="nav-item active">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                <span class="nav-text">Configuration</span>
+            </a>
+        </nav>
+
+        <div class="p-4 border-t border-slate-800">
+            <button onclick="logout()" class="nav-item w-full text-left hover:bg-red-500/10 hover:text-red-400">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                <span class="nav-text">Sign Out</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 flex flex-col min-w-0">
+        <!-- Header -->
+        <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 z-10">
+            <div class="flex items-center gap-4">
+                <button onclick="toggleSidebar()" class="p-2 hover:bg-slate-100 rounded-lg text-slate-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+                </button>
+                <div class="h-8 w-px bg-slate-200 mx-2"></div>
+                <div class="flex flex-col">
+                    <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-tight">Current Node Instance</span>
+                    <span class="text-xs font-black text-slate-900 leading-tight">DX-PROD-SOUTH-01</span>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <div class="flex flex-col items-end">
+                    <span class="text-xs font-bold text-slate-900">Admin User</span>
+                    <span class="text-[10px] text-slate-400 font-medium uppercase tracking-tighter">Node Administrator</span>
+                </div>
+                <div class="h-10 w-10 bg-slate-200 rounded-xl border-2 border-white shadow-sm overflow-hidden">
+                    <img src="https://ui-avatars.com/api/?name=Admin+User&background=0f172a&color=fff" alt="Avatar">
+                </div>
+            </div>
+        </header>
+
+        <!-- Dynamic View Area -->
+        <div class="flex-1 flex overflow-hidden">
+            <!-- Configuration Sub-Navigation -->
+            <aside class="w-64 bg-white border-r border-slate-200 flex flex-col py-8">
+                <div class="px-8 mb-6">
+                    <h2 class="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Node Config</h2>
+                </div>
+                <nav class="flex-1">
+                    <button onclick="showSection('node')" id="btn-node" class="sub-nav-item active w-full text-left px-8 py-3 text-xs font-bold uppercase tracking-widest transition-all">Node Settings</button>
+                    <button onclick="showSection('pii')" id="btn-pii" class="sub-nav-item w-full text-left px-8 py-3 text-xs font-bold uppercase tracking-widest text-slate-500 hover:text-slate-900 transition-all">PII Anonymization</button>
+                    <button onclick="showSection('scripts')" id="btn-scripts" class="sub-nav-item w-full text-left px-8 py-3 text-xs font-bold uppercase tracking-widest text-slate-500 hover:text-slate-900 transition-all">Validation Scripts</button>
+                    <button onclick="showSection('retention')" id="btn-retention" class="sub-nav-item w-full text-left px-8 py-3 text-xs font-bold uppercase tracking-widest text-slate-500 hover:text-slate-900 transition-all">Archiving & Purging</button>
+                </nav>
+            </aside>
+
+            <!-- Settings Content Container -->
+            <div class="flex-1 overflow-y-auto p-12 custom-scrollbar bg-slate-50">
+                <div class="max-w-4xl mx-auto">
+                    <!-- Node Settings Section -->
+                    <section id="section-node" class="space-y-8">
+                        <div>
+                            <h1 class="text-2xl font-black text-slate-900 uppercase tracking-tight">Node Core Parameters</h1>
+                            <p class="text-xs text-slate-500 font-medium mt-1">Manage network identity, FQDN, and PKI security context.</p>
+                        </div>
+
+                        <div class="card p-8 space-y-6">
+                            <div class="grid grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Local Node ID</label>
+                                    <input type="text" value="DX-PROD-SOUTH-01" disabled class="w-full px-4 py-2.5 bg-slate-100 border border-slate-200 rounded-lg text-sm font-mono text-slate-500 cursor-not-allowed">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Protocol Port (mTLS)</label>
+                                    <input type="number" value="8443" class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500/20">
+                                </div>
+                                <div class="col-span-2">
+                                    <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Public FQDN (CNAME)</label>
+                                    <input type="text" value="dx.south.tsicoop.org" class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500/20">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card p-8 space-y-6">
+                            <div>
+                                <h3 class="text-xs font-black text-slate-900 uppercase tracking-widest">PKI Management</h3>
+                                <p class="text-[10px] text-slate-400 font-medium mt-1 uppercase">Current Identity: Self-Signed (Transitioning to Let's Encrypt)</p>
+                            </div>
+                            <div class="flex gap-4">
+                                <button class="flex-1 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-slate-800 transition-all">Generate new CSR</button>
+                                <button class="flex-1 py-3 bg-white border border-slate-200 text-slate-900 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all">Import Signed Certificate</button>
+                            </div>
+                            <div class="p-4 bg-blue-50 border border-blue-100 rounded-xl flex items-start gap-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-500 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                <p class="text-[10px] text-blue-700 font-medium leading-relaxed">Updating node certificates requires a protocol service restart. Connected partners may experience transient handshake failures during this window.</p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- PII Anonymization Section -->
+                    <section id="section-pii" class="hidden space-y-8">
+                        <div>
+                            <h1 class="text-2xl font-black text-slate-900 uppercase tracking-tight">PII Anonymization Rules</h1>
+                            <p class="text-xs text-slate-500 font-medium mt-1">Define global data governance templates for sensitive field handling.</p>
+                        </div>
+                        <div class="card p-8">
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between p-4 border border-slate-200 rounded-xl hover:border-blue-300 transition-all">
+                                    <div>
+                                        <p class="text-sm font-bold text-slate-900 uppercase tracking-tight">Rule: SSN_PARTIAL_MASK</p>
+                                        <p class="text-[10px] text-slate-500 font-medium">Method: MASK | Params: retain_end=4, char=X</p>
+                                    </div>
+                                    <button class="text-[10px] font-black text-slate-400 uppercase hover:text-slate-900">Edit Rule</button>
+                                </div>
+                                <div class="flex items-center justify-between p-4 border border-slate-200 rounded-xl hover:border-blue-300 transition-all">
+                                    <div>
+                                        <p class="text-sm font-bold text-slate-900 uppercase tracking-tight">Rule: EMAIL_SHA256_HASH</p>
+                                        <p class="text-[10px] text-slate-500 font-medium">Method: HASH | Params: algorithm=SHA-256, salt=REQUIRED</p>
+                                    </div>
+                                    <button class="text-[10px] font-black text-slate-400 uppercase hover:text-slate-900">Edit Rule</button>
+                                </div>
+                                <button class="w-full py-4 border-2 border-dashed border-slate-200 rounded-xl text-[10px] font-black text-slate-400 uppercase tracking-widest hover:bg-white hover:text-blue-600 transition-all">+ Add New Rule Template</button>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Validation Scripts Section -->
+                    <section id="section-scripts" class="hidden space-y-8">
+                        <div class="flex justify-between items-end">
+                            <div>
+                                <h1 class="text-2xl font-black text-slate-900 uppercase tracking-tight">Validation Logic</h1>
+                                <p class="text-xs text-slate-500 font-medium mt-1">Manage custom Python/JS validation scripts for contract enforcement.</p>
+                            </div>
+                            <button class="px-4 py-2 bg-slate-900 text-white rounded-lg text-[10px] font-black uppercase tracking-widest shadow-md">Upload Script</button>
+                        </div>
+                        <div class="card overflow-hidden">
+                            <div class="bg-slate-800 px-6 py-3 flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <span class="text-[10px] font-black text-slate-400 uppercase">Script Editor:</span>
+                                    <span class="text-[10px] font-black text-blue-400 uppercase">income_ratio_check.py</span>
+                                </div>
+                                <div class="flex gap-4">
+                                    <span class="text-[9px] font-bold text-slate-500 uppercase">Runtime: Python 3.11</span>
+                                    <span class="text-[9px] font-bold text-green-500 uppercase">Status: Compiled</span>
+                                </div>
+                            </div>
+                            <textarea class="w-full h-80 code-editor p-8 text-xs outline-none resize-none custom-scrollbar" spellcheck="false">
+def validate_transfer(payload, metadata):
+    """
+    Ensures requested loan amount does not exceed 5x annual income.
+    Returns: (bool, str) -> (Success, ErrorMessage)
+    """
+    try:
+        income = payload.get('applicant', {}).get('annual_income', 0)
+        loan_amount = payload.get('loan_details', {}).get('amount', 0)
+        
+        if loan_amount > (income * 5):
+            return False, f"Loan amount {loan_amount} exceeds limit for income {income}"
+            
+        return True, "Success"
+    except Exception as e:
+        return False, str(e)</textarea>
+                        </div>
+                    </section>
+
+                    <!-- Retention Section -->
+                    <section id="section-retention" class="hidden space-y-8">
+                        <div>
+                            <h1 class="text-2xl font-black text-slate-900 uppercase tracking-tight">Archiving & Purging</h1>
+                            <p class="text-xs text-slate-500 font-medium mt-1">Configure automated lifecycle rules for active data and audit logs.</p>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="card p-8 space-y-6">
+                                <h3 class="text-xs font-black text-slate-900 uppercase tracking-widest">Active Data Persistence</h3>
+                                <div>
+                                    <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Move to Archive After (Days)</label>
+                                    <input type="number" value="30" class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500/20">
+                                </div>
+                                <p class="text-[10px] text-slate-400 leading-relaxed uppercase font-bold tracking-tight">Active data is stored in high-performance staging for immediate access. Archiving moves it to compressed storage.</p>
+                            </div>
+                            <div class="card p-8 space-y-6">
+                                <h3 class="text-xs font-black text-slate-900 uppercase tracking-widest">Permanent Purge Policy</h3>
+                                <div>
+                                    <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Purge Archive After (Years)</label>
+                                    <input type="number" value="7" class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500/20">
+                                </div>
+                                <p class="text-[10px] text-red-400 leading-relaxed uppercase font-bold tracking-tight italic">Warning: Purging is an immutable destructive action. Records cannot be recovered once the sequence completes.</p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Global Save Button -->
+                    <div class="mt-12 pt-8 border-t border-slate-200 flex justify-end">
+                        <button class="px-10 py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-xl shadow-blue-500/20 transition-all transform hover:-translate-y-1 active:translate-y-0">
+                            Apply & Save All Changes
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('collapsed');
+        }
+
+        function showSection(sectionId) {
+            // Update Buttons
+            document.querySelectorAll('.sub-nav-item').forEach(btn => {
+                btn.classList.remove('active', 'bg-blue-50');
+                btn.classList.add('text-slate-500');
+            });
+            const activeBtn = document.getElementById(`btn-${sectionId}`);
+            activeBtn.classList.add('active');
+            activeBtn.classList.remove('text-slate-500');
+
+            // Update Sections
+            document.querySelectorAll('section').forEach(sec => sec.classList.add('hidden'));
+            document.getElementById(`section-${sectionId}`).classList.remove('hidden');
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>

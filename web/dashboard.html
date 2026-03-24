@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | TSI DX Node</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        :root {
+            --dx-primary: #0f172a;
+            --dx-accent: #3b82f6;
+            --sidebar-width: 280px;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+
+        .sidebar {
+            width: var(--sidebar-width);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .sidebar.collapsed {
+            width: 80px;
+        }
+
+        .sidebar.collapsed .nav-text, 
+        .sidebar.collapsed .nav-badge,
+        .sidebar.collapsed .sidebar-footer-text,
+        .sidebar.collapsed .brand-full {
+            display: none;
+        }
+
+        .sidebar.collapsed .brand-icon {
+            margin: 0 auto;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            color: #94a3b8;
+            transition: all 0.2s;
+            border-radius: 0.5rem;
+            margin: 0.25rem 0.75rem;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: white;
+        }
+
+        .nav-item.active {
+            background-color: var(--dx-accent);
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .card:hover {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .status-pulse {
+            animation: pulse-green 2s infinite;
+        }
+
+        @keyframes pulse-green {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden">
+
+    <!-- Sidebar Navigation -->
+    <aside id="sidebar" class="sidebar bg-slate-900 flex flex-col z-20">
+        <!-- Branding: TSI DX Node clearly on top left -->
+        <div class="p-6 mb-4">
+            <div class="flex items-center gap-3 brand-container">
+                <div class="brand-icon bg-blue-600 p-2.5 rounded-xl shadow-lg shadow-blue-900/20 flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                    </svg>
+                </div>
+                <div class="brand-full flex flex-col overflow-hidden">
+                    <span class="font-black text-white tracking-tighter text-xl leading-none">TSI DX NODE</span>
+                    <span class="text-[9px] text-blue-400 font-bold uppercase tracking-[0.2em] mt-1">Direct Exchange</span>
+                </div>
+            </div>
+        </div>
+
+        <nav class="flex-1 overflow-y-auto">
+            <div class="px-8 mb-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest nav-text">Operational Hub</div>
+            <a href="dashboard.html" class="nav-item active">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+                <span class="nav-text">Dashboard</span>
+            </a>
+            
+            <div class="px-8 mt-6 mb-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest nav-text">Partnership</div>
+            <a href="partners.html" class="nav-item">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                <span class="nav-text">Partner Nodes</span>
+            </a>
+            <a href="contracts.html" class="nav-item">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                <span class="nav-text">Data Contracts</span>
+                <span class="ml-auto bg-blue-600 text-[10px] px-2 py-0.5 rounded-full text-white font-bold nav-badge">2</span>
+            </a>
+            <a href="transfers.html" class="nav-item">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
+                <span class="nav-text">Transfer Logs</span>
+            </a>
+
+            <div class="px-8 mt-6 mb-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest nav-text">System</div>
+            <a href="audit.html" class="nav-item">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 00-2 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
+                <span class="nav-text">Audit Trail</span>
+            </a>
+            <a href="users.html" class="nav-item">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 00-2 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
+                <span class="nav-text">Users & Roles</span>
+            </a>
+            <a href="settings.html" class="nav-item">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                <span class="nav-text">Configuration</span>
+            </a>
+        </nav>
+
+        <div class="p-4 border-t border-slate-800">
+            <button onclick="logout()" class="nav-item w-full text-left hover:bg-red-500/10 hover:text-red-400">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                <span class="nav-text">Sign Out</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 flex flex-col min-w-0">
+        <!-- Header -->
+        <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 z-10">
+            <div class="flex items-center gap-4">
+                <button onclick="toggleSidebar()" class="p-2 hover:bg-slate-100 rounded-lg text-slate-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+                </button>
+                <div class="h-8 w-px bg-slate-200 mx-2"></div>
+                <div class="flex flex-col">
+                    <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-tight">Current Node Instance</span>
+                    <span class="text-xs font-black text-slate-900 leading-tight">DX-PROD-SOUTH-01</span>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-6">
+                <div class="hidden md:flex items-center bg-slate-100 rounded-full px-4 py-2 border border-slate-200 focus-within:border-blue-500 focus-within:bg-white transition-all">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                    <input type="text" placeholder="Global search..." class="bg-transparent outline-none text-xs w-48 text-slate-600">
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <div class="flex flex-col items-end">
+                        <span class="text-xs font-bold text-slate-900">Admin User</span>
+                        <span class="text-[10px] text-slate-400 font-medium">Node Administrator</span>
+                    </div>
+                    <div class="h-10 w-10 bg-slate-200 rounded-xl border-2 border-white shadow-sm overflow-hidden">
+                        <img src="https://ui-avatars.com/api/?name=Admin+User&background=0f172a&color=fff" alt="Avatar">
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Dynamic View Area -->
+        <div class="flex-1 overflow-y-auto p-8">
+            <!-- Breadcrumbs -->
+            <nav class="flex text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">
+                <a href="#" class="hover:text-blue-500 transition-colors">TSI DX NODE</a>
+                <span class="mx-2">/</span>
+                <span class="text-slate-900">Dashboard</span>
+            </nav>
+            <h1 class="text-2xl font-black text-slate-900 mb-8 uppercase tracking-tight">System Summary</h1>
+
+            <!-- Top Grid Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="card p-6 flex flex-col">
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-1">Partners Online</span>
+                    <div class="flex items-end justify-between">
+                        <span class="text-3xl font-black text-slate-900">12</span>
+                        <span class="text-green-500 text-[10px] font-bold">+2 Today</span>
+                    </div>
+                </div>
+                <div class="card p-6 flex flex-col">
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-1">Pending Actions</span>
+                    <div class="flex items-end justify-between">
+                        <span class="text-3xl font-black text-slate-900">03</span>
+                        <span class="text-orange-500 text-[10px] font-bold">Action Req.</span>
+                    </div>
+                </div>
+                <div class="card p-6 flex flex-col">
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-1">Transfers (24h)</span>
+                    <div class="flex items-end justify-between">
+                        <span class="text-3xl font-black text-slate-900">1.2k</span>
+                        <span class="text-blue-500 text-[10px] font-bold">8.4 GB</span>
+                    </div>
+                </div>
+                <div class="card p-6 flex flex-col">
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-1">Storage Status</span>
+                    <div class="flex items-end justify-between">
+                        <span class="text-3xl font-black text-slate-900">42%</span>
+                        <span class="text-slate-400 text-[10px] font-bold">1.2 TB Free</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Grid Layout -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                
+                <!-- Left Column: Transfers & Audit -->
+                <div class="lg:col-span-2 space-y-8">
+                    
+                    <!-- Transfers Section -->
+                    <div class="card">
+                        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                            <h3 class="text-xs font-black text-slate-900 uppercase tracking-widest">Active & Recent Transfers</h3>
+                            <a href="#" class="text-[10px] font-bold text-blue-500 uppercase hover:underline">View All</a>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm">
+                                <thead>
+                                    <tr class="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-50">
+                                        <th class="px-6 py-3">Transfer ID</th>
+                                        <th class="px-6 py-3">Partner</th>
+                                        <th class="px-6 py-3">Direction</th>
+                                        <th class="px-6 py-3">Status</th>
+                                        <th class="px-6 py-3 text-right">Progress</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    <tr>
+                                        <td class="px-6 py-4 font-mono text-[11px] text-slate-600">TX-982...F2</td>
+                                        <td class="px-6 py-4 font-bold text-slate-900">GLOBAL_LOGISTICS</td>
+                                        <td class="px-6 py-4"><span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-[10px] font-bold">OUTGOING</span></td>
+                                        <td class="px-6 py-4">
+                                            <div class="flex items-center gap-2">
+                                                <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                                                <span class="text-[11px] font-medium">Encrypting</span>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 text-right">
+                                            <div class="w-full bg-slate-100 rounded-full h-1.5 ml-auto max-w-[80px]">
+                                                <div class="bg-blue-500 h-1.5 rounded-full" style="width: 65%"></div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="px-6 py-4 font-mono text-[11px] text-slate-600">TX-115...A9</td>
+                                        <td class="px-6 py-4 font-bold text-slate-900">NORDIC_SOLUTIONS</td>
+                                        <td class="px-6 py-4"><span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full text-[10px] font-bold">INCOMING</span></td>
+                                        <td class="px-6 py-4">
+                                            <div class="flex items-center gap-2">
+                                                <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                                                <span class="text-[11px] font-medium">Delivered</span>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 text-right text-slate-400 font-bold text-[10px]">100%</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Audit Events -->
+                    <div class="card">
+                        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                            <h3 class="text-xs font-black text-slate-900 uppercase tracking-widest">Recent Audit Events</h3>
+                            <a href="#" class="text-[10px] font-bold text-blue-500 uppercase hover:underline">Full Log</a>
+                        </div>
+                        <div class="p-6 space-y-4">
+                            <div class="flex gap-4">
+                                <div class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8-0v4h8z" /></svg>
+                                </div>
+                                <div>
+                                    <p class="text-xs font-bold text-slate-900">mTLS Handshake Successful</p>
+                                    <p class="text-[10px] text-slate-500 font-medium">Secure channel established with partner node <span class="text-slate-900">DX-EU-WEST-02</span></p>
+                                    <p class="text-[9px] text-slate-400 font-bold mt-1">2 MINUTES AGO</p>
+                                </div>
+                            </div>
+                            <div class="flex gap-4">
+                                <div class="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                                </div>
+                                <div>
+                                    <p class="text-xs font-bold text-slate-900">Contract Validation Warning</p>
+                                    <p class="text-[10px] text-slate-500 font-medium">Inbound transfer <span class="text-slate-900">TX-0092</span> flagged for schema deviation.</p>
+                                    <p class="text-[9px] text-slate-400 font-bold mt-1">15 MINUTES AGO</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Right Column: Status & Resources -->
+                <div class="space-y-8">
+                    
+                    <!-- Node Health -->
+                    <div class="card p-6">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="text-xs font-black text-slate-900 uppercase tracking-widest">Node Status</h3>
+                            <span class="status-pulse w-2.5 h-2.5 rounded-full bg-green-500"></span>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center text-xs">
+                                <span class="text-slate-500 font-medium">Status</span>
+                                <span class="font-bold text-green-600 uppercase tracking-widest text-[10px]">Operational</span>
+                            </div>
+                            <div class="flex justify-between items-center text-xs">
+                                <span class="text-slate-500 font-medium">FQDN</span>
+                                <span class="font-bold text-slate-900">dx.south.tsicoop.org</span>
+                            </div>
+                            <div class="flex justify-between items-center text-xs">
+                                <span class="text-slate-500 font-medium">TLS Mode</span>
+                                <span class="font-bold text-slate-900">mTLS 1.3 (Enforced)</span>
+                            </div>
+                            <div class="flex justify-between items-center text-xs">
+                                <span class="text-slate-500 font-medium">Uptime</span>
+                                <span class="font-bold text-slate-900">14d 06h 22m</span>
+                            </div>
+                        </div>
+                        <button class="w-full mt-6 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-[10px] font-black uppercase tracking-widest text-slate-700 transition-colors">
+                            Restart Services
+                        </button>
+                    </div>
+
+                    <!-- Pending Actions List -->
+                    <div class="card p-6">
+                        <h3 class="text-xs font-black text-slate-900 uppercase tracking-widest mb-4">Pending Actions</h3>
+                        <div class="space-y-3">
+                            <div class="p-3 bg-orange-50 border border-orange-100 rounded-lg flex items-center justify-between">
+                                <span class="text-[11px] font-bold text-orange-800">2 New Contracts</span>
+                                <button class="text-[9px] font-black uppercase tracking-widest bg-orange-200 px-2 py-1 rounded">Review</button>
+                            </div>
+                            <div class="p-3 bg-red-50 border border-red-100 rounded-lg flex items-center justify-between">
+                                <span class="text-[11px] font-bold text-red-800">1 Expired Certificate</span>
+                                <button class="text-[9px] font-black uppercase tracking-widest bg-red-200 px-2 py-1 rounded">Renew</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Storage Meter -->
+                    <div class="card p-6">
+                        <h3 class="text-xs font-black text-slate-900 uppercase tracking-widest mb-6">Storage Utilization</h3>
+                        <div class="relative pt-1">
+                            <div class="flex mb-2 items-center justify-between">
+                                <div>
+                                    <span class="text-[10px] font-bold inline-block py-1 px-2 uppercase rounded-full text-blue-600 bg-blue-100">
+                                        Active Path
+                                    </span>
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-xs font-bold inline-block text-blue-600">
+                                        42%
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="overflow-hidden h-2 mb-4 text-xs flex rounded-full bg-slate-100">
+                                <div style="width:42%" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-blue-500"></div>
+                            </div>
+                            <p class="text-[10px] text-slate-400 font-medium italic">Purge scheduled in 48 hours.</p>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('collapsed');
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>

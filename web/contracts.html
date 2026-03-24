@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Contracts | TSI DX Node</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        :root {
+            --dx-primary: #0f172a;
+            --dx-accent: #3b82f6;
+            --sidebar-width: 280px;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+
+        .sidebar {
+            width: var(--sidebar-width);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .sidebar.collapsed {
+            width: 80px;
+        }
+
+        .sidebar.collapsed .nav-text, 
+        .sidebar.collapsed .nav-badge,
+        .sidebar.collapsed .brand-full {
+            display: none;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            color: #94a3b8;
+            transition: all 0.2s;
+            border-radius: 0.5rem;
+            margin: 0.25rem 0.75rem;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: white;
+        }
+
+        .nav-item.active {
+            background-color: var(--dx-accent);
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .modal-backdrop {
+            background-color: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(4px);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+        /* Wizard Step Indicators */
+        .step-pill.active { background-color: var(--dx-accent); color: white; }
+        .step-pill.completed { background-color: #10b981; color: white; }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden">
+
+    <!-- Sidebar Navigation -->
+    <aside id="sidebar" class="sidebar bg-slate-900 flex flex-col z-20">
+        <div class="p-6 mb-4">
+            <div class="flex items-center gap-3 brand-container">
+                <div class="brand-icon bg-blue-600 p-2.5 rounded-xl shadow-lg shadow-blue-900/20 flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                    </svg>
+                </div>
+                <div class="brand-full flex flex-col overflow-hidden">
+                    <span class="font-black text-white tracking-tighter text-xl leading-none">TSI DX NODE</span>
+                    <span class="text-[9px] text-blue-400 font-bold uppercase tracking-[0.2em] mt-1">Direct Exchange</span>
+                </div>
+            </div>
+        </div>
+
+        <nav class="flex-1 overflow-y-auto">
+            <div class="px-8 mb-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest nav-text">Operational Hub</div>
+            <a href="dashboard.html" class="nav-item">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+                <span class="nav-text">Dashboard</span>
+            </a>
+            
+            <div class="px-8 mt-6 mb-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest nav-text">Partnership</div>
+            <a href="partners.html" class="nav-item">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                <span class="nav-text">Partner Nodes</span>
+            </a>
+            <a href="contracts.html" class="nav-item active">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                <span class="nav-text">Data Contracts</span>
+                <span class="ml-auto bg-blue-600 text-[10px] px-2 py-0.5 rounded-full text-white font-bold nav-badge">2</span>
+            </a>
+            <a href="transfers.html" class="nav-item">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
+                <span class="nav-text">Transfer Logs</span>
+            </a>
+
+            <div class="px-8 mt-6 mb-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest nav-text">System</div>
+            <a href="audit.html" class="nav-item">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 00-2 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
+                <span class="nav-text">Audit Trail</span>
+            </a>
+               <a href="users.html" class="nav-item">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                <span class="nav-text">Users & Roles</span>
+            </a>
+            <a href="settings.html" class="nav-item">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                <span class="nav-text">Configuration</span>
+            </a>
+        </nav>
+
+        <div class="p-4 border-t border-slate-800">
+            <button onclick="logout()" class="nav-item w-full text-left hover:bg-red-500/10 hover:text-red-400">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                <span class="nav-text">Sign Out</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 flex flex-col min-w-0">
+        <!-- Header -->
+        <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 z-10">
+            <div class="flex items-center gap-4">
+                <button onclick="toggleSidebar()" class="p-2 hover:bg-slate-100 rounded-lg text-slate-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+                </button>
+                <div class="h-8 w-px bg-slate-200 mx-2"></div>
+                <div class="flex flex-col">
+                    <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-tight">Current Node Instance</span>
+                    <span class="text-xs font-black text-slate-900 leading-tight">DX-PROD-SOUTH-01</span>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <div class="flex flex-col items-end">
+                    <span class="text-xs font-bold text-slate-900">Admin User</span>
+                    <span class="text-[10px] text-slate-400 font-medium uppercase tracking-tighter">Node Administrator</span>
+                </div>
+                <div class="h-10 w-10 bg-slate-200 rounded-xl border-2 border-white shadow-sm overflow-hidden">
+                    <img src="https://ui-avatars.com/api/?name=Admin+User&background=0f172a&color=fff" alt="Avatar">
+                </div>
+            </div>
+        </header>
+
+        <!-- Dynamic View Area -->
+        <div class="flex-1 overflow-y-auto p-8 custom-scrollbar">
+            <!-- Breadcrumbs -->
+            <nav class="flex text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">
+                <a href="dashboard.html" class="hover:text-blue-500 transition-colors">TSI DX NODE</a>
+                <span class="mx-2">/</span>
+                <span class="text-slate-900">Data Contracts</span>
+            </nav>
+
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                <div>
+                    <h1 class="text-2xl font-black text-slate-900 uppercase tracking-tight">Contract Management</h1>
+                    <p class="text-xs text-slate-500 font-medium">Define governance, schemas, and sharing rules with your partners.</p>
+                </div>
+                <button onclick="openContractWizard()" class="inline-flex items-center px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-500/20 transition-all transform hover:-translate-y-0.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                    Create New Contract
+                </button>
+            </div>
+
+            <!-- Filters Area -->
+            <div class="card p-4 mb-6 flex flex-wrap gap-4 items-center">
+                <div class="flex-1 min-w-[240px] relative">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                    <input type="text" placeholder="Search by contract name or partner..." class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
+                </div>
+                <select class="px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-600 outline-none focus:ring-2 focus:ring-blue-500/20 transition-all">
+                    <option value="">All Statuses</option>
+                    <option value="draft">Draft</option>
+                    <option value="proposed">Proposed</option>
+                    <option value="active">Active</option>
+                    <option value="terminated">Terminated</option>
+                </select>
+                <select class="px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-600 outline-none focus:ring-2 focus:ring-blue-500/20 transition-all">
+                    <option value="">All Directions</option>
+                    <option value="outgoing">Outgoing</option>
+                    <option value="incoming">Incoming</option>
+                    <option value="bidirectional">Bidirectional</option>
+                </select>
+            </div>
+
+            <!-- Contract Table -->
+            <div class="card overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead>
+                            <tr class="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-50">
+                                <th class="px-6 py-4">Contract Name</th>
+                                <th class="px-6 py-4">Partner</th>
+                                <th class="px-6 py-4">Direction</th>
+                                <th class="px-6 py-4">Status</th>
+                                <th class="px-6 py-4">Last Updated</th>
+                                <th class="px-6 py-4 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <!-- Example Row: Active -->
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="px-6 py-4">
+                                    <div>
+                                        <p class="font-bold text-slate-900 leading-none">Loan Application Exchange</p>
+                                        <p class="text-[10px] text-slate-400 mt-1 font-mono uppercase">ID: CTR-9128-B</p>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 font-bold text-slate-600">Global Logistics</td>
+                                <td class="px-6 py-4">
+                                    <span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-tighter">Outgoing</span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-green-100 text-green-700">Active</span>
+                                </td>
+                                <td class="px-6 py-4 text-slate-500 text-[11px]">2025-07-20</td>
+                                <td class="px-6 py-4 text-right">
+                                    <div class="flex items-center justify-end gap-2">
+                                        <button class="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all">Terminate</button>
+                                        <button class="p-2 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-900"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg></button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <!-- Example Row: Proposed -->
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="px-6 py-4">
+                                    <div>
+                                        <p class="font-bold text-slate-900 leading-none">Credit Verification Flow</p>
+                                        <p class="text-[10px] text-slate-400 mt-1 font-mono uppercase">ID: CTR-4421-A</p>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 font-bold text-slate-600">Nordic Solutions</td>
+                                <td class="px-6 py-4">
+                                    <span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-tighter">Incoming</span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-yellow-100 text-yellow-700">Proposed</span>
+                                </td>
+                                <td class="px-6 py-4 text-slate-500 text-[11px]">3 hours ago</td>
+                                <td class="px-6 py-4 text-right">
+                                    <div class="flex items-center justify-end gap-2">
+                                        <button class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 shadow-sm">Accept</button>
+                                        <button class="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-red-50 hover:text-red-600 transition-all">Reject</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <!-- Example Row: Draft -->
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="px-6 py-4">
+                                    <div>
+                                        <p class="font-bold text-slate-900 leading-none">Audit Log Mirroring</p>
+                                        <p class="text-[10px] text-slate-400 mt-1 font-mono uppercase">ID: CTR-0021-D</p>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 font-bold text-slate-600">Internal Backup Node</td>
+                                <td class="px-6 py-4">
+                                    <span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-tighter">Bidirectional</span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-slate-100 text-slate-600">Draft</span>
+                                </td>
+                                <td class="px-6 py-4 text-slate-500 text-[11px]">Just now</td>
+                                <td class="px-6 py-4 text-right">
+                                    <div class="flex items-center justify-end gap-2">
+                                        <button class="px-3 py-1.5 bg-slate-900 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-slate-800">Propose</button>
+                                        <button class="p-2 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-900"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Contract Wizard Modal -->
+    <div id="contractWizard" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop">
+        <div class="bg-white w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh]">
+            <!-- Modal Header -->
+            <div class="px-8 py-6 bg-slate-900 flex items-center justify-between">
+                <div>
+                    <h3 class="text-xl font-black text-white uppercase tracking-tight">Contract Creation Wizard</h3>
+                    <p class="text-[10px] text-blue-400 font-bold uppercase tracking-[0.2em] mt-1">Lifecycle Stage: Definition</p>
+                </div>
+                <button onclick="closeContractWizard()" class="text-slate-400 hover:text-white transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+
+            <!-- Wizard Progress -->
+            <div class="px-8 py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-center gap-12">
+                <div class="flex items-center gap-2">
+                    <span id="step1-indicator" class="step-pill active w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black">1</span>
+                    <span class="text-[10px] font-bold uppercase tracking-widest text-slate-900">General Info</span>
+                </div>
+                <div class="h-px w-12 bg-slate-200"></div>
+                <div class="flex items-center gap-2">
+                    <span id="step2-indicator" class="step-pill w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-black text-slate-500">2</span>
+                    <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Data Schema</span>
+                </div>
+                <div class="h-px w-12 bg-slate-200"></div>
+                <div class="flex items-center gap-2">
+                    <span id="step3-indicator" class="step-pill w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-black text-slate-500">3</span>
+                    <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Governance</span>
+                </div>
+            </div>
+
+            <!-- Wizard Steps Container -->
+            <div class="p-8 overflow-y-auto custom-scrollbar flex-1">
+                
+                <!-- Step 1: General Info -->
+                <div id="step1-content" class="space-y-6">
+                    <div class="grid grid-cols-2 gap-6">
+                        <div class="col-span-2">
+                            <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Contract Title</label>
+                            <input type="text" placeholder="e.g., Loan Application Data Sharing v1" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Target Partner</label>
+                            <select class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold text-slate-700 outline-none">
+                                <option>Select Partner Node...</option>
+                                <option>Global Logistics</option>
+                                <option>Nordic Solutions</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Exchange Direction</label>
+                            <select class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold text-slate-700 outline-none">
+                                <option>Outgoing (Sending)</option>
+                                <option>Incoming (Receiving)</option>
+                                <option>Bidirectional</option>
+                            </select>
+                        </div>
+                        <div class="col-span-2">
+                            <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Purpose Statement</label>
+                            <textarea rows="3" placeholder="Briefly describe the business reason for this data exchange..." class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-sm resize-none"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2: Data Schema (Placeholder for complexity) -->
+                <div id="step2-content" class="hidden space-y-6">
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 class="text-xs font-black text-slate-900 uppercase tracking-widest">Fields & Validation Rules</h4>
+                        <button class="text-[10px] font-black text-blue-600 uppercase">+ Add Field</button>
+                    </div>
+                    <div class="space-y-3">
+                        <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
+                            <div class="flex gap-4 items-center">
+                                <span class="text-[10px] font-black text-slate-400">01</span>
+                                <div>
+                                    <p class="text-sm font-bold text-slate-900">application_id</p>
+                                    <p class="text-[10px] text-slate-500">Type: UUID | Mandatory: YES</p>
+                                </div>
+                            </div>
+                            <div class="flex gap-2">
+                                <button class="p-2 text-slate-400 hover:text-slate-900"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>
+                                <button class="p-2 text-slate-400 hover:text-red-600"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                            </div>
+                        </div>
+                        <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
+                            <div class="flex gap-4 items-center">
+                                <span class="text-[10px] font-black text-slate-400">02</span>
+                                <div>
+                                    <p class="text-sm font-bold text-slate-900">ssn</p>
+                                    <p class="text-[10px] text-slate-500">Type: String | Pattern: ^\d{3}-\d{2}-\d{4}$</p>
+                                </div>
+                            </div>
+                            <div class="flex gap-2">
+                                <button class="p-2 text-slate-400 hover:text-slate-900"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>
+                                <button class="p-2 text-slate-400 hover:text-red-600"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 3: Governance -->
+                <div id="step3-content" class="hidden space-y-8">
+                    <div>
+                        <h4 class="text-xs font-black text-slate-900 uppercase tracking-widest mb-4">PII Anonymization Rules</h4>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="p-4 border border-slate-200 rounded-xl">
+                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Field: ssn</p>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-xs font-bold text-slate-900">MASK (Partial)</span>
+                                    <button class="text-[9px] text-blue-600 font-bold uppercase">Configure</button>
+                                </div>
+                            </div>
+                            <div class="p-4 border border-slate-200 rounded-xl">
+                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Field: email</p>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-xs font-bold text-slate-900">HASH (SHA-256)</span>
+                                    <button class="text-[9px] text-blue-600 font-bold uppercase">Configure</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 class="text-xs font-black text-slate-900 uppercase tracking-widest mb-4">Data Retention & Purge</h4>
+                        <div class="grid grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Active Staging (Days)</label>
+                                <input type="number" value="30" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Archive Vault (Years)</label>
+                                <input type="number" value="7" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="px-8 py-6 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+                <div>
+                    <button onclick="closeContractWizard()" class="px-6 py-2.5 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-colors">Cancel</button>
+                </div>
+                <div class="flex gap-3">
+                    <button id="prevBtn" onclick="prevStep()" class="hidden px-6 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl text-xs font-black uppercase tracking-widest transition-all">Previous</button>
+                    <button id="saveDraftBtn" class="px-6 py-2.5 bg-slate-200 text-slate-700 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-300 transition-all">Save Draft</button>
+                    <button id="nextBtn" onclick="nextStep()" class="px-8 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg transition-all">Next Step</button>
+                    <button id="proposeBtn" class="hidden px-8 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-500/20 transition-all">Propose Contract</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentStep = 1;
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('collapsed');
+        }
+
+        function openContractWizard() {
+            document.getElementById('contractWizard').classList.remove('hidden');
+            goToStep(1);
+        }
+
+        function closeContractWizard() {
+            document.getElementById('contractWizard').classList.add('hidden');
+        }
+
+        function goToStep(step) {
+            currentStep = step;
+            
+            // Hide all steps
+            document.getElementById('step1-content').classList.add('hidden');
+            document.getElementById('step2-content').classList.add('hidden');
+            document.getElementById('step3-content').classList.add('hidden');
+            
+            // Show current step
+            document.getElementById(`step${step}-content`).classList.remove('hidden');
+
+            // Update Indicators
+            updateIndicators(step);
+
+            // Update Buttons
+            document.getElementById('prevBtn').classList.toggle('hidden', step === 1);
+            document.getElementById('nextBtn').classList.toggle('hidden', step === 3);
+            document.getElementById('proposeBtn').classList.toggle('hidden', step !== 3);
+        }
+
+        function updateIndicators(step) {
+            for (let i = 1; i <= 3; i++) {
+                const el = document.getElementById(`step${i}-indicator`);
+                el.classList.remove('active', 'completed');
+                if (i === step) el.classList.add('active');
+                if (i < step) el.classList.add('completed');
+            }
+        }
+
+        function nextStep() {
+            if (currentStep < 3) goToStep(currentStep + 1);
+        }
+
+        function prevStep() {
+            if (currentStep > 1) goToStep(currentStep - 1);
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>

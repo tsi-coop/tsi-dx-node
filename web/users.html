@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Users & Roles | TSI DX Node</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        :root {
+            --dx-primary: #0f172a;
+            --dx-accent: #3b82f6;
+            --sidebar-width: 280px;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+
+        .sidebar {
+            width: var(--sidebar-width);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .sidebar.collapsed {
+            width: 80px;
+        }
+
+        .sidebar.collapsed .nav-text, 
+        .sidebar.collapsed .nav-badge,
+        .sidebar.collapsed .brand-full {
+            display: none;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            color: #94a3b8;
+            transition: all 0.2s;
+            border-radius: 0.5rem;
+            margin: 0.25rem 0.75rem;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: white;
+        }
+
+        .nav-item.active {
+            background-color: var(--dx-accent);
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .modal-backdrop {
+            background-color: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(4px);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+        .tab-btn.active {
+            color: var(--dx-accent);
+            border-bottom: 2px solid var(--dx-accent);
+        }
+
+        /* Toggle Switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 32px;
+            height: 18px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #cbd5e1;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 14px; width: 14px;
+            left: 2px; bottom: 2px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider { background-color: #10b981; }
+        input:checked + .slider:before { transform: translateX(14px); }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden">
+
+    <!-- Sidebar Navigation -->
+    <aside id="sidebar" class="sidebar bg-slate-900 flex flex-col z-20">
+        <div class="p-6 mb-4">
+            <div class="flex items-center gap-3 brand-container">
+                <div class="brand-icon bg-blue-600 p-2.5 rounded-xl shadow-lg shadow-blue-900/20 flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                    </svg>
+                </div>
+                <div class="brand-full flex flex-col overflow-hidden">
+                    <span class="font-black text-white tracking-tighter text-xl leading-none">TSI DX NODE</span>
+                    <span class="text-[9px] text-blue-400 font-bold uppercase tracking-[0.2em] mt-1">Direct Exchange</span>
+                </div>
+            </div>
+        </div>
+
+        <nav class="flex-1 overflow-y-auto">
+            <div class="px-8 mb-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest nav-text">Operational Hub</div>
+            <a href="dashboard.html" class="nav-item">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+                <span class="nav-text">Dashboard</span>
+            </a>
+            
+            <div class="px-8 mt-6 mb-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest nav-text">Partnership</div>
+            <a href="partners.html" class="nav-item">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                <span class="nav-text">Partner Nodes</span>
+            </a>
+            <a href="contracts.html" class="nav-item">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                <span class="nav-text">Data Contracts</span>
+                <span class="ml-auto bg-blue-600 text-[10px] px-2 py-0.5 rounded-full text-white font-bold nav-badge">2</span>
+            </a>
+            <a href="transfers.html" class="nav-item">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
+                <span class="nav-text">Transfer Logs</span>
+            </a>
+
+            <div class="px-8 mt-6 mb-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest nav-text">System</div>
+            <a href="audit.html" class="nav-item">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 00-2 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
+                <span class="nav-text">Audit Trail</span>
+            </a>
+            <a href="users.html" class="nav-item active">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                <span class="nav-text">Users & Roles</span>
+            </a>
+            <a href="settings.html" class="nav-item">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                <span class="nav-text">Configuration</span>
+            </a>
+        </nav>
+
+        <div class="p-4 border-t border-slate-800">
+            <button onclick="logout()" class="nav-item w-full text-left hover:bg-red-500/10 hover:text-red-400">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                <span class="nav-text">Sign Out</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 flex flex-col min-w-0">
+        <!-- Header -->
+        <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 z-10">
+            <div class="flex items-center gap-4">
+                <button onclick="toggleSidebar()" class="p-2 hover:bg-slate-100 rounded-lg text-slate-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+                </button>
+                <div class="h-8 w-px bg-slate-200 mx-2"></div>
+                <div class="flex flex-col">
+                    <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-tight">Current Node Instance</span>
+                    <span class="text-xs font-black text-slate-900 leading-tight">DX-PROD-SOUTH-01</span>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <div class="flex flex-col items-end">
+                    <span class="text-xs font-bold text-slate-900">Admin User</span>
+                    <span class="text-[10px] text-slate-400 font-medium uppercase tracking-tighter">Node Administrator</span>
+                </div>
+                <div class="h-10 w-10 bg-slate-200 rounded-xl border-2 border-white shadow-sm overflow-hidden">
+                    <img src="https://ui-avatars.com/api/?name=Admin+User&background=0f172a&color=fff" alt="Avatar">
+                </div>
+            </div>
+        </header>
+
+        <!-- Dynamic View Area -->
+        <div class="flex-1 overflow-y-auto p-8 custom-scrollbar">
+            <!-- Breadcrumbs -->
+            <nav class="flex text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">
+                <a href="dashboard.html" class="hover:text-blue-500 transition-colors">TSI DX NODE</a>
+                <span class="mx-2">/</span>
+                <span class="text-slate-900">Users & Roles</span>
+            </nav>
+
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                <div>
+                    <h1 class="text-2xl font-black text-slate-900 uppercase tracking-tight">Identity & Access</h1>
+                    <p class="text-xs text-slate-500 font-medium">Manage administrative accounts and granular permission policies.</p>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="openRoleModal()" class="inline-flex items-center px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-900 rounded-xl text-xs font-black uppercase tracking-widest transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
+                        Create New Role
+                    </button>
+                    <button onclick="openUserModal()" class="inline-flex items-center px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-500/20 transition-all transform hover:-translate-y-0.5">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /></svg>
+                        Add New User
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tabbed Interface -->
+            <div class="mb-6 border-b border-slate-200">
+                <div class="flex gap-8">
+                    <button onclick="switchTab('users')" id="tab-users" class="tab-btn active px-1 py-4 text-xs font-black uppercase tracking-widest transition-all">User Accounts</button>
+                    <button onclick="switchTab('roles')" id="tab-roles" class="tab-btn px-1 py-4 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-all">Access Roles</button>
+                </div>
+            </div>
+
+            <!-- Content Area (Users View by default) -->
+            <div id="users-view" class="space-y-6">
+                <!-- Filters -->
+                <div class="card p-4 flex flex-wrap gap-4 items-center">
+                    <div class="flex-1 min-w-[240px] relative">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                        <input type="text" placeholder="Search by name, email or role..." class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500/20 transition-all">
+                    </div>
+                    <select class="px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-600 outline-none">
+                        <option value="">All Statuses</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                </div>
+
+                <!-- User Table -->
+                <div class="card overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead>
+                                <tr class="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-50">
+                                    <th class="px-6 py-4">Administrative User</th>
+                                    <th class="px-6 py-4">Email Address</th>
+                                    <th class="px-6 py-4">Assigned Role</th>
+                                    <th class="px-6 py-4">Status</th>
+                                    <th class="px-6 py-4">Last Login</th>
+                                    <th class="px-6 py-4 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <tr class="hover:bg-slate-50 transition-colors">
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center gap-3">
+                                            <div class="h-8 w-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs">AU</div>
+                                            <span class="font-bold text-slate-900">Admin User</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 text-slate-600 text-[11px]">admin@tsicoop.org</td>
+                                    <td class="px-6 py-4">
+                                        <span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase">Administrator</span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <label class="switch">
+                                            <input type="checkbox" checked>
+                                            <span class="slider"></span>
+                                        </label>
+                                    </td>
+                                    <td class="px-6 py-4 text-slate-400 text-[11px]">Just now</td>
+                                    <td class="px-6 py-4 text-right">
+                                        <div class="flex justify-end gap-2">
+                                            <button class="p-2 hover:bg-slate-100 rounded text-slate-400 hover:text-slate-900" title="Edit User"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>
+                                            <button class="p-2 hover:bg-orange-50 rounded text-slate-400 hover:text-orange-600" title="Reset Password"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg></button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="roles-view" class="hidden space-y-6">
+                <!-- Role Table -->
+                <div class="card overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead>
+                                <tr class="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-50">
+                                    <th class="px-6 py-4">Role Designation</th>
+                                    <th class="px-6 py-4">Type</th>
+                                    <th class="px-6 py-4">Scope / Description</th>
+                                    <th class="px-6 py-4">Active Users</th>
+                                    <th class="px-6 py-4 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <tr class="hover:bg-slate-50">
+                                    <td class="px-6 py-4 font-bold text-slate-900">Administrator</td>
+                                    <td class="px-6 py-4"><span class="text-[9px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-black uppercase">System</span></td>
+                                    <td class="px-6 py-4 text-slate-500 text-[11px]">Full access to all node settings, contracts, and audits.</td>
+                                    <td class="px-6 py-4 text-slate-600 font-bold">1</td>
+                                    <td class="px-6 py-4 text-right">
+                                        <button class="p-2 hover:bg-slate-100 rounded text-slate-400 hover:text-slate-900"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg></button>
+                                    </td>
+                                </tr>
+                                <tr class="hover:bg-slate-50">
+                                    <td class="px-6 py-4 font-bold text-slate-900">Auditor</td>
+                                    <td class="px-6 py-4"><span class="text-[9px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-black uppercase">Custom</span></td>
+                                    <td class="px-6 py-4 text-slate-500 text-[11px]">Read-only access to transfers and logs for compliance.</td>
+                                    <td class="px-6 py-4 text-slate-600 font-bold">0</td>
+                                    <td class="px-6 py-4 text-right">
+                                        <div class="flex justify-end gap-2">
+                                            <button class="p-2 hover:bg-slate-100 rounded text-slate-400 hover:text-slate-900"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>
+                                            <button class="p-2 hover:bg-red-50 rounded text-slate-400 hover:text-red-600"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Add User Modal -->
+    <div id="userModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop">
+        <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden">
+            <div class="px-8 py-6 bg-slate-900 flex items-center justify-between">
+                <div>
+                    <h3 class="text-xl font-black text-white uppercase tracking-tight">Create User Account</h3>
+                    <p class="text-[10px] text-blue-400 font-bold uppercase tracking-[0.2em] mt-1">Assign Node Access</p>
+                </div>
+                <button onclick="closeUserModal()" class="text-slate-400 hover:text-white transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+            <div class="p-8 space-y-6">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="col-span-2">
+                        <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Full Name</label>
+                        <input type="text" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Email Address</label>
+                        <input type="email" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Assigned Role</label>
+                        <select class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold text-slate-700 outline-none">
+                            <option>Administrator</option>
+                            <option>Auditor</option>
+                            <option>Operator</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="pt-4 flex gap-3">
+                    <button onclick="closeUserModal()" class="flex-1 py-3 text-xs font-black uppercase tracking-widest text-slate-400">Cancel</button>
+                    <button class="flex-1 py-3 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg">Save User</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Role Modal -->
+    <div id="roleModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop">
+        <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="px-8 py-6 bg-slate-900 flex items-center justify-between">
+                <div>
+                    <h3 class="text-xl font-black text-white uppercase tracking-tight">Access Policy Definition</h3>
+                    <p class="text-[10px] text-blue-400 font-bold uppercase tracking-[0.2em] mt-1">Granular RBAC Matrix</p>
+                </div>
+                <button onclick="closeRoleModal()" class="text-slate-400 hover:text-white transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+            <div class="p-8 overflow-y-auto custom-scrollbar flex-1 space-y-8">
+                <div>
+                    <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Role Name</label>
+                    <input type="text" placeholder="e.g. Compliance Officer" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none">
+                </div>
+                
+                <div>
+                    <h4 class="text-xs font-black text-slate-900 uppercase tracking-widest mb-4">Permissions Matrix</h4>
+                    <div class="space-y-3">
+                        <!-- Module Group -->
+                        <div class="p-4 border border-slate-200 rounded-xl space-y-4">
+                            <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                                <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Partners & Contracts</span>
+                                <label class="flex items-center text-[10px] font-bold text-blue-600"><input type="checkbox" class="mr-2"> All</label>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <label class="flex items-center text-xs font-bold text-slate-700 cursor-pointer">
+                                    <input type="checkbox" class="w-4 h-4 mr-3 text-blue-600 rounded border-slate-300">
+                                    Register Partners
+                                </label>
+                                <label class="flex items-center text-xs font-bold text-slate-700 cursor-pointer">
+                                    <input type="checkbox" class="w-4 h-4 mr-3 text-blue-600 rounded border-slate-300">
+                                    Propose Contracts
+                                </label>
+                                <label class="flex items-center text-xs font-bold text-slate-700 cursor-pointer">
+                                    <input type="checkbox" class="w-4 h-4 mr-3 text-blue-600 rounded border-slate-300">
+                                    Approve Incoming Contracts
+                                </label>
+                            </div>
+                        </div>
+                        <!-- Module Group -->
+                        <div class="p-4 border border-slate-200 rounded-xl space-y-4">
+                            <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                                <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Data Operations</span>
+                                <label class="flex items-center text-[10px] font-bold text-blue-600"><input type="checkbox" class="mr-2"> All</label>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <label class="flex items-center text-xs font-bold text-slate-700 cursor-pointer">
+                                    <input type="checkbox" class="w-4 h-4 mr-3 text-blue-600 rounded border-slate-300">
+                                    Initiate Transfers
+                                </label>
+                                <label class="flex items-center text-xs font-bold text-slate-700 cursor-pointer">
+                                    <input type="checkbox" class="w-4 h-4 mr-3 text-blue-600 rounded border-slate-300">
+                                    Download Payload
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="px-8 py-6 bg-slate-50 border-t border-slate-100 flex gap-3">
+                <button onclick="closeRoleModal()" class="flex-1 py-3 text-xs font-black uppercase tracking-widest text-slate-400">Cancel</button>
+                <button class="flex-1 py-3 bg-slate-900 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg">Save Access Policy</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('collapsed');
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+                btn.classList.add('text-slate-400');
+            });
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+            document.getElementById(`tab-${tabId}`).classList.remove('text-slate-400');
+
+            document.getElementById('users-view').classList.toggle('hidden', tabId !== 'users');
+            document.getElementById('roles-view').classList.toggle('hidden', tabId !== 'roles');
+        }
+
+        function openUserModal() { document.getElementById('userModal').classList.remove('hidden'); }
+        function closeUserModal() { document.getElementById('userModal').classList.add('hidden'); }
+        function openRoleModal() { document.getElementById('roleModal').classList.remove('hidden'); }
+        function closeRoleModal() { document.getElementById('roleModal').classList.add('hidden'); }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>

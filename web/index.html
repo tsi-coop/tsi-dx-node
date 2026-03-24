@@ -56,14 +56,10 @@
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .animated-button:hover:not(:disabled) {
+        .animated-button:hover {
             background-color: #1e293b;
             transform: translateY(-2px);
             box-shadow: 0 10px 15px -3px rgba(15, 23, 42, 0.3);
-        }
-
-        .animated-button:active:not(:disabled) {
-            transform: translateY(0);
         }
 
         .animated-button::before {
@@ -110,6 +106,7 @@
 <div class="node-blob" style="bottom: -100px; right: -100px;"></div>
 
 <div class="w-full max-w-md p-10 bg-white rounded-2xl dx-card">
+    <!-- Branding Header -->
     <div class="text-center mb-10">
         <div class="inline-flex items-center justify-center p-4 bg-slate-900 rounded-2xl mb-6 shadow-lg">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -123,7 +120,8 @@
         </div>
     </div>
 
-    <form onsubmit="handleLogin(event)" class="space-y-6">
+    <!-- Form -->
+    <form class="space-y-6" id="loginForm">
         <div>
             <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2 px-1">Email Address</label>
             <div class="relative">
@@ -156,13 +154,9 @@
             </div>
         </div>
 
-        <button type="submit" id="login-btn" class="animated-button w-full py-4 rounded-xl font-bold text-xs uppercase tracking-[0.2em] shadow-lg mt-4 disabled:opacity-50 disabled:cursor-not-allowed">
+        <button type="submit" class="animated-button w-full py-4 rounded-xl font-bold text-xs uppercase tracking-[0.2em] shadow-lg mt-4">
             Sign In
         </button>
-
-        <div id="error-container" class="hidden animate-bounce mt-4 p-3 bg-red-50 border border-red-100 rounded-lg">
-             <p id="error-msg" class="text-[10px] font-bold text-red-600 uppercase text-center"></p>
-        </div>
     </form>
 
     <div class="mt-10 pt-6 border-t border-slate-100 text-center">
@@ -173,55 +167,18 @@
 </div>
 
 <script>
-async function handleLogin(event) {
-    event.preventDefault();
-    
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    const btn = document.getElementById('login-btn');
-    const errorContainer = document.getElementById('error-container');
-    const errorEl = document.getElementById('error-msg');
-
-    btn.disabled = true;
-    btn.innerText = "Signing In...";
-    errorContainer.classList.add('hidden');
-
-    try {
-        const payload = { 
-            _func: "admin_login", 
-            email: email, 
-            password: password 
-        };
-
-        const response = await fetch('api/admin/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-
-        const data = await response.json();
-
-        if (response.ok && (data.success || data._success)) {
-            localStorage.setItem('dx_token', data.token);
-            localStorage.setItem('dx_user_email', data.email);
-            localStorage.setItem('dx_role', data.role);
-            
-            btn.innerText = "Access Granted";
-            btn.classList.replace('bg-slate-900', 'bg-green-600');
-            
-            setTimeout(() => {
-                window.location.href = 'dashboard.html';
-            }, 800);
-        } else {
-            throw new Error(data.message || "Invalid credentials");
-        }
-    } catch (err) {
-        errorEl.innerText = err.message || "Gateway Communication Failure";
-        errorContainer.classList.remove('hidden');
-        btn.disabled = false;
-        btn.innerText = "Sign In";
-    }
-}
+    // Enable the transition to dashboard
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const btn = e.target.querySelector('button');
+        btn.innerText = "VERIFYING IDENTITY...";
+        btn.disabled = true;
+        
+        // Mock successful redirect
+        setTimeout(() => {
+            window.location.href = 'dashboard.html';
+        }, 800);
+    });
 </script>
 
 </body>
