@@ -47,10 +47,8 @@ public class RegisterAdmin implements REST {
             String username = (String) input.get("username");
             String email = (String) input.get("email");
             String password = (String) input.get("password");
-            String confirmPassword = (String) input.get("confirm_password");
-            // The 'role' attribute from input in the original template is not strictly needed here
-            // as this endpoint *always* registers an 'Administrator'.
-
+            String confirmPassword = (String) input.get("confirm");
+          
             // 2. Input Validation
             String validationError = validateRegistrationInput(username, email, password, confirmPassword);
             if (validationError != null) {

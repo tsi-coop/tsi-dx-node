@@ -44,7 +44,7 @@ services:
       - "${APP_PORT_MAP:-8082:8080}"
     
     environment:
-      POSTGRES_HOST: "jdbc:postgresql://postgres_db:5434"
+      POSTGRES_HOST: "jdbc:postgresql://postgres_db:5432"
       POSTGRES_DB: "${POSTGRES_DB:-tsi_dx_node}"
       POSTGRES_USER: "${POSTGRES_USER:-tsi_admin}"
       POSTGRES_PASSWD: "${POSTGRES_PASSWD:-secure_dev_password}"

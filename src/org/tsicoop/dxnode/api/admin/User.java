@@ -119,6 +119,7 @@ public class User implements REST {
                         OutputProcessor.errorResponse(res, HttpServletResponse.SC_BAD_REQUEST, "Bad Request", "Missing required fields (username, email, password, role_id) for 'create_user'.", req.getRequestURI());
                         return;
                     }
+
                     UUID userRoleId = UUID.fromString(userRoleIdStr);
 
                     String validationError = validateUserInput(username, email, password, password); // Confirm password not needed for create_user here, but validate format
@@ -331,6 +332,31 @@ public class User implements REST {
             e.printStackTrace();
             OutputProcessor.errorResponse(res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Internal Server Error", "An unexpected error occurred: " + e.getMessage(), req.getRequestURI());
         }
+    }
+
+     /**
+     * Checks if any user (indicating node initialization) is present in the database.
+     * This is crucial for the single-use nature of the /admin/register endpoint.
+     * @return true if at least one user exists, false otherwise.
+     * @throws SQLException if a database access error occurs.
+     */
+    private boolean isNodeInitialized() throws SQLException {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        PoolDB pool = new PoolDB();
+        String sql = "SELECT COUNT(*) FROM users"; // Check for any user
+        try {
+            conn = pool.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            rs = pstmt.executeQuery();
+            if (rs.next() && rs.getInt(1) > 0) {
+                return true; // At least one user exists
+            }
+        } finally {
+            pool.cleanup(rs, pstmt, conn);
+        }
+        return false;
     }
 
     @Override
