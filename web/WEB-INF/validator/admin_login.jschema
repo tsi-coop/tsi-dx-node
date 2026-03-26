@@ -1,0 +1,32 @@
+{
+  "$schema": "https://www.google.com/search?q=http://json-schema.org/draft-07/schema%23",
+  "title": "Admin Login Request",
+  "description": "Schema for validating administrative login requests to the TSI DX Node.",
+  "type": "object",
+  "required": [
+    "_func",
+    "email",
+    "password"
+  ],
+  "properties": {
+    "_func": {
+      "type": "string",
+      "const": "admin_login",
+      "description": "The internal function identifier for administrative login."
+    },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "description": "The administrative user's email address.",
+      "examples": [
+        "admin@tsicoop.org"
+      ]
+    },
+    "password": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The secret key or password for the administrative account."
+    }
+  },
+  "additionalProperties": false
+}

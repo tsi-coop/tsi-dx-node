@@ -56,7 +56,7 @@
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .animated-button:hover {
+        .animated-button:hover:not(:disabled) {
             background-color: #1e293b;
             transform: translateY(-2px);
             box-shadow: 0 10px 15px -3px rgba(15, 23, 42, 0.3);
@@ -120,7 +120,10 @@
         </div>
     </div>
 
-    <!-- Form -->
+    <!-- Feedback Message Area -->
+    <div id="login-feedback" class="hidden p-3 mb-6 rounded-lg text-center text-[10px] font-black uppercase"></div>
+
+    <!-- Login Form -->
     <form class="space-y-6" id="loginForm">
         <div>
             <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2 px-1">Email Address</label>
@@ -154,7 +157,7 @@
             </div>
         </div>
 
-        <button type="submit" class="animated-button w-full py-4 rounded-xl font-bold text-xs uppercase tracking-[0.2em] shadow-lg mt-4">
+        <button type="submit" id="loginBtn" class="animated-button w-full py-4 rounded-xl font-bold text-xs uppercase tracking-[0.2em] shadow-lg mt-4 disabled:opacity-50 disabled:cursor-not-allowed">
             Sign In
         </button>
     </form>
@@ -167,17 +170,66 @@
 </div>
 
 <script>
-    // Enable the transition to dashboard
-    document.getElementById('loginForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const btn = e.target.querySelector('button');
-        btn.innerText = "VERIFYING IDENTITY...";
-        btn.disabled = true;
-        
-        // Mock successful redirect
-        setTimeout(() => {
-            window.location.href = 'dashboard.html';
-        }, 800);
+    document.addEventListener('DOMContentLoaded', () => {
+        const loginForm = document.getElementById('loginForm');
+        const loginBtn = document.getElementById('loginBtn');
+        const feedback = document.getElementById('login-feedback');
+
+        loginForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            // UI Feedback: Loading
+            loginBtn.disabled = true;
+            loginBtn.innerText = "VERIFYING IDENTITY...";
+            feedback.classList.add('hidden');
+
+            try {
+                const payload = {
+                    "_func": "admin_login",
+                    "email": email,
+                    "password": password
+                };
+
+                const response = await fetch('/api/admin/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+
+                // FIX: Support both 'success' and '_success' to match different backend implementations
+                const isSuccessful = response.ok && (data.success === true || data._success === true);
+
+                if (isSuccessful) {
+                    // Store session identity
+                    localStorage.setItem('dx_token', data.token);
+                    localStorage.setItem('dx_user', data.username || data.user_id);
+                    localStorage.setItem('dx_role', data.role);
+                    
+                    loginBtn.innerText = "ACCESS GRANTED";
+                    loginBtn.classList.replace('bg-slate-900', 'bg-green-600');
+                    
+                    // Smooth transition to dashboard
+                    setTimeout(() => {
+                        window.location.href = 'dashboard.html';
+                    }, 800);
+                } else {
+                    throw new Error(data.message || "Invalid administrative credentials");
+                }
+            } catch (err) {
+                // UI Feedback: Error
+                feedback.textContent = `Login Failed: ${err.message}`;
+                feedback.className = "p-3 mb-6 rounded-lg text-center text-[10px] font-black uppercase bg-red-50 text-red-600 border border-red-100";
+                feedback.classList.remove('hidden');
+                
+                loginBtn.disabled = false;
+                loginBtn.innerText = "Sign In";
+            }
+        });
     });
 </script>
 

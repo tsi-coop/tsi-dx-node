@@ -42,18 +42,18 @@ public class Login implements REST {
         JSONObject output = null;
         try {
             JSONObject input = InputProcessor.getInput(req);
-            String username = (String) input.get("username");
+            String email = (String) input.get("email");
             String password = (String) input.get("password");
 
             // Basic input validation
-            if (username == null || username.trim().isEmpty() ||
+            if (email == null || email.trim().isEmpty() ||
                     password == null || password.trim().isEmpty()) {
                 OutputProcessor.errorResponse(res, HttpServletResponse.SC_BAD_REQUEST, "Bad Request", "Missing required fields (username, password).", req.getRequestURI());
                 return;
             }
 
             // 1. Get user details from DB and validate password
-            Optional<JSONObject> userDetailsOptional = getUserDetails(username);
+            Optional<JSONObject> userDetailsOptional = getUserDetails(email);
 
             if (userDetailsOptional.isEmpty()) {
                 // User not found. Use a generic message for security (avoid username enumeration).
@@ -66,6 +66,7 @@ public class Login implements REST {
             String userId = (String) userDetails.get("userId"); // UUID as String
             String userEmail = (String) userDetails.get("email");
             String userStatus = (String) userDetails.get("status");
+            String username = (String) userDetails.get("username");
             String roleName = (String) userDetails.get("roleName"); // Get the single role name
 
             // Check user status
@@ -90,7 +91,6 @@ public class Login implements REST {
             output = new JSONObject();
             output.put("success", true); // Consistent with API design
             output.put("message", "Login successful");
-            output.put("username", username);
             output.put("token", generatedToken);
             output.put("role", roleName); // Return the single role name
             output.put("email", userEmail);
@@ -127,11 +127,11 @@ public class Login implements REST {
 
     /**
      * Retrieves user details including password hash, email, and their single role name.
-     * @param username The username to look up.
+     * @param email The email to look up.
      * @return An Optional containing a JSONObject with user details if found, otherwise empty.
      * @throws SQLException if a database access error occurs.
      */
-    private Optional<JSONObject> getUserDetails(String username) throws SQLException {
+    private Optional<JSONObject> getUserDetails(String email) throws SQLException {
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -141,12 +141,12 @@ public class Login implements REST {
         String sql = "SELECT u.user_id, u.username, u.password_hash, u.email, u.status, r.name AS role_name " +
                 "FROM users u " +
                 "JOIN roles r ON u.role_id = r.role_id " +
-                "WHERE u.username = ?";
+                "WHERE u.email = ?";
 
         try {
             conn = pool.getConnection();
             pstmt = conn.prepareStatement(sql);
-            pstmt.setString(1, username);
+            pstmt.setString(1, email);
             rs = pstmt.executeQuery();
 
             if (rs.next()) {
