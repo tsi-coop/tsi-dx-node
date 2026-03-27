@@ -62,7 +62,6 @@
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
 
-        /* Modal Styles */
         .modal-backdrop {
             background-color: rgba(15, 23, 42, 0.7);
             backdrop-filter: blur(4px);
@@ -121,7 +120,7 @@
             <a href="users.html" class="nav-item">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
                 <span class="nav-text">Users & Roles</span>
-            </a>         
+            </a>
             <a href="settings.html" class="nav-item">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                 <span class="nav-text">Configuration</span>
@@ -153,11 +152,11 @@
 
             <div class="flex items-center gap-3">
                 <div class="flex flex-col items-end">
-                    <span class="text-xs font-bold text-slate-900">Admin User</span>
-                    <span class="text-[10px] text-slate-400 font-medium uppercase tracking-tighter">Node Administrator</span>
+                    <span class="text-xs font-bold text-slate-900" id="header-username">Admin User</span>
+                    <span class="text-[10px] text-slate-400 font-medium uppercase tracking-tighter" id="header-role">Node Administrator</span>
                 </div>
                 <div class="h-10 w-10 bg-slate-200 rounded-xl border-2 border-white shadow-sm overflow-hidden">
-                    <img src="https://ui-avatars.com/api/?name=Admin+User&background=0f172a&color=fff" alt="Avatar">
+                    <img src="https://ui-avatars.com/api/?name=Admin+User&background=0f172a&color=fff" id="header-avatar" alt="Avatar">
                 </div>
             </div>
         </header>
@@ -186,19 +185,8 @@
             <div class="card p-4 mb-6 flex flex-wrap gap-4 items-center">
                 <div class="flex-1 min-w-[240px] relative">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                    <input type="text" placeholder="Search by name, node ID or FQDN..." class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
+                    <input type="text" id="partnerSearch" oninput="handleSearch()" placeholder="Search by name, node ID or FQDN..." class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
                 </div>
-                <select class="px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-600 outline-none focus:ring-2 focus:ring-blue-500/20 transition-all">
-                    <option value="">All Statuses</option>
-                    <option value="active">Active</option>
-                    <option value="discovery">In Discovery</option>
-                    <option value="offline">Offline</option>
-                </select>
-                <select class="px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-600 outline-none focus:ring-2 focus:ring-blue-500/20 transition-all">
-                    <option value="">Sort by: Latest</option>
-                    <option value="name">Name (A-Z)</option>
-                    <option value="node_id">Node ID</option>
-                </select>
             </div>
 
             <!-- Partner Table -->
@@ -211,92 +199,24 @@
                                 <th class="px-6 py-4">FQDN / Address</th>
                                 <th class="px-6 py-4">Node Identity</th>
                                 <th class="px-6 py-4">Status</th>
-                                <th class="px-6 py-4">Last Interaction</th>
+                                <th class="px-6 py-4">Created At</th>
                                 <th class="px-6 py-4 text-right">Actions</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-slate-100">
-                            <!-- Example Row 1 -->
-                            <tr class="hover:bg-slate-50 transition-colors">
-                                <td class="px-6 py-4">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-[10px]">GL</div>
-                                        <div>
-                                            <p class="font-bold text-slate-900 leading-none">Global Logistics</p>
-                                            <p class="text-[10px] text-slate-400 mt-1 uppercase font-bold tracking-tighter">Logistics Partner</p>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <p class="text-[11px] font-medium text-slate-600">dx.global-logistics.net</p>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <code class="text-[10px] bg-slate-100 px-2 py-1 rounded text-slate-500">Node-77A9...B1</code>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-green-100 text-green-700">
-                                        Active
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <p class="text-[11px] text-slate-500">2 mins ago</p>
-                                </td>
-                                <td class="px-6 py-4 text-right">
-                                    <div class="flex items-center justify-end gap-2">
-                                        <button class="p-2 hover:bg-slate-200 rounded-lg text-slate-400 hover:text-slate-900 transition-all" title="Edit Partner">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                                        </button>
-                                        <button class="p-2 hover:bg-red-50 rounded-lg text-slate-400 hover:text-red-600 transition-all" title="Remove Partner">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <!-- Example Row 2 -->
-                            <tr class="hover:bg-slate-50 transition-colors">
-                                <td class="px-6 py-4">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center text-purple-600 font-bold text-[10px]">NS</div>
-                                        <div>
-                                            <p class="font-bold text-slate-900 leading-none">Nordic Solutions</p>
-                                            <p class="text-[10px] text-slate-400 mt-1 uppercase font-bold tracking-tighter">Technology Vendor</p>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <p class="text-[11px] font-medium text-slate-600">dx.nordic-sol.io</p>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <code class="text-[10px] bg-slate-100 px-2 py-1 rounded text-slate-500">Node-44C1...D2</code>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-yellow-100 text-yellow-700">
-                                        Discovery
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <p class="text-[11px] text-slate-500">1 hour ago</p>
-                                </td>
-                                <td class="px-6 py-4 text-right">
-                                    <div class="flex items-center justify-end gap-2">
-                                        <button class="p-2 hover:bg-slate-200 rounded-lg text-slate-400 hover:text-slate-900 transition-all">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                                        </button>
-                                        <button class="p-2 hover:bg-red-50 rounded-lg text-slate-400 hover:text-red-600 transition-all">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
+                        <tbody id="partner-table-body" class="divide-y divide-slate-100">
+                            <!-- Rows loaded via JS -->
                         </tbody>
                     </table>
                 </div>
-                <!-- Pagination Placeholder -->
+                <div id="no-partners-msg" class="hidden p-12 text-center">
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">No partners found in registry.</p>
+                </div>
+                <!-- Pagination -->
                 <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Showing 2 of 12 Partners</p>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest" id="partner-count-display">Showing 0 Partners</p>
                     <div class="flex gap-2">
-                        <button class="px-3 py-1 bg-white border border-slate-200 rounded text-[10px] font-bold text-slate-400 disabled:opacity-50">Prev</button>
-                        <button class="px-3 py-1 bg-white border border-slate-200 rounded text-[10px] font-bold text-slate-600">Next</button>
+                        <button onclick="changePage(-1)" id="prevBtn" class="px-3 py-1 bg-white border border-slate-200 rounded text-[10px] font-bold text-slate-600 disabled:opacity-50">Prev</button>
+                        <button onclick="changePage(1)" id="nextBtn" class="px-3 py-1 bg-white border border-slate-200 rounded text-[10px] font-bold text-slate-600 disabled:opacity-50">Next</button>
                     </div>
                 </div>
             </div>
@@ -323,75 +243,281 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Partner Display Name</label>
-                            <input type="text" placeholder="e.g. Acme Corp" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
+                            <input type="text" id="partnerName" required placeholder="e.g. Acme Corp" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
                         </div>
                         <div>
                             <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Partner FQDN</label>
-                            <input type="text" placeholder="dx.partner-domain.com" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
+                            <input type="text" id="partnerFqdn" required placeholder="dx.partner-domain.com" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
                         </div>
                     </div>
 
                     <div>
-                        <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Remote Node ID (Optional)</label>
-                        <input type="text" placeholder="UUID format preferred" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
+                        <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Remote Node ID</label>
+                        <input type="text" id="partnerNodeId" required placeholder="UUID format required" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
                     </div>
 
                     <div>
                         <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Public Key (PEM Format)</label>
                         <div class="relative group">
-                            <textarea rows="6" placeholder="-----BEGIN CERTIFICATE-----&#10;...&#10;-----END CERTIFICATE-----" 
+                            <textarea id="partnerPublicKey" rows="6" placeholder="-----BEGIN CERTIFICATE-----&#10;...&#10;-----END CERTIFICATE-----" 
                                 class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none"></textarea>
                             <div class="mt-2 flex items-center justify-between">
                                 <span class="text-[9px] text-slate-400 font-bold uppercase italic">Manual input or file upload required</span>
                                 <label class="cursor-pointer inline-flex items-center px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded text-[9px] font-black uppercase tracking-widest text-slate-600 transition-all">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
                                     Upload Cert File
-                                    <input type="file" class="hidden">
+                                    <input type="file" id="certFileLoader" class="hidden" accept=".pem,.crt,.cer">
                                 </label>
                             </div>
                         </div>
                     </div>
 
-                    <div class="flex items-center gap-2 p-3 bg-blue-50 border border-blue-100 rounded-lg">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                        <p class="text-[10px] text-blue-700 font-medium leading-relaxed">Identity is verified via DNS FQDN matching during the first mTLS handshake. Ensure the public key matches the partner's node certificate.</p>
-                    </div>
+                    <div id="form-error" class="hidden p-3 bg-red-50 border border-red-100 rounded-lg text-center text-[10px] font-black text-red-600 uppercase"></div>
                 </form>
             </div>
 
             <!-- Modal Footer -->
             <div class="px-8 py-6 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-4">
                 <button onclick="closePartnerModal()" class="px-6 py-2.5 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-colors">Cancel</button>
-                <button form="addPartnerForm" type="submit" class="px-8 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-slate-900/20 transition-all">Establish Connection</button>
+                <button id="submitPartnerBtn" onclick="handleRegisterPartner()" class="px-8 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-slate-900/20 transition-all">Establish Connection</button>
             </div>
         </div>
     </div>
 
     <script>
+        const API_ENDPOINT = '/api/admin/partners'; // Aligned with Partners.java
+        let currentPage = 1;
+        const pageLimit = 10;
+        let searchTimeout = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initSession();
+            fetchPartners();
+            
+            document.getElementById('certFileLoader').addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (e) => document.getElementById('partnerPublicKey').value = e.target.result;
+                reader.readAsText(file);
+            });
+        });
+
+        function initSession() {
+            const user = localStorage.getItem('dx_user');
+            const role = localStorage.getItem('dx_role');
+            if (user) document.getElementById('header-username').innerText = user;
+            if (role) document.getElementById('header-role').innerText = role;
+            document.getElementById('header-avatar').src = `https://ui-avatars.com/api/?name=${user || 'Admin'}&background=0f172a&color=fff`;
+        }
+
+        function handleSearch() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                currentPage = 1;
+                fetchPartners();
+            }, 500);
+        }
+
+        function changePage(delta) {
+            currentPage += delta;
+            if (currentPage < 1) currentPage = 1;
+            fetchPartners();
+        }
+
+        async function fetchPartners() {
+            const search = document.getElementById('partnerSearch').value;
+            
+            try {
+                const response = await fetch(API_ENDPOINT, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ 
+                        _func: "list_partners",
+                        page: currentPage,
+                        limit: pageLimit,
+                        search: search || ""
+                    })
+                });
+
+                // Partners.java returns a raw JSONArray
+                const partners = await response.json();
+
+                if (Array.isArray(partners)) {
+                    renderPartnerTable(partners);
+                } else {
+                    console.error("Partner fetch failed: Response not an array");
+                }
+            } catch (err) {
+                console.error("Network error fetching partners", err);
+            }
+        }
+
+        function renderPartnerTable(partners) {
+            const tableBody = document.getElementById('partner-table-body');
+            const noPartnersMsg = document.getElementById('no-partners-msg');
+            const countDisplay = document.getElementById('partner-count-display');
+
+            tableBody.innerHTML = '';
+            countDisplay.innerText = `Showing ${partners.length} Partners (Page ${currentPage})`;
+            
+            // Basic pagination control logic
+            document.getElementById('prevBtn').disabled = currentPage === 1;
+            document.getElementById('nextBtn').disabled = partners.length < pageLimit;
+
+            if (partners.length === 0) {
+                noPartnersMsg.classList.remove('hidden');
+                return;
+            }
+
+            noPartnersMsg.classList.add('hidden');
+            partners.forEach(partner => {
+                const row = document.createElement('tr');
+                row.className = "hover:bg-slate-50 transition-colors";
+                
+                const initials = (partner.name || 'P').substring(0, 2).toUpperCase();
+                const statusColor = partner.status === 'Active' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700';
+
+                row.innerHTML = `
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-[10px]">${initials}</div>
+                            <div>
+                                <p class="font-bold text-slate-900 leading-none">${partner.name}</p>
+                                <p class="text-[10px] text-slate-400 mt-1 uppercase font-bold tracking-tighter">Registered Partner</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <p class="text-[11px] font-medium text-slate-600">${partner.fqdn}</p>
+                    </td>
+                    <td class="px-6 py-4">
+                        <code class="text-[10px] bg-slate-100 px-2 py-1 rounded text-slate-500 font-mono">${partner.node_id}</code>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest ${statusColor}">
+                            ${partner.status}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <p class="text-[11px] text-slate-500">${new Date(partner.created_at).toLocaleDateString()}</p>
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <div class="flex items-center justify-end gap-2">
+                            <button onclick="handleDeletePartner('${partner.partner_id}')" class="p-2 hover:bg-red-50 rounded-lg text-slate-400 hover:text-red-600 transition-all" title="Remove Partner">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        async function handleRegisterPartner() {
+            const btn = document.getElementById('submitPartnerBtn');
+            const errorArea = document.getElementById('form-error');
+            
+            const payload = {
+                _func: "create_partner", // Aligned with Partners.java
+                name: document.getElementById('partnerName').value,
+                fqdn: document.getElementById('partnerFqdn').value,
+                node_id: document.getElementById('partnerNodeId').value, // Aligned with Partners.java
+                public_key_pem: document.getElementById('partnerPublicKey').value // Aligned with Partners.java
+            };
+
+            if (!payload.name || !payload.fqdn || !payload.node_id || !payload.public_key_pem) {
+                showFormError("All fields are mandatory.");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = "COMMITTING IDENTITY...";
+            errorArea.classList.add('hidden');
+
+            try {
+                const response = await fetch(API_ENDPOINT, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+
+                if (response.status === 201 || result.success) {
+                    closePartnerModal();
+                    fetchPartners(); 
+                    document.getElementById('addPartnerForm').reset();
+                } else {
+                    showFormError(result.message || "Registration Rejected.");
+                }
+            } catch (err) {
+                showFormError("Network Error: Could not reach service.");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Establish Connection";
+            }
+        }
+
+        async function handleDeletePartner(partnerId) {
+            if (!confirm("Are you sure you want to revoke trust and delete this partner?")) return;
+
+            try {
+                const response = await fetch(API_ENDPOINT, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ 
+                        _func: "delete_partner", // Aligned with Partners.java
+                        partner_id: partnerId 
+                    })
+                });
+
+                if (response.status === 204 || response.ok) {
+                    fetchPartners();
+                } else {
+                    const error = await response.json();
+                    alert("Delete failed: " + error.message);
+                }
+            } catch (err) {
+                console.error("Partner removal failed", err);
+            }
+        }
+
+        function getAuthHeaders() {
+            const token = localStorage.getItem('dx_token');
+            return {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            };
+        }
+
+        function showFormError(msg) {
+            const errorArea = document.getElementById('form-error');
+            errorArea.innerText = msg;
+            errorArea.classList.remove('hidden');
+        }
+
         function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            sidebar.classList.toggle('collapsed');
+            document.getElementById('sidebar').classList.toggle('collapsed');
         }
 
         function openPartnerModal() {
-            const modal = document.getElementById('partnerModal');
-            modal.classList.remove('hidden');
+            document.getElementById('partnerModal').classList.remove('hidden');
         }
 
         function closePartnerModal() {
-            const modal = document.getElementById('partnerModal');
-            modal.classList.add('hidden');
+            document.getElementById('partnerModal').classList.add('hidden');
+            document.getElementById('form-error').classList.add('hidden');
         }
-
-        // Close modal on escape key
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') closePartnerModal();
-        });
 
         function logout() {
             localStorage.clear();
             window.location.href = 'index.html';
         }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closePartnerModal();
+        });
     </script>
 </body>
 </html>
