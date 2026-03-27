@@ -1,10 +1,10 @@
 # Client APIs
-/api/client/register=org.tsicoop.aadhaarvault.api.client.RegisterClient
-/api/client/vault=org.tsicoop.aadhaarvault.api.client.Vault
+
 
 # Admin Handlers
 /api/admin/registeradmin=org.tsicoop.dxnode.api.admin.RegisterAdmin
 /api/admin/login=org.tsicoop.dxnode.api.admin.Login
 /api/admin/node=org.tsicoop.dxnode.api.admin.Node
 /api/admin/partners=org.tsicoop.dxnode.api.admin.Partners
+/api/admin/dashboard=org.tsicoop.dxnode.api.admin.Dashboard
 

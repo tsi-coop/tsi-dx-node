@@ -30,13 +30,8 @@
 
         .sidebar.collapsed .nav-text, 
         .sidebar.collapsed .nav-badge,
-        .sidebar.collapsed .sidebar-footer-text,
         .sidebar.collapsed .brand-full {
             display: none;
-        }
-
-        .sidebar.collapsed .brand-icon {
-            margin: 0 auto;
         }
 
         .nav-item {
@@ -91,7 +86,6 @@
 
     <!-- Sidebar Navigation -->
     <aside id="sidebar" class="sidebar bg-slate-900 flex flex-col z-20">
-        <!-- Branding: TSI DX Node clearly on top left -->
         <div class="p-6 mb-4">
             <div class="flex items-center gap-3 brand-container">
                 <div class="brand-icon bg-blue-600 p-2.5 rounded-xl shadow-lg shadow-blue-900/20 flex-shrink-0">
@@ -109,7 +103,7 @@
         <nav class="flex-1 overflow-y-auto">
             <div class="px-8 mb-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest nav-text">Operational Hub</div>
             <a href="dashboard.html" class="nav-item active">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6z" /></svg>
                 <span class="nav-text">Dashboard</span>
             </a>
             
@@ -121,7 +115,6 @@
             <a href="contracts.html" class="nav-item">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                 <span class="nav-text">Data Contracts</span>
-                <span class="ml-auto bg-blue-600 text-[10px] px-2 py-0.5 rounded-full text-white font-bold nav-badge">2</span>
             </a>
             <a href="transfers.html" class="nav-item">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
@@ -132,10 +125,6 @@
             <a href="audit.html" class="nav-item">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 00-2 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
                 <span class="nav-text">Audit Trail</span>
-            </a>
-            <a href="users.html" class="nav-item">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 00-2 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
-                <span class="nav-text">Users & Roles</span>
             </a>
             <a href="settings.html" class="nav-item">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
@@ -162,23 +151,18 @@
                 <div class="h-8 w-px bg-slate-200 mx-2"></div>
                 <div class="flex flex-col">
                     <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-tight">Current Node Instance</span>
-                    <span class="text-xs font-black text-slate-900 leading-tight">DX-PROD-SOUTH-01</span>
+                    <span class="text-xs font-black text-slate-900 leading-tight" id="header-node-id">DX-PROD-SOUTH-01</span>
                 </div>
             </div>
 
             <div class="flex items-center gap-6">
-                <div class="hidden md:flex items-center bg-slate-100 rounded-full px-4 py-2 border border-slate-200 focus-within:border-blue-500 focus-within:bg-white transition-all">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                    <input type="text" placeholder="Global search..." class="bg-transparent outline-none text-xs w-48 text-slate-600">
-                </div>
-
                 <div class="flex items-center gap-3">
                     <div class="flex flex-col items-end">
-                        <span class="text-xs font-bold text-slate-900">Admin User</span>
-                        <span class="text-[10px] text-slate-400 font-medium">Node Administrator</span>
+                        <span class="text-xs font-bold text-slate-900" id="header-username">Admin User</span>
+                        <span class="text-[10px] text-slate-400 font-medium" id="header-role">Node Administrator</span>
                     </div>
                     <div class="h-10 w-10 bg-slate-200 rounded-xl border-2 border-white shadow-sm overflow-hidden">
-                        <img src="https://ui-avatars.com/api/?name=Admin+User&background=0f172a&color=fff" alt="Avatar">
+                        <img src="" id="header-avatar" alt="Avatar">
                     </div>
                 </div>
             </div>
@@ -199,29 +183,29 @@
                 <div class="card p-6 flex flex-col">
                     <span class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-1">Partners Online</span>
                     <div class="flex items-end justify-between">
-                        <span class="text-3xl font-black text-slate-900">12</span>
-                        <span class="text-green-500 text-[10px] font-bold">+2 Today</span>
+                        <span class="text-3xl font-black text-slate-900" id="stat-partners">0</span>
+                        <span class="text-green-500 text-[10px] font-bold">Active</span>
                     </div>
                 </div>
                 <div class="card p-6 flex flex-col">
                     <span class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-1">Pending Actions</span>
                     <div class="flex items-end justify-between">
-                        <span class="text-3xl font-black text-slate-900">03</span>
+                        <span class="text-3xl font-black text-slate-900" id="stat-pending">0</span>
                         <span class="text-orange-500 text-[10px] font-bold">Action Req.</span>
                     </div>
                 </div>
                 <div class="card p-6 flex flex-col">
                     <span class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-1">Transfers (24h)</span>
                     <div class="flex items-end justify-between">
-                        <span class="text-3xl font-black text-slate-900">1.2k</span>
-                        <span class="text-blue-500 text-[10px] font-bold">8.4 GB</span>
+                        <span class="text-3xl font-black text-slate-900" id="stat-transfers">0</span>
+                        <span class="text-blue-500 text-[10px] font-bold">Throughput</span>
                     </div>
                 </div>
                 <div class="card p-6 flex flex-col">
                     <span class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-1">Storage Status</span>
                     <div class="flex items-end justify-between">
-                        <span class="text-3xl font-black text-slate-900">42%</span>
-                        <span class="text-slate-400 text-[10px] font-bold">1.2 TB Free</span>
+                        <span class="text-3xl font-black text-slate-900" id="stat-storage">0%</span>
+                        <span class="text-slate-400 text-[10px] font-bold">Utilization</span>
                     </div>
                 </div>
             </div>
@@ -236,7 +220,7 @@
                     <div class="card">
                         <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
                             <h3 class="text-xs font-black text-slate-900 uppercase tracking-widest">Active & Recent Transfers</h3>
-                            <a href="#" class="text-[10px] font-bold text-blue-500 uppercase hover:underline">View All</a>
+                            <a href="transfers.html" class="text-[10px] font-bold text-blue-500 uppercase hover:underline">View All</a>
                         </div>
                         <div class="overflow-x-auto">
                             <table class="w-full text-left text-sm">
@@ -249,35 +233,8 @@
                                         <th class="px-6 py-3 text-right">Progress</th>
                                     </tr>
                                 </thead>
-                                <tbody class="divide-y divide-slate-100">
-                                    <tr>
-                                        <td class="px-6 py-4 font-mono text-[11px] text-slate-600">TX-982...F2</td>
-                                        <td class="px-6 py-4 font-bold text-slate-900">GLOBAL_LOGISTICS</td>
-                                        <td class="px-6 py-4"><span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-[10px] font-bold">OUTGOING</span></td>
-                                        <td class="px-6 py-4">
-                                            <div class="flex items-center gap-2">
-                                                <span class="w-2 h-2 rounded-full bg-blue-500"></span>
-                                                <span class="text-[11px] font-medium">Encrypting</span>
-                                            </div>
-                                        </td>
-                                        <td class="px-6 py-4 text-right">
-                                            <div class="w-full bg-slate-100 rounded-full h-1.5 ml-auto max-w-[80px]">
-                                                <div class="bg-blue-500 h-1.5 rounded-full" style="width: 65%"></div>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td class="px-6 py-4 font-mono text-[11px] text-slate-600">TX-115...A9</td>
-                                        <td class="px-6 py-4 font-bold text-slate-900">NORDIC_SOLUTIONS</td>
-                                        <td class="px-6 py-4"><span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full text-[10px] font-bold">INCOMING</span></td>
-                                        <td class="px-6 py-4">
-                                            <div class="flex items-center gap-2">
-                                                <span class="w-2 h-2 rounded-full bg-green-500"></span>
-                                                <span class="text-[11px] font-medium">Delivered</span>
-                                            </div>
-                                        </td>
-                                        <td class="px-6 py-4 text-right text-slate-400 font-bold text-[10px]">100%</td>
-                                    </tr>
+                                <tbody id="transfer-table-body" class="divide-y divide-slate-100">
+                                    <!-- Dynamic Rows -->
                                 </tbody>
                             </table>
                         </div>
@@ -287,29 +244,10 @@
                     <div class="card">
                         <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
                             <h3 class="text-xs font-black text-slate-900 uppercase tracking-widest">Recent Audit Events</h3>
-                            <a href="#" class="text-[10px] font-bold text-blue-500 uppercase hover:underline">Full Log</a>
+                            <a href="audit.html" class="text-[10px] font-bold text-blue-500 uppercase hover:underline">Full Log</a>
                         </div>
-                        <div class="p-6 space-y-4">
-                            <div class="flex gap-4">
-                                <div class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8-0v4h8z" /></svg>
-                                </div>
-                                <div>
-                                    <p class="text-xs font-bold text-slate-900">mTLS Handshake Successful</p>
-                                    <p class="text-[10px] text-slate-500 font-medium">Secure channel established with partner node <span class="text-slate-900">DX-EU-WEST-02</span></p>
-                                    <p class="text-[9px] text-slate-400 font-bold mt-1">2 MINUTES AGO</p>
-                                </div>
-                            </div>
-                            <div class="flex gap-4">
-                                <div class="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                                </div>
-                                <div>
-                                    <p class="text-xs font-bold text-slate-900">Contract Validation Warning</p>
-                                    <p class="text-[10px] text-slate-500 font-medium">Inbound transfer <span class="text-slate-900">TX-0092</span> flagged for schema deviation.</p>
-                                    <p class="text-[9px] text-slate-400 font-bold mt-1">15 MINUTES AGO</p>
-                                </div>
-                            </div>
+                        <div class="p-6 space-y-4" id="audit-log-container">
+                            <!-- Dynamic Audit Items -->
                         </div>
                     </div>
 
@@ -322,43 +260,29 @@
                     <div class="card p-6">
                         <div class="flex items-center justify-between mb-6">
                             <h3 class="text-xs font-black text-slate-900 uppercase tracking-widest">Node Status</h3>
-                            <span class="status-pulse w-2.5 h-2.5 rounded-full bg-green-500"></span>
+                            <span id="node-pulse" class="w-2.5 h-2.5 rounded-full bg-slate-300"></span>
                         </div>
                         <div class="space-y-4">
                             <div class="flex justify-between items-center text-xs">
                                 <span class="text-slate-500 font-medium">Status</span>
-                                <span class="font-bold text-green-600 uppercase tracking-widest text-[10px]">Operational</span>
+                                <span id="node-status-text" class="font-bold text-slate-400 uppercase tracking-widest text-[10px]">Checking...</span>
                             </div>
                             <div class="flex justify-between items-center text-xs">
                                 <span class="text-slate-500 font-medium">FQDN</span>
-                                <span class="font-bold text-slate-900">dx.south.tsicoop.org</span>
+                                <span id="node-fqdn" class="font-bold text-slate-900">...</span>
                             </div>
                             <div class="flex justify-between items-center text-xs">
                                 <span class="text-slate-500 font-medium">TLS Mode</span>
                                 <span class="font-bold text-slate-900">mTLS 1.3 (Enforced)</span>
                             </div>
-                            <div class="flex justify-between items-center text-xs">
-                                <span class="text-slate-500 font-medium">Uptime</span>
-                                <span class="font-bold text-slate-900">14d 06h 22m</span>
-                            </div>
                         </div>
-                        <button class="w-full mt-6 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-[10px] font-black uppercase tracking-widest text-slate-700 transition-colors">
-                            Restart Services
-                        </button>
                     </div>
 
                     <!-- Pending Actions List -->
                     <div class="card p-6">
                         <h3 class="text-xs font-black text-slate-900 uppercase tracking-widest mb-4">Pending Actions</h3>
-                        <div class="space-y-3">
-                            <div class="p-3 bg-orange-50 border border-orange-100 rounded-lg flex items-center justify-between">
-                                <span class="text-[11px] font-bold text-orange-800">2 New Contracts</span>
-                                <button class="text-[9px] font-black uppercase tracking-widest bg-orange-200 px-2 py-1 rounded">Review</button>
-                            </div>
-                            <div class="p-3 bg-red-50 border border-red-100 rounded-lg flex items-center justify-between">
-                                <span class="text-[11px] font-bold text-red-800">1 Expired Certificate</span>
-                                <button class="text-[9px] font-black uppercase tracking-widest bg-red-200 px-2 py-1 rounded">Renew</button>
-                            </div>
+                        <div class="space-y-3" id="pending-actions-container">
+                            <!-- Dynamic Actions -->
                         </div>
                     </div>
 
@@ -373,15 +297,15 @@
                                     </span>
                                 </div>
                                 <div class="text-right">
-                                    <span class="text-xs font-bold inline-block text-blue-600">
-                                        42%
+                                    <span class="text-xs font-bold inline-block text-blue-600" id="storage-label">
+                                        0%
                                     </span>
                                 </div>
                             </div>
                             <div class="overflow-hidden h-2 mb-4 text-xs flex rounded-full bg-slate-100">
-                                <div style="width:42%" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-blue-500"></div>
+                                <div id="storage-bar" style="width:0%" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-blue-500 transition-all duration-500"></div>
                             </div>
-                            <p class="text-[10px] text-slate-400 font-medium italic">Purge scheduled in 48 hours.</p>
+                            <p class="text-[10px] text-slate-400 font-medium italic">Automated archiving active.</p>
                         </div>
                     </div>
 
@@ -391,9 +315,166 @@
     </main>
 
     <script>
+        const API_ENDPOINT = '/api/admin/dashboard';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initSession();
+            fetchDashboardData();
+            
+            // Refresh every 30 seconds
+            setInterval(fetchDashboardData, 30000);
+        });
+
+        function initSession() {
+            const user = localStorage.getItem('dx_user');
+            const role = localStorage.getItem('dx_role');
+            if (user) document.getElementById('header-username').innerText = user;
+            if (role) document.getElementById('header-role').innerText = role;
+            document.getElementById('header-avatar').src = `https://ui-avatars.com/api/?name=${user || 'Admin'}&background=0f172a&color=fff`;
+        }
+
+        async function fetchDashboardData() {
+            try {
+                const response = await fetch(API_ENDPOINT, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ _func: "get_dashboard_summary" })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    updateUI(result.data);
+                } else {
+                    console.error("Dashboard data fetch failed", result.message);
+                }
+            } catch (err) {
+                console.error("Network error fetching dashboard data", err);
+            }
+        }
+
+        function updateUI(data) {
+            // Update Node Info
+            document.getElementById('header-node-id').innerText = data.node.node_id;
+            document.getElementById('node-fqdn').innerText = data.node.fqdn;
+            document.getElementById('node-status-text').innerText = data.node.status;
+            document.getElementById('node-status-text').className = "font-bold text-green-600 uppercase tracking-widest text-[10px]";
+            document.getElementById('node-pulse').className = "status-pulse w-2.5 h-2.5 rounded-full bg-green-500";
+
+            // Update Top Stats
+            document.getElementById('stat-partners').innerText = data.partners_online;
+            document.getElementById('stat-pending').innerText = data.pending_actions.length;
+            document.getElementById('stat-transfers').innerText = data.transfers_24h;
+            document.getElementById('stat-storage').innerText = data.storage_used_pct + '%';
+
+            // Update Storage Bar
+            document.getElementById('storage-label').innerText = data.storage_used_pct + '%';
+            document.getElementById('storage-bar').style.width = data.storage_used_pct + '%';
+
+            // Render Transfers Table
+            renderTransfers(data.recent_transfers);
+
+            // Render Audit Logs
+            renderAudit(data.recent_audit);
+
+            // Render Pending Actions
+            renderActions(data.pending_actions);
+        }
+
+        function renderTransfers(transfers) {
+            const tbody = document.getElementById('transfer-table-body');
+            tbody.innerHTML = '';
+
+            transfers.forEach(t => {
+                const row = document.createElement('tr');
+                const directionClass = t.direction === 'OUTGOING' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700';
+                const statusDot = t.status === 'Completed' ? 'bg-green-500' : 'bg-blue-500';
+
+                row.innerHTML = `
+                    <td class="px-6 py-4 font-mono text-[11px] text-slate-600">${t.id.substring(0, 12)}...</td>
+                    <td class="px-6 py-4 font-bold text-slate-900">${t.partner}</td>
+                    <td class="px-6 py-4"><span class="${directionClass} px-2 py-0.5 rounded-full text-[10px] font-bold">${t.direction}</span></td>
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full ${statusDot}"></span>
+                            <span class="text-[11px] font-medium">${t.status}</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <div class="w-full bg-slate-100 rounded-full h-1.5 ml-auto max-w-[80px]">
+                            <div class="bg-blue-500 h-1.5 rounded-full" style="width: ${t.progress}%"></div>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function renderAudit(logs) {
+            const container = document.getElementById('audit-log-container');
+            container.innerHTML = '';
+
+            logs.forEach(log => {
+                const isCritical = log.severity === 'CRITICAL' || log.severity === 'ERROR';
+                const iconBg = isCritical ? 'bg-red-100' : 'bg-slate-100';
+                const iconColor = isCritical ? 'text-red-500' : 'text-slate-500';
+                const iconPath = isCritical 
+                    ? 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z'
+                    : 'M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8-0v4h8z';
+
+                const div = document.createElement('div');
+                div.className = "flex gap-4";
+                div.innerHTML = `
+                    <div class="w-8 h-8 rounded-lg ${iconBg} flex items-center justify-center flex-shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ${iconColor}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${iconPath}" />
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-xs font-bold text-slate-900">${log.event}</p>
+                        <p class="text-[10px] text-slate-500 font-medium">${log.summary}</p>
+                        <p class="text-[9px] text-slate-400 font-bold mt-1">${formatTime(log.timestamp)}</p>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function renderActions(actions) {
+            const container = document.getElementById('pending-actions-container');
+            container.innerHTML = '';
+
+            if (actions.length === 0) {
+                container.innerHTML = '<p class="text-[10px] text-slate-400 italic">No pending actions required.</p>';
+                return;
+            }
+
+            actions.forEach(action => {
+                const div = document.createElement('div');
+                div.className = "p-3 bg-orange-50 border border-orange-100 rounded-lg flex items-center justify-between";
+                div.innerHTML = `
+                    <span class="text-[11px] font-bold text-orange-800">${action.title}</span>
+                    <button onclick="window.location.href='contracts.html'" class="text-[9px] font-black uppercase tracking-widest bg-orange-200 px-2 py-1 rounded hover:bg-orange-300 transition-colors">Review</button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function getAuthHeaders() {
+            const token = localStorage.getItem('dx_token');
+            return {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            };
+        }
+
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }).toUpperCase();
+        }
+
         function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            sidebar.classList.toggle('collapsed');
+            document.getElementById('sidebar').classList.toggle('collapsed');
         }
 
         function logout() {
