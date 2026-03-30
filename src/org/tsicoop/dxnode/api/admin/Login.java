@@ -92,6 +92,7 @@ public class Login implements REST {
             output.put("success", true); // Consistent with API design
             output.put("message", "Login successful");
             output.put("token", generatedToken);
+            output.put("username", username); 
             output.put("role", roleName); // Return the single role name
             output.put("email", userEmail);
             output.put("user_id", userId);
