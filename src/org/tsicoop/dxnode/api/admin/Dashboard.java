@@ -15,6 +15,7 @@ import java.util.UUID;
 /**
  * Dashboard service for the TSI DX Node Admin App.
  * Aggregates system metrics, recent activities, and pending actions.
+ * Corrected to match the 'init.sql' schema.
  */
 public class Dashboard implements REST {
 
@@ -83,6 +84,7 @@ public class Dashboard implements REST {
 
     /**
      * Aggregates all data required for the dashboard landing page.
+     * Aligned with 'init.sql' schema.
      */
     private JSONObject getDashboardSummary() throws SQLException {
         JSONObject summary = new JSONObject();
@@ -94,13 +96,15 @@ public class Dashboard implements REST {
         try {
             conn = pool.getConnection();
 
-            // 1. Node Identity & Status
+            // 1. Node Identity & Status (from node_config)
             JSONObject nodeStatus = new JSONObject();
             pstmt = conn.prepareStatement("SELECT node_id, fqdn FROM node_config WHERE config_id = ?");
             pstmt.setObject(1, NODE_CONFIG_SINGLETON_ID);
             rs = pstmt.executeQuery();
+            String localNodeId = "";
             if (rs.next()) {
-                nodeStatus.put("node_id", rs.getString("node_id"));
+                localNodeId = rs.getString("node_id");
+                nodeStatus.put("node_id", localNodeId);
                 nodeStatus.put("fqdn", rs.getString("fqdn"));
                 nodeStatus.put("status", "Operational");
             }
@@ -109,40 +113,55 @@ public class Dashboard implements REST {
             pstmt.close();
 
             // 2. High-level Metrics
-            // Partners Online
+            // Partners Active
             pstmt = conn.prepareStatement("SELECT COUNT(*) FROM partners WHERE status = 'Active'");
             rs = pstmt.executeQuery();
             summary.put("partners_online", rs.next() ? rs.getInt(1) : 0);
             rs.close();
             pstmt.close();
 
-            // Transfers (Last 24h)
-            pstmt = conn.prepareStatement("SELECT COUNT(*) FROM transfers WHERE created_at > NOW() - INTERVAL '24 hours'");
+            // Transfers (Last 24h) - Table name corrected to 'data_transfers', timestamp to 'start_time'
+            pstmt = conn.prepareStatement("SELECT COUNT(*) FROM data_transfers WHERE start_time > NOW() - INTERVAL '24 hours'");
             rs = pstmt.executeQuery();
             summary.put("transfers_24h", rs.next() ? rs.getInt(1) : 0);
             rs.close();
             pstmt.close();
 
             // 3. Recent Transfers
+            // Note: Join logic changed to use data_contracts to find the context
             JSONArray recentTransfers = new JSONArray();
-            pstmt = conn.prepareStatement("SELECT t.transfer_id, p.name as partner_name, t.direction, t.status, t.progress_pct " +
-                    "FROM transfers t JOIN partners p ON t.partner_id = p.partner_id " +
-                    "ORDER BY t.created_at DESC LIMIT 5");
+            String transferSql = "SELECT t.transfer_id, t.status, t.sender_node_id, t.receiver_node_id, c.name as contract_name " +
+                                 "FROM data_transfers t " +
+                                 "JOIN data_contracts c ON t.contract_id = c.contract_id " +
+                                 "ORDER BY t.start_time DESC LIMIT 5";
+            pstmt = conn.prepareStatement(transferSql);
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 JSONObject t = new JSONObject();
+                String sender = rs.getString("sender_node_id");
+                String receiver = rs.getString("receiver_node_id");
+                
                 t.put("id", rs.getString("transfer_id"));
-                t.put("partner", rs.getString("partner_name"));
-                t.put("direction", rs.getString("direction"));
+                // If local node is sender, the "partner" is the receiver
+                t.put("partner", localNodeId.equals(sender) ? receiver : sender);
+                t.put("direction", localNodeId.equals(sender) ? "OUTGOING" : "INCOMING");
                 t.put("status", rs.getString("status"));
-                t.put("progress", rs.getInt("progress_pct"));
+                
+                // progress_pct is not in the schema, inferring from status for UI consistency
+                String status = rs.getString("status");
+                int progress = 0;
+                if ("Delivered".equals(status) || "Sent".equals(status) || "Received".equals(status)) progress = 100;
+                else if ("Processing".equals(status)) progress = 50;
+                else if ("Pending".equals(status)) progress = 10;
+                
+                t.put("progress", progress);
                 recentTransfers.add(t);
             }
             summary.put("recent_transfers", recentTransfers);
             rs.close();
             pstmt.close();
 
-            // 4. Pending Actions (Proposed contracts + near-expiry certs)
+            // 4. Pending Actions (Proposed contracts)
             JSONArray pendingActions = new JSONArray();
             pstmt = conn.prepareStatement("SELECT contract_id, name FROM data_contracts WHERE status = 'Proposed'");
             rs = pstmt.executeQuery();
@@ -157,22 +176,22 @@ public class Dashboard implements REST {
             rs.close();
             pstmt.close();
 
-            // 5. Recent Audit Events
+            // 5. Recent Audit Events - Column names aligned with schema (event_type instead of summary)
             JSONArray auditLogs = new JSONArray();
-            pstmt = conn.prepareStatement("SELECT timestamp, severity, event_type, summary FROM audit_logs ORDER BY timestamp DESC LIMIT 5");
+            pstmt = conn.prepareStatement("SELECT timestamp, severity, event_type, actor_id FROM audit_logs ORDER BY timestamp DESC LIMIT 5");
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 JSONObject log = new JSONObject();
                 log.put("timestamp", rs.getTimestamp("timestamp").toString());
                 log.put("severity", rs.getString("severity"));
                 log.put("event", rs.getString("event_type"));
-                log.put("summary", rs.getString("summary"));
+                log.put("summary", rs.getString("event_type") + " by " + rs.getString("actor_id"));
                 auditLogs.add(log);
             }
             summary.put("recent_audit", auditLogs);
 
-            // 6. Mock Storage (System level info usually not in DB)
-            summary.put("storage_used_pct", 42);
+            // 6. Storage Metric
+            summary.put("storage_used_pct", 42); // Placeholder
 
         } finally {
             pool.cleanup(rs, pstmt, conn);

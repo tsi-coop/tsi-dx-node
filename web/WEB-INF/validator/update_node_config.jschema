@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Update Node Configuration Request",
+  "description": "Schema for updating the Fully Qualified Domain Name and network port of a TSI DX Node.",
+  "type": "object",
+  "required": [
+    "_func",
+    "fqdn",
+    "network_port"
+  ],
+  "properties": {
+    "_func": {
+      "type": "string",
+      "const": "update_node_config",
+      "description": "The internal function identifier for the node configuration update."
+    },
+    "fqdn": {
+      "type": "string",
+      "description": "The public Fully Qualified Domain Name (FQDN) assigned to the node.",
+      "examples": [
+        "dx.south.tsicoop.org"
+      ]
+    },
+    "network_port": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 65535,
+      "description": "The network port used for mTLS protocol communication.",
+      "examples": [
+        8082
+      ]
+    }
+  },
+  "additionalProperties": false
+}
