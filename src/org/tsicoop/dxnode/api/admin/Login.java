@@ -67,6 +67,7 @@ public class Login implements REST {
             String userEmail = (String) userDetails.get("email");
             String userStatus = (String) userDetails.get("status");
             String username = (String) userDetails.get("username");
+            String nodeId = (String) userDetails.get("nodeId");
             String roleName = (String) userDetails.get("roleName"); // Get the single role name
 
             // Check user status
@@ -95,6 +96,7 @@ public class Login implements REST {
             output.put("username", username); 
             output.put("role", roleName); // Return the single role name
             output.put("email", userEmail);
+            output.put("nodeId", nodeId);
             output.put("user_id", userId);
 
             OutputProcessor.send(res, HttpServletResponse.SC_OK, output);
@@ -127,7 +129,8 @@ public class Login implements REST {
     }
 
     /**
-     * Retrieves user details including password hash, email, and their single role name.
+     * Retrieves user details including password hash, email, role name, and the local Node ID.
+     * Aligned with the node identity established during bootstrapping.
      * @param email The email to look up.
      * @return An Optional containing a JSONObject with user details if found, otherwise empty.
      * @throws SQLException if a database access error occurs.
@@ -138,8 +141,9 @@ public class Login implements REST {
         ResultSet rs = null;
         PoolDB pool = new PoolDB();
 
-        // SQL to join users and roles to get the single role name
-        String sql = "SELECT u.user_id, u.username, u.password_hash, u.email, u.status, r.name AS role_name " +
+        // SQL to join users/roles and fetch the singleton node_id from node_config
+        String sql = "SELECT u.user_id, u.username, u.password_hash, u.email, u.status, r.name AS role_name, " +
+                "(SELECT node_id FROM node_config WHERE config_id = '00000000-0000-0000-0000-000000000001') AS local_node_id " +
                 "FROM users u " +
                 "JOIN roles r ON u.role_id = r.role_id " +
                 "WHERE u.email = ?";
@@ -152,12 +156,15 @@ public class Login implements REST {
 
             if (rs.next()) {
                 JSONObject user = new JSONObject();
-                user.put("userId", rs.getString("user_id")); // Store UUID as String
+                user.put("userId", rs.getString("user_id"));
                 user.put("username", rs.getString("username"));
                 user.put("passwordHash", rs.getString("password_hash"));
                 user.put("email", rs.getString("email"));
                 user.put("status", rs.getString("status"));
-                user.put("roleName", rs.getString("role_name")); // Get the single role name
+                user.put("roleName", rs.getString("role_name"));
+                // Added the node_id to the identity context
+                user.put("nodeId", rs.getString("local_node_id")); 
+                
                 return Optional.of(user);
             }
         } finally {

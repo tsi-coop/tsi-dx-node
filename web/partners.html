@@ -75,7 +75,6 @@
 </head>
 <body class="flex h-screen overflow-hidden">
 
-    <!-- Sidebar Navigation -->
     <aside id="sidebar" class="sidebar bg-slate-900 flex flex-col z-20">
         <div class="p-6 mb-4">
             <div class="flex items-center gap-3 brand-container">
@@ -92,18 +91,12 @@
         </div>
 
         <nav class="flex-1 overflow-y-auto custom-scrollbar">
-            <!-- Segment 1: Operational Hub -->
             <div class="px-8 mb-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest nav-section-label">Operational Hub</div>
             <a href="dashboard.html" class="nav-item">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6z" /></svg>
                 <span class="nav-text">Dashboard</span>
             </a>
-            <a href="transfers.html" class="nav-item">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
-                <span class="nav-text">Transfer Logs</span>
-            </a>
 
-            <!-- Segment 2: Partnership -->
             <div class="px-8 mt-6 mb-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest nav-section-label">Partnership</div>
             <a href="partners.html" class="nav-item active">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
@@ -113,8 +106,11 @@
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                 <span class="nav-text">Data Contracts</span>
             </a>
+            <a href="transfers.html" class="nav-item">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
+                <span class="nav-text">Transfer Logs</span>
+            </a>
 
-            <!-- Segment 3: System -->
             <div class="px-8 mt-6 mb-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest nav-section-label">System</div>
             <a href="audit.html" class="nav-item">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 00-2 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
@@ -138,9 +134,7 @@
         </div>
     </aside>
 
-    <!-- Main Content Area -->
     <main class="flex-1 flex flex-col min-w-0">
-        <!-- Header -->
         <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 z-10">
             <div class="flex items-center gap-4">
                 <button onclick="toggleSidebar()" class="p-2 hover:bg-slate-100 rounded-lg text-slate-500">
@@ -148,8 +142,8 @@
                 </button>
                 <div class="h-8 w-px bg-slate-200 mx-2"></div>
                 <div class="flex flex-col">
-                    <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-tight">Identity Context</span>
-                    <span class="text-xs font-black text-slate-900 leading-tight" id="header-node-id">DX-PROD-SOUTH-01</span>
+                    <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-tight">Current Node Instance</span>
+                    <span class="text-xs font-black text-slate-900 leading-tight" id="header-node-id">FETCHING...</span>
                 </div>
             </div>
 
@@ -164,9 +158,7 @@
             </div>
         </header>
 
-        <!-- Dynamic View Area -->
         <div class="flex-1 overflow-y-auto p-8 custom-scrollbar">
-            <!-- Breadcrumbs -->
             <nav class="flex text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">
                 <a href="dashboard.html" class="hover:text-blue-500 transition-colors">TSI DX NODE</a>
                 <span class="mx-2">/</span>
@@ -184,7 +176,6 @@
                 </button>
             </div>
 
-            <!-- Filters Area -->
             <div class="card p-4 mb-6 flex flex-wrap gap-4 items-center">
                 <div class="flex-1 min-w-[240px] relative">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
@@ -192,7 +183,6 @@
                 </div>
             </div>
 
-            <!-- Partner Table -->
             <div class="card overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-sm">
@@ -207,14 +197,12 @@
                             </tr>
                         </thead>
                         <tbody id="partner-table-body" class="divide-y divide-slate-100">
-                            <!-- Rows loaded via JS -->
-                        </tbody>
+                            </tbody>
                     </table>
                 </div>
                 <div id="no-partners-msg" class="hidden p-12 text-center">
                     <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">No partners found in registry.</p>
                 </div>
-                <!-- Pagination -->
                 <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
                     <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest" id="partner-count-display">Showing 0 Partners</p>
                     <div class="flex gap-2">
@@ -226,10 +214,8 @@
         </div>
     </main>
 
-    <!-- Modal Backdrop -->
     <div id="partnerModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop">
         <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-            <!-- Modal Header -->
             <div class="px-8 py-6 bg-slate-900 flex items-center justify-between">
                 <div>
                     <h3 class="text-xl font-black text-white uppercase tracking-tight">Register Partner Node</h3>
@@ -240,7 +226,6 @@
                 </button>
             </div>
 
-            <!-- Modal Content -->
             <div class="p-8 overflow-y-auto custom-scrollbar flex-1">
                 <form id="addPartnerForm" class="space-y-6">
                     <div class="grid grid-cols-2 gap-4">
@@ -279,7 +264,6 @@
                 </form>
             </div>
 
-            <!-- Modal Footer -->
             <div class="px-8 py-6 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-4">
                 <button onclick="closePartnerModal()" class="px-6 py-2.5 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-colors">Cancel</button>
                 <button id="submitPartnerBtn" onclick="handleCreatePartner()" class="px-8 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-slate-900/20 transition-all">Establish Connection</button>
@@ -307,10 +291,14 @@
         });
 
         function initSession() {
-            const user = localStorage.getItem('dx_user_email') || 'Admin User';
+            // Corrected LocalStorage keys to match login logic
+            const user = localStorage.getItem('dx_user') || 'Admin User';
             const role = localStorage.getItem('dx_role') || 'Node Administrator';
+            const nodeId = localStorage.getItem('dx_node_id') || 'DX-PROD-SOUTH-01';
+
             document.getElementById('header-username').innerText = user;
             document.getElementById('header-role').innerText = role;
+            document.getElementById('header-node-id').innerText = nodeId;
             document.getElementById('header-avatar').src = `https://ui-avatars.com/api/?name=${user}&background=0f172a&color=fff`;
         }
 
@@ -372,40 +360,42 @@
             }
 
             noPartnersMsg.classList.add('hidden');
-            partners.forEach(partner => {
+            partners.forEach(p => {
                 const row = document.createElement('tr');
                 row.className = "hover:bg-slate-50 transition-colors";
                 
-                const initials = (partner.name || 'P').substring(0, 2).toUpperCase();
-                const statusColor = partner.status === 'Active' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700';
+                // Corrected field mapping to p.name and p.node_id
+                const statusColor = p.status === 'Active' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700';
+                const partnerName = p.name || 'Unknown Partner';
+                const nodeId = p.node_id || 'ID_PENDING';
 
                 row.innerHTML = `
                     <td class="px-6 py-4">
                         <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-[10px]">${initials}</div>
+                            <div class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-[10px]">${partnerName.substring(0, 2).toUpperCase()}</div>
                             <div>
-                                <p class="font-bold text-slate-900 leading-none">${partner.name}</p>
+                                <p class="font-bold text-slate-900 leading-none">${partnerName}</p>
                                 <p class="text-[10px] text-slate-400 mt-1 uppercase font-bold tracking-tighter">Registered Partner</p>
                             </div>
                         </div>
                     </td>
                     <td class="px-6 py-4">
-                        <p class="text-[11px] font-medium text-slate-600">${partner.fqdn}</p>
+                        <p class="text-[11px] font-medium text-slate-600">${p.fqdn || 'N/A'}</p>
                     </td>
                     <td class="px-6 py-4">
-                        <code class="text-[10px] bg-slate-100 px-2 py-1 rounded text-slate-500 font-mono">${partner.node_id}</code>
+                        <code class="text-[10px] bg-slate-100 px-2 py-1 rounded text-slate-500 font-mono">${nodeId}</code>
                     </td>
                     <td class="px-6 py-4">
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest ${statusColor}">
-                            ${partner.status}
+                            ${p.status || 'Pending'}
                         </span>
                     </td>
                     <td class="px-6 py-4">
-                        <p class="text-[11px] text-slate-500">${new Date(partner.created_at).toLocaleDateString()}</p>
+                        <p class="text-[11px] text-slate-500">${p.created_at ? new Date(p.created_at).toLocaleDateString() : 'N/A'}</p>
                     </td>
                     <td class="px-6 py-4 text-right">
                         <div class="flex items-center justify-end gap-2">
-                            <button onclick="handleDeletePartner('${partner.partner_id}')" class="text-red-400 hover:text-red-600 text-[10px] font-black uppercase" title="Remove Partner">Delete</button>
+                            <button onclick="handleDeletePartner('${p.partner_id}')" class="text-red-400 hover:text-red-600 text-[10px] font-black uppercase" title="Remove Partner">Delete</button>
                         </div>
                     </td>
                 `;
@@ -508,7 +498,7 @@
 
         function logout() {
             localStorage.clear();
-            window.location.href = 'login.html';
+            window.location.href = 'index.html';
         }
 
         document.addEventListener('keydown', (e) => {

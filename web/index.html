@@ -209,6 +209,7 @@
                     localStorage.setItem('dx_token', data.token);
                     localStorage.setItem('dx_user', data.username || data.user_id);
                     localStorage.setItem('dx_role', data.role);
+                    localStorage.setItem('dx_node_id', data.nodeId);
                     
                     loginBtn.innerText = "ACCESS GRANTED";
                     loginBtn.classList.replace('bg-slate-900', 'bg-green-600');
