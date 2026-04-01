@@ -1,0 +1,57 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Create User Request",
+  "description": "Schema for validating the creation of a new administrative user account within the DX Node.",
+  "type": "object",
+  "required": [
+    "_func",
+    "username",
+    "email",
+    "password",
+    "role_id"
+  ],
+  "properties": {
+    "_func": {
+      "type": "string",
+      "const": "create_user",
+      "description": "The internal function identifier for user creation."
+    },
+    "user_id": {
+      "type": "string",
+      "description": "Empty string during creation; the UUID is assigned by the database engine."
+    },
+    "username": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 50,
+      "description": "The unique display name for the administrative user."
+    },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "pattern": "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,6}$",
+      "description": "The unique system ID / email address for the user."
+    },
+    "password": {
+      "type": "string",
+      "pattern": "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[!@#$%^&*()_+])[A-Za-z\\d!@#$%^&*()_+]{8,}$",
+      "description": "The master password. Requires 8+ chars, uppercase, lowercase, number, and special char."
+    },
+    "role_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "The UUID of the assigned access role (e.g., Administrator)."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Active",
+        "Inactive",
+        "Locked"
+      ],
+      "default": "Active",
+      "description": "The initial operational status of the account."
+    }
+  },
+  "additionalProperties": false
+}
