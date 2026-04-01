@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Delete Role Request",
+  "description": "Request schema for removing a custom access role from the system.",
+  "type": "object",
+  "required": [
+    "_func",
+    "role_id"
+  ],
+  "properties": {
+    "_func": {
+      "type": "string",
+      "const": "delete_role",
+      "description": "Function identifier for role deletion."
+    },
+    "role_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "The unique UUID of the role to be removed."
+    }
+  },
+  "additionalProperties": false
+}

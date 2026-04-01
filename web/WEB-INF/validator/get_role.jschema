@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Get Role Request",
+  "description": "Request schema for fetching a single RBAC policy and its associated permissions.",
+  "type": "object",
+  "required": [
+    "_func",
+    "role_id"
+  ],
+  "properties": {
+    "_func": {
+      "type": "string",
+      "const": "get_role",
+      "description": "Function identifier for role lookup."
+    },
+    "role_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "The unique UUID of the role to retrieve."
+    }
+  },
+  "additionalProperties": false
+}

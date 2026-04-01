@@ -1,0 +1,55 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Create Role Request",
+  "description": "Request schema for defining a new RBAC access policy with granular resource permissions.",
+  "type": "object",
+  "required": [
+    "_func",
+    "name",
+    "permissions"
+  ],
+  "properties": {
+    "_func": {
+      "type": "string",
+      "const": "create_role",
+      "description": "The internal function identifier for role creation."
+    },
+    "role_id": {
+      "type": "string",
+      "description": "Should be an empty string for creation; the unique identifier is assigned by the database."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 100,
+      "description": "The unique designation for the role (e.g., Compliance Officer)."
+    },
+    "description": {
+      "type": "string",
+      "description": "An optional summary of the role's intended scope or administrative purpose."
+    },
+    "permissions": {
+      "type": "array",
+      "description": "A collection of permission objects defining access to system modules.",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "resource",
+          "action"
+        ],
+        "properties": {
+          "resource": {
+            "type": "string",
+            "description": "The system module (e.g., node, partner, contract, transfer, audit, governance)."
+          },
+          "action": {
+            "type": "string",
+            "description": "The specific operation permitted on the resource (e.g., view_status, list, create, delete)."
+          }
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}

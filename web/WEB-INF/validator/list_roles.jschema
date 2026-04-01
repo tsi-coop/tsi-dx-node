@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "List Roles Request",
+  "description": "Request schema for listing access roles with search and pagination.",
+  "type": "object",
+  "required": ["_func", "page", "limit"],
+  "properties": {
+    "_func": {
+      "type": "string",
+      "const": "list_roles",
+      "description": "Function identifier for role listing."
+    },
+    "search": {
+      "type": "string",
+      "description": "Optional keyword search for role name or description."
+    },
+    "page": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "The page number for pagination."
+    },
+    "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100,
+      "description": "Number of records per page."
+    }
+  },
+  "additionalProperties": false
+}

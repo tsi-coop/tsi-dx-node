@@ -1,0 +1,57 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Update Role Request",
+  "description": "Schema for modifying an existing access control policy and its associated permissions matrix.",
+  "type": "object",
+  "required": [
+    "_func",
+    "role_id",
+    "name",
+    "permissions"
+  ],
+  "properties": {
+    "_func": {
+      "type": "string",
+      "const": "update_role",
+      "description": "The internal function identifier for role updates."
+    },
+    "role_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "The unique UUID of the role to be modified."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 100,
+      "description": "The updated name for the access role."
+    },
+    "description": {
+      "type": "string",
+      "description": "An optional description of the role's administrative scope."
+    },
+    "permissions": {
+      "type": "array",
+      "description": "The complete set of permissions for this role. This replaces the existing permission set.",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "resource",
+          "action"
+        ],
+        "properties": {
+          "resource": {
+            "type": "string",
+            "description": "The system module (e.g., node, partner, contract)."
+          },
+          "action": {
+            "type": "string",
+            "description": "The specific operation (e.g., list, create, accept)."
+          }
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}

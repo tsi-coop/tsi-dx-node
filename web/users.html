@@ -30,7 +30,8 @@
 
         .sidebar.collapsed .nav-text, 
         .sidebar.collapsed .nav-badge,
-        .sidebar.collapsed .brand-full {
+        .sidebar.collapsed .brand-full,
+        .sidebar.collapsed .nav-section-label {
             display: none;
         }
 
@@ -76,30 +77,15 @@
             border-bottom: 2px solid var(--dx-accent);
         }
 
-        /* Toggle Switch */
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 32px;
-            height: 18px;
-        }
+        .switch { position: relative; display: inline-block; width: 32px; height: 18px; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-color: #cbd5e1;
-            transition: .4s;
-            border-radius: 34px;
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #cbd5e1; transition: .4s; border-radius: 34px;
         }
         .slider:before {
-            position: absolute;
-            content: "";
-            height: 14px; width: 14px;
-            left: 2px; bottom: 2px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
+            position: absolute; content: ""; height: 14px; width: 14px;
+            left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%;
         }
         input:checked + .slider { background-color: #10b981; }
         input:checked + .slider:before { transform: translateX(14px); }
@@ -123,14 +109,14 @@
             </div>
         </div>
 
-        <nav class="flex-1 overflow-y-auto">
-            <div class="px-8 mb-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest nav-text">Operational Hub</div>
+        <nav class="flex-1 overflow-y-auto custom-scrollbar">
+            <div class="px-8 mb-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest nav-section-label">Operational Hub</div>
             <a href="dashboard.html" class="nav-item">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6z" /></svg>
                 <span class="nav-text">Dashboard</span>
             </a>
             
-            <div class="px-8 mt-6 mb-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest nav-text">Partnership</div>
+            <div class="px-8 mt-6 mb-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest nav-section-label">Partnership</div>
             <a href="partners.html" class="nav-item">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
                 <span class="nav-text">Partner Nodes</span>
@@ -138,14 +124,13 @@
             <a href="contracts.html" class="nav-item">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                 <span class="nav-text">Data Contracts</span>
-                <span class="ml-auto bg-blue-600 text-[10px] px-2 py-0.5 rounded-full text-white font-bold nav-badge">2</span>
             </a>
             <a href="transfers.html" class="nav-item">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
                 <span class="nav-text">Transfer Logs</span>
             </a>
 
-            <div class="px-8 mt-6 mb-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest nav-text">System</div>
+            <div class="px-8 mt-6 mb-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest nav-section-label">System</div>
             <a href="audit.html" class="nav-item">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 00-2 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
                 <span class="nav-text">Audit Trail</span>
@@ -179,24 +164,23 @@
                 <div class="h-8 w-px bg-slate-200 mx-2"></div>
                 <div class="flex flex-col">
                     <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-tight">Current Node Instance</span>
-                    <span class="text-xs font-black text-slate-900 leading-tight">DX-PROD-SOUTH-01</span>
+                    <span class="text-xs font-black text-slate-900 leading-tight" id="header-node-id">...</span>
                 </div>
             </div>
 
             <div class="flex items-center gap-3">
                 <div class="flex flex-col items-end">
-                    <span class="text-xs font-bold text-slate-900">Admin User</span>
-                    <span class="text-[10px] text-slate-400 font-medium uppercase tracking-tighter">Node Administrator</span>
+                    <span class="text-xs font-bold text-slate-900" id="header-username">...</span>
+                    <span class="text-[10px] text-slate-400 font-medium uppercase tracking-tighter" id="header-role">...</span>
                 </div>
                 <div class="h-10 w-10 bg-slate-200 rounded-xl border-2 border-white shadow-sm overflow-hidden">
-                    <img src="https://ui-avatars.com/api/?name=Admin+User&background=0f172a&color=fff" alt="Avatar">
+                    <img src="" id="header-avatar" alt="Avatar">
                 </div>
             </div>
         </header>
 
         <!-- Dynamic View Area -->
         <div class="flex-1 overflow-y-auto p-8 custom-scrollbar">
-            <!-- Breadcrumbs -->
             <nav class="flex text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">
                 <a href="dashboard.html" class="hover:text-blue-500 transition-colors">TSI DX NODE</a>
                 <span class="mx-2">/</span>
@@ -228,22 +212,21 @@
                 </div>
             </div>
 
-            <!-- Content Area (Users View by default) -->
+            <!-- Users View -->
             <div id="users-view" class="space-y-6">
-                <!-- Filters -->
                 <div class="card p-4 flex flex-wrap gap-4 items-center">
                     <div class="flex-1 min-w-[240px] relative">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                        <input type="text" placeholder="Search by name, email or role..." class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500/20 transition-all">
+                        <input type="text" id="userSearch" oninput="handleUserSearch()" placeholder="Search by name or email..." class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500/20 transition-all">
                     </div>
-                    <select class="px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-600 outline-none">
+                    <select id="userStatusFilter" onchange="fetchUsers()" class="px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-600 outline-none">
                         <option value="">All Statuses</option>
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                        <option value="Locked">Locked</option>
                     </select>
                 </div>
 
-                <!-- User Table -->
                 <div class="card overflow-hidden">
                     <div class="overflow-x-auto">
                         <table class="w-full text-left text-sm">
@@ -257,40 +240,14 @@
                                     <th class="px-6 py-4 text-right">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-slate-100">
-                                <tr class="hover:bg-slate-50 transition-colors">
-                                    <td class="px-6 py-4">
-                                        <div class="flex items-center gap-3">
-                                            <div class="h-8 w-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs">AU</div>
-                                            <span class="font-bold text-slate-900">Admin User</span>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 text-slate-600 text-[11px]">admin@tsicoop.org</td>
-                                    <td class="px-6 py-4">
-                                        <span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase">Administrator</span>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <label class="switch">
-                                            <input type="checkbox" checked>
-                                            <span class="slider"></span>
-                                        </label>
-                                    </td>
-                                    <td class="px-6 py-4 text-slate-400 text-[11px]">Just now</td>
-                                    <td class="px-6 py-4 text-right">
-                                        <div class="flex justify-end gap-2">
-                                            <button class="p-2 hover:bg-slate-100 rounded text-slate-400 hover:text-slate-900" title="Edit User"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>
-                                            <button class="p-2 hover:bg-orange-50 rounded text-slate-400 hover:text-orange-600" title="Reset Password"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg></button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </tbody>
+                            <tbody id="user-table-body" class="divide-y divide-slate-100"></tbody>
                         </table>
                     </div>
                 </div>
             </div>
 
+            <!-- Roles View -->
             <div id="roles-view" class="hidden space-y-6">
-                <!-- Role Table -->
                 <div class="card overflow-hidden">
                     <div class="overflow-x-auto">
                         <table class="w-full text-left text-sm">
@@ -299,33 +256,10 @@
                                     <th class="px-6 py-4">Role Designation</th>
                                     <th class="px-6 py-4">Type</th>
                                     <th class="px-6 py-4">Scope / Description</th>
-                                    <th class="px-6 py-4">Active Users</th>
                                     <th class="px-6 py-4 text-right">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-slate-100">
-                                <tr class="hover:bg-slate-50">
-                                    <td class="px-6 py-4 font-bold text-slate-900">Administrator</td>
-                                    <td class="px-6 py-4"><span class="text-[9px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-black uppercase">System</span></td>
-                                    <td class="px-6 py-4 text-slate-500 text-[11px]">Full access to all node settings, contracts, and audits.</td>
-                                    <td class="px-6 py-4 text-slate-600 font-bold">1</td>
-                                    <td class="px-6 py-4 text-right">
-                                        <button class="p-2 hover:bg-slate-100 rounded text-slate-400 hover:text-slate-900"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg></button>
-                                    </td>
-                                </tr>
-                                <tr class="hover:bg-slate-50">
-                                    <td class="px-6 py-4 font-bold text-slate-900">Auditor</td>
-                                    <td class="px-6 py-4"><span class="text-[9px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-black uppercase">Custom</span></td>
-                                    <td class="px-6 py-4 text-slate-500 text-[11px]">Read-only access to transfers and logs for compliance.</td>
-                                    <td class="px-6 py-4 text-slate-600 font-bold">0</td>
-                                    <td class="px-6 py-4 text-right">
-                                        <div class="flex justify-end gap-2">
-                                            <button class="p-2 hover:bg-slate-100 rounded text-slate-400 hover:text-slate-900"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>
-                                            <button class="p-2 hover:bg-red-50 rounded text-slate-400 hover:text-red-600"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </tbody>
+                            <tbody id="role-table-body" class="divide-y divide-slate-100"></tbody>
                         </table>
                     </div>
                 </div>
@@ -333,139 +267,379 @@
         </div>
     </main>
 
-    <!-- Add User Modal -->
+    <!-- User Modal -->
     <div id="userModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop">
         <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden">
             <div class="px-8 py-6 bg-slate-900 flex items-center justify-between">
                 <div>
-                    <h3 class="text-xl font-black text-white uppercase tracking-tight">Create User Account</h3>
+                    <h3 class="text-xl font-black text-white uppercase tracking-tight">User Account</h3>
                     <p class="text-[10px] text-blue-400 font-bold uppercase tracking-[0.2em] mt-1">Assign Node Access</p>
                 </div>
                 <button onclick="closeUserModal()" class="text-slate-400 hover:text-white transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
             </div>
-            <div class="p-8 space-y-6">
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="col-span-2">
-                        <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Full Name</label>
-                        <input type="text" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none">
+            <form id="userForm" onsubmit="handleUserSubmit(event)" class="p-8 space-y-6">
+                <input type="hidden" id="userIdInput">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-[10px] font-black text-slate-500 uppercase mb-2">Display Name</label>
+                        <input type="text" id="userNameInput" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none">
                     </div>
-                    <div class="col-span-2">
-                        <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Email Address</label>
-                        <input type="email" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none">
+                    <div>
+                        <label class="block text-[10px] font-black text-slate-500 uppercase mb-2">Email Address</label>
+                        <input type="email" id="userEmailInput" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none">
                     </div>
-                    <div class="col-span-2">
-                        <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Assigned Role</label>
-                        <select class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold text-slate-700 outline-none">
-                            <option>Administrator</option>
-                            <option>Auditor</option>
-                            <option>Operator</option>
-                        </select>
+                    <div id="passwordFieldContainer">
+                        <label class="block text-[10px] font-black text-slate-500 uppercase mb-2">Password</label>
+                        <input type="password" id="userPasswordInput" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none" placeholder="Leave empty to keep current">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black text-slate-500 uppercase mb-2">Assigned Role</label>
+                        <select id="userRoleSelect" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold text-slate-700 outline-none"></select>
                     </div>
                 </div>
+                <div id="userFormError" class="hidden p-3 bg-red-50 text-red-600 text-[10px] font-bold uppercase rounded text-center"></div>
                 <div class="pt-4 flex gap-3">
-                    <button onclick="closeUserModal()" class="flex-1 py-3 text-xs font-black uppercase tracking-widest text-slate-400">Cancel</button>
-                    <button class="flex-1 py-3 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg">Save User</button>
+                    <button type="button" onclick="closeUserModal()" class="flex-1 py-3 text-xs font-black uppercase text-slate-400">Cancel</button>
+                    <button type="submit" id="userSubmitBtn" class="flex-1 py-3 bg-blue-600 text-white rounded-xl text-xs font-black uppercase shadow-lg">Save User</button>
                 </div>
-            </div>
+            </form>
         </div>
     </div>
 
-    <!-- Add/Edit Role Modal -->
+    <!-- Role Modal -->
     <div id="roleModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop">
         <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
             <div class="px-8 py-6 bg-slate-900 flex items-center justify-between">
                 <div>
-                    <h3 class="text-xl font-black text-white uppercase tracking-tight">Access Policy Definition</h3>
+                    <h3 class="text-xl font-black text-white uppercase tracking-tight">Access Policy</h3>
                     <p class="text-[10px] text-blue-400 font-bold uppercase tracking-[0.2em] mt-1">Granular RBAC Matrix</p>
                 </div>
                 <button onclick="closeRoleModal()" class="text-slate-400 hover:text-white transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
             </div>
-            <div class="p-8 overflow-y-auto custom-scrollbar flex-1 space-y-8">
-                <div>
-                    <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Role Name</label>
-                    <input type="text" placeholder="e.g. Compliance Officer" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none">
-                </div>
-                
-                <div>
-                    <h4 class="text-xs font-black text-slate-900 uppercase tracking-widest mb-4">Permissions Matrix</h4>
-                    <div class="space-y-3">
-                        <!-- Module Group -->
-                        <div class="p-4 border border-slate-200 rounded-xl space-y-4">
-                            <div class="flex items-center justify-between border-b border-slate-100 pb-2">
-                                <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Partners & Contracts</span>
-                                <label class="flex items-center text-[10px] font-bold text-blue-600"><input type="checkbox" class="mr-2"> All</label>
-                            </div>
-                            <div class="grid grid-cols-2 gap-4">
-                                <label class="flex items-center text-xs font-bold text-slate-700 cursor-pointer">
-                                    <input type="checkbox" class="w-4 h-4 mr-3 text-blue-600 rounded border-slate-300">
-                                    Register Partners
-                                </label>
-                                <label class="flex items-center text-xs font-bold text-slate-700 cursor-pointer">
-                                    <input type="checkbox" class="w-4 h-4 mr-3 text-blue-600 rounded border-slate-300">
-                                    Propose Contracts
-                                </label>
-                                <label class="flex items-center text-xs font-bold text-slate-700 cursor-pointer">
-                                    <input type="checkbox" class="w-4 h-4 mr-3 text-blue-600 rounded border-slate-300">
-                                    Approve Incoming Contracts
-                                </label>
-                            </div>
-                        </div>
-                        <!-- Module Group -->
-                        <div class="p-4 border border-slate-200 rounded-xl space-y-4">
-                            <div class="flex items-center justify-between border-b border-slate-100 pb-2">
-                                <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Data Operations</span>
-                                <label class="flex items-center text-[10px] font-bold text-blue-600"><input type="checkbox" class="mr-2"> All</label>
-                            </div>
-                            <div class="grid grid-cols-2 gap-4">
-                                <label class="flex items-center text-xs font-bold text-slate-700 cursor-pointer">
-                                    <input type="checkbox" class="w-4 h-4 mr-3 text-blue-600 rounded border-slate-300">
-                                    Initiate Transfers
-                                </label>
-                                <label class="flex items-center text-xs font-bold text-slate-700 cursor-pointer">
-                                    <input type="checkbox" class="w-4 h-4 mr-3 text-blue-600 rounded border-slate-300">
-                                    Download Payload
-                                </label>
-                            </div>
+            <form id="roleForm" onsubmit="handleRoleSubmit(event)" class="flex flex-col flex-1 overflow-hidden">
+                <div class="p-8 overflow-y-auto custom-scrollbar flex-1 space-y-8">
+                    <div>
+                        <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Role Name</label>
+                        <input type="text" id="roleNameInput" required placeholder="e.g. Compliance Officer" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Description</label>
+                        <textarea id="roleDescInput" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none" rows="2"></textarea>
+                    </div>
+                    
+                    <div>
+                        <h4 class="text-xs font-black text-slate-900 uppercase tracking-widest mb-4">Permissions Matrix</h4>
+                        <div id="permissions-container" class="space-y-3">
+                            <!-- Populated with JS based on API requirements -->
                         </div>
                     </div>
+                    <div id="roleFormError" class="hidden p-3 bg-red-50 text-red-600 text-[10px] font-bold uppercase rounded text-center"></div>
                 </div>
-            </div>
-            <div class="px-8 py-6 bg-slate-50 border-t border-slate-100 flex gap-3">
-                <button onclick="closeRoleModal()" class="flex-1 py-3 text-xs font-black uppercase tracking-widest text-slate-400">Cancel</button>
-                <button class="flex-1 py-3 bg-slate-900 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg">Save Access Policy</button>
-            </div>
+                <div class="px-8 py-6 bg-slate-50 border-t border-slate-100 flex gap-3">
+                    <button type="button" onclick="closeRoleModal()" class="flex-1 py-3 text-xs font-black uppercase text-slate-400">Cancel</button>
+                    <button type="submit" id="roleSubmitBtn" class="flex-1 py-3 bg-slate-900 text-white rounded-xl text-xs font-black uppercase shadow-lg">Save Access Policy</button>
+                </div>
+            </form>
         </div>
     </div>
 
     <script>
-        function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('collapsed');
+        const API_ENDPOINT = '/api/admin/users';
+        let searchTimeout;
+
+        const PERMISSION_RESOURCES = {
+            'node': ['view_status', 'view_config', 'update_config', 'generate_csr', 'import_certificate'],
+            'partner': ['list', 'get', 'create', 'update', 'delete'],
+            'contract': ['list', 'get', 'create', 'update', 'propose', 'accept', 'reject', 'terminate'],
+            'user': ['list', 'get', 'create', 'update', 'delete'],
+            'role': ['list', 'get', 'create', 'update', 'delete'],
+            'transfer': ['list', 'get', 'resend', 'list_bulk', 'get_bulk', 'initiate_bulk'],
+            'audit': ['list', 'get'],
+            'governance': ['list_pii_rules', 'create_pii_rule', 'update_pii_rule', 'delete_pii_rule', 'list_validation_scripts', 'create_validation_script', 'update_validation_script', 'delete_validation_script', 'get_archiving_purging_config', 'update_archiving_purging_config']
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initSession();
+            initPermissionsUI();
+            fetchUsers();
+            fetchRoles();
+        });
+
+        function initSession() {
+            // FIX: Use 'dx_user' to match login logic keys
+            const user = localStorage.getItem('dx_user') || 'Admin User';
+            const role = localStorage.getItem('dx_role') || 'Administrator';
+            const nodeId = localStorage.getItem('dx_node_id') || 'DX-DEFAULT';
+            
+            document.getElementById('header-username').innerText = user;
+            document.getElementById('header-role').innerText = role;
+            document.getElementById('header-node-id').innerText = nodeId;
+            document.getElementById('header-avatar').src = `https://ui-avatars.com/api/?name=${user}&background=0f172a&color=fff`;
+        }
+
+        function initPermissionsUI() {
+            const container = document.getElementById('permissions-container');
+            container.innerHTML = '';
+            
+            for (const [resource, actions] of Object.entries(PERMISSION_RESOURCES)) {
+                const group = document.createElement('div');
+                group.className = "p-4 border border-slate-200 rounded-xl space-y-4";
+                group.innerHTML = `
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">${resource} Management</span>
+                        <label class="flex items-center text-[10px] font-bold text-blue-600 cursor-pointer">
+                            <input type="checkbox" class="mr-2 res-toggle" data-res="${resource}"> All
+                        </label>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        ${actions.map(action => `
+                            <label class="flex items-center text-xs font-bold text-slate-700 cursor-pointer">
+                                <input type="checkbox" class="perm-check w-4 h-4 mr-3 text-blue-600 rounded border-slate-300" 
+                                    data-res="${resource}" data-act="${action}">
+                                ${action.replace('_', ' ')}
+                            </label>
+                        `).join('')}
+                    </div>
+                `;
+                container.appendChild(group);
+            }
+
+            document.querySelectorAll('.res-toggle').forEach(toggle => {
+                toggle.addEventListener('change', (e) => {
+                    const res = e.target.getAttribute('data-res');
+                    document.querySelectorAll(`.perm-check[data-res="${res}"]`).forEach(check => {
+                        check.checked = e.target.checked;
+                    });
+                });
+            });
+        }
+
+        async function fetchUsers() {
+            const search = document.getElementById('userSearch').value;
+            const status = document.getElementById('userStatusFilter').value;
+            try {
+                const response = await callApi("list_users", { status, search, page: 1, limit: 100 });
+                if (response) renderUserTable(response);
+            } catch (err) { console.error(err); }
+        }
+
+        function renderUserTable(users) {
+            const tbody = document.getElementById('user-table-body');
+            tbody.innerHTML = '';
+            users.forEach(u => {
+                const row = document.createElement('tr');
+                row.className = "hover:bg-slate-50 transition-colors";
+                
+                // FIX: Check if the role is Administrator to disable deactivation
+                const isSystemAdmin = u.role === 'Administrator';
+                
+                row.innerHTML = `
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-3">
+                            <div class="h-8 w-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs">${u.username.substring(0,2).toUpperCase()}</div>
+                            <span class="font-bold text-slate-900">${u.username}</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-slate-600 text-[11px]">${u.email}</td>
+                    <td class="px-6 py-4"><span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase">${u.role}</span></td>
+                    <td class="px-6 py-4">
+                        <label class="switch ${isSystemAdmin ? 'opacity-40 cursor-not-allowed' : ''}">
+                            <input type="checkbox" ${u.status === 'Active' ? 'checked' : ''} 
+                                ${isSystemAdmin ? 'disabled' : `onchange="handleUserToggle('${u.user_id}', this.checked)"`}>
+                            <span class="slider"></span>
+                        </label>
+                    </td>
+                    <td class="px-6 py-4 text-slate-400 text-[11px]">${u.last_login_at ? new Date(u.last_login_at).toLocaleDateString() : 'Never'}</td>
+                    <td class="px-6 py-4 text-right">
+                        <div class="flex justify-end gap-2">
+                            <button onclick="openUserModal('${u.user_id}')" class="p-2 text-slate-400 hover:text-slate-900"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>
+                            <button onclick="handleUserDelete('${u.user_id}')" class="p-2 text-slate-400 hover:text-red-600 ${isSystemAdmin ? 'hidden' : ''}"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        async function fetchRoles() {
+            try {
+                const roles = await callApi("list_roles", { search: "", page: 1, limit: 100 });
+                if (roles) {
+                    renderRoleTable(roles);
+                    populateRoleDropdown(roles);
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        function renderRoleTable(roles) {
+            const tbody = document.getElementById('role-table-body');
+            tbody.innerHTML = '';
+            roles.forEach(r => {
+                const row = document.createElement('tr');
+                row.className = "hover:bg-slate-50";
+                row.innerHTML = `
+                    <td class="px-6 py-4 font-bold text-slate-900">${r.name}</td>
+                    <td class="px-6 py-4"><span class="text-[9px] ${r.is_system_role ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600'} px-2 py-0.5 rounded font-black uppercase">${r.is_system_role ? 'System' : 'Custom'}</span></td>
+                    <td class="px-6 py-4 text-slate-500 text-[11px]">${r.description || 'No description provided.'}</td>
+                    <td class="px-6 py-4 text-right">
+                        <div class="flex justify-end gap-2">
+                             <button onclick="openRoleModal('${r.role_id}')" class="p-2 text-slate-400 hover:text-slate-900"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>
+                             ${!r.is_system_role ? `<button onclick="handleRoleDelete('${r.role_id}')" class="p-2 text-slate-400 hover:text-red-600"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>` : ''}
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        async function handleUserSubmit(e) {
+            e.preventDefault();
+            const id = document.getElementById('userIdInput').value;
+            const payload = {
+                _func: id ? "update_user" : "create_user",
+                user_id: id,
+                username: document.getElementById('userNameInput').value,
+                email: document.getElementById('userEmailInput').value,
+                password: document.getElementById('userPasswordInput').value,
+                role_id: document.getElementById('userRoleSelect').value,
+                status: "Active"
+            };
+
+            const response = await callApi(payload._func, payload);
+            if (response) {
+                closeUserModal();
+                fetchUsers();
+            } else {
+                showUserError("Submission failed. Check constraints.");
+            }
+        }
+
+        async function handleRoleSubmit(e) {
+            e.preventDefault();
+            const id = localStorage.getItem('active_role_edit_id');
+            const permissions = [];
+            document.querySelectorAll('.perm-check:checked').forEach(c => {
+                permissions.push({ resource: c.getAttribute('data-res'), action: c.getAttribute('data-act') });
+            });
+
+            const payload = {
+                _func: id ? "update_role" : "create_role",
+                role_id: id,
+                name: document.getElementById('roleNameInput').value,
+                description: document.getElementById('roleDescInput').value,
+                permissions: permissions
+            };
+
+            const response = await callApi(payload._func, payload);
+            if (response) {
+                closeRoleModal();
+                fetchRoles();
+            } else {
+                showRoleError("Failed to save role definition.");
+            }
+        }
+
+        async function handleUserToggle(id, isActive) {
+            await callApi("update_user", { user_id: id, status: isActive ? "Active" : "Inactive" });
+        }
+
+        async function handleUserDelete(id) {
+            if (confirm("Permanently remove this administrative user?")) {
+                await callApi("delete_user", { user_id: id });
+                fetchUsers();
+            }
+        }
+
+        async function handleRoleDelete(id) {
+            if (confirm("Delete this custom access policy?")) {
+                await callApi("delete_role", { role_id: id });
+                fetchRoles();
+            }
+        }
+
+        async function callApi(func, data) {
+            const token = localStorage.getItem('dx_token');
+            try {
+                const response = await fetch(API_ENDPOINT, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ _func: func, ...data })
+                });
+                if (response.status === 204) return true;
+                const result = await response.json();
+                return response.ok ? (result.data || result) : null;
+            } catch (err) { return null; }
+        }
+
+        function populateRoleDropdown(roles) {
+            const select = document.getElementById('userRoleSelect');
+            select.innerHTML = roles.map(r => `<option value="${r.role_id}">${r.name}</option>`).join('');
+        }
+
+        async function openUserModal(userId = null) {
+            document.getElementById('userForm').reset();
+            document.getElementById('userIdInput').value = userId || '';
+            document.getElementById('userFormError').classList.add('hidden');
+            
+            if (userId) {
+                const user = await callApi("get_user", { user_id: userId });
+                if (user) {
+                    document.getElementById('userNameInput').value = user.username;
+                    document.getElementById('userEmailInput').value = user.email;
+                    document.getElementById('userRoleSelect').value = user.role_id;
+                }
+            }
+            document.getElementById('userModal').classList.remove('hidden');
+        }
+
+        async function openRoleModal(roleId = null) {
+            document.getElementById('roleForm').reset();
+            localStorage.setItem('active_role_edit_id', roleId || '');
+            document.querySelectorAll('.perm-check, .res-toggle').forEach(c => c.checked = false);
+            document.getElementById('roleFormError').classList.add('hidden');
+
+            if (roleId) {
+                const role = await callApi("get_role", { role_id: roleId });
+                if (role) {
+                    document.getElementById('roleNameInput').value = role.name;
+                    document.getElementById('roleDescInput').value = role.description;
+                    role.permissions.forEach(p => {
+                        const check = document.querySelector(`.perm-check[data-res="${p.resource}"][data-act="${p.action}"]`);
+                        if (check) check.checked = true;
+                    });
+                }
+            }
+            document.getElementById('roleModal').classList.remove('hidden');
         }
 
         function switchTab(tabId) {
             document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('active');
-                btn.classList.add('text-slate-400');
+                btn.classList.toggle('active', btn.id === `tab-${tabId}`);
+                btn.classList.toggle('text-slate-400', btn.id !== `tab-${tabId}`);
             });
-            document.getElementById(`tab-${tabId}`).classList.add('active');
-            document.getElementById(`tab-${tabId}`).classList.remove('text-slate-400');
-
             document.getElementById('users-view').classList.toggle('hidden', tabId !== 'users');
             document.getElementById('roles-view').classList.toggle('hidden', tabId !== 'roles');
         }
 
-        function openUserModal() { document.getElementById('userModal').classList.remove('hidden'); }
-        function closeUserModal() { document.getElementById('userModal').classList.add('hidden'); }
-        function openRoleModal() { document.getElementById('roleModal').classList.remove('hidden'); }
-        function closeRoleModal() { document.getElementById('roleModal').classList.add('hidden'); }
+        function handleUserSearch() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(fetchUsers, 500);
+        }
 
-        function logout() {
-            localStorage.clear();
-            window.location.href = 'index.html';
+        function closeUserModal() { document.getElementById('userModal').classList.add('hidden'); }
+        function closeRoleModal() { document.getElementById('roleModal').classList.add('hidden'); }
+        function showUserError(msg) { const el = document.getElementById('userFormError'); el.innerText = msg; el.classList.remove('hidden'); }
+        function showRoleError(msg) { const el = document.getElementById('roleFormError'); el.innerText = msg; el.classList.remove('hidden'); }
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
+        
+        // FIX: Logout now redirects to index.html and clears session
+        function logout() { 
+            localStorage.clear(); 
+            window.location.href = 'index.html'; 
         }
     </script>
 </body>

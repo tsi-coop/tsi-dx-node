@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "List Users Request",
+  "description": "Request schema for listing administrative users with filtering and pagination.",
+  "type": "object",
+  "required": ["_func", "page", "limit"],
+  "properties": {
+    "_func": {
+      "type": "string",
+      "const": "list_users",
+      "description": "Function identifier for user listing."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["Active", "Inactive", "Locked", ""],
+      "description": "Optional filter for user account status."
+    },
+    "search": {
+      "type": "string",
+      "description": "Optional keyword search for username or email."
+    },
+    "page": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "The page number for pagination."
+    },
+    "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100,
+      "description": "Number of records per page."
+    }
+  },
+  "additionalProperties": false
+}

@@ -8,4 +8,4 @@
 /api/admin/partners=org.tsicoop.dxnode.api.admin.Partners
 /api/admin/dashboard=org.tsicoop.dxnode.api.admin.Dashboard
 /api/admin/settings=org.tsicoop.dxnode.api.admin.Settings
-
+/api/admin/users=org.tsicoop.dxnode.api.admin.User
