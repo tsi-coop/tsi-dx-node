@@ -101,7 +101,7 @@ CREATE TABLE validation_scripts (
 CREATE TABLE data_contracts (
     contract_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(255) NOT NULL,
-    version INT NOT NULL DEFAULT 1,
+    version VARCHAR(50),
     description TEXT NULL,
     sender_partner_id UUID NOT NULL REFERENCES partners(partner_id) ON DELETE RESTRICT,
     receiver_partner_id UUID NOT NULL REFERENCES partners(partner_id) ON DELETE RESTRICT,
@@ -110,6 +110,9 @@ CREATE TABLE data_contracts (
     validation_script_id UUID NULL REFERENCES validation_scripts(script_id) ON DELETE SET NULL,
     retention_policy_days INT NULL, -- Data retention period in days for this contract
     pii_fields TEXT[] NULL, -- Array of field names identified as PII
+    direction VARCHAR(50),
+    schema_json JSONB,
+    governance_json JSONB,
     status VARCHAR(50) NOT NULL DEFAULT 'Draft', -- 'Draft', 'Proposed', 'Active', 'Terminated', 'Rejected'
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()

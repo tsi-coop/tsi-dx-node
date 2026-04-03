@@ -1,0 +1,60 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "List Contracts Request",
+  "description": "Schema for listing data contracts with filtering, search, and pagination support.",
+  "type": "object",
+  "required": [
+    "_func",
+    "page",
+    "limit"
+  ],
+  "properties": {
+    "_func": {
+      "type": "string",
+      "const": "list_contracts",
+      "description": "The internal function identifier for contract listing."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Draft",
+        "Proposed",
+        "Active",
+        "Terminated",
+        ""
+      ],
+      "description": "Optional filter for contract lifecycle status."
+    },
+    "direction": {
+      "type": "string",
+      "enum": [
+        "Incoming",
+        "Outgoing",
+        "Bidirectional",
+        ""
+      ],
+      "description": "Optional filter for data exchange direction."
+    },
+    "partner_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Optional filter to show contracts associated with a specific partner node."
+    },
+    "search": {
+      "type": "string",
+      "description": "Keyword search for contract name or description."
+    },
+    "page": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "The page number for pagination."
+    },
+    "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100,
+      "description": "The number of records to return per page."
+    }
+  },
+  "additionalProperties": false
+}

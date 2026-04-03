@@ -1,0 +1,82 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Create Contract Request",
+  "description": "Schema for establishing a new data exchange contract between nodes, including schema definitions and governance rules.",
+  "type": "object",
+  "required": [
+    "_func",
+    "name",
+    "direction",
+    "sender_partner_id",
+    "receiver_partner_id",
+    "schema_definition"
+  ],
+  "properties": {
+    "_func": {
+      "type": "string",
+      "const": "create_contract",
+      "description": "The internal function identifier for contract creation."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The unique designation for the data contract."
+    },
+    "version": {
+      "type": "string",
+      "default": "1.0.0",
+      "description": "The semver string for the contract version."
+    },
+    "description": {
+      "type": "string",
+      "description": "Optional business context or purpose statement for the exchange."
+    },
+    "direction": {
+      "type": "string",
+      "enum": ["Outgoing", "Incoming", "Bidirectional"],
+      "description": "The primary flow of data relative to the local node."
+    },
+    "sender_partner_id": {
+      "type": "string",
+      "description": "The identity (UUID or Node ID) of the data source."
+    },
+    "receiver_partner_id": {
+      "type": "string",
+      "description": "The identity (UUID or Node ID) of the data consumer."
+    },
+    "schema_definition": {
+      "type": "object",
+      "required": ["type", "properties"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "object"
+        },
+        "properties": {
+          "type": "array",
+          "description": "A list of field definitions for validation.",
+          "items": {
+            "type": "object",
+            "required": ["name", "type"],
+            "properties": {
+              "name": { "type": "string" },
+              "type": { "type": "string", "enum": ["string", "number", "boolean", "uuid"] }
+            }
+          }
+        }
+      }
+    },
+    "retention_policy_days": {
+      "type": "integer",
+      "minimum": 0,
+      "default": 30,
+      "description": "Duration in days to retain active staging data."
+    },
+    "pii_fields": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "A list of field paths marked for PII anonymization."
+    }
+  },
+  "additionalProperties": false
+}
