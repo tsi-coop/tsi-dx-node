@@ -15,7 +15,7 @@ import java.util.Optional;
 
 /**
  * Service to manage Data Contracts between TSI DX Nodes.
- * Synchronized with the finalized schema.sql using schema_json and governance_json.
+ * Synchronized with the schema.sql: partner IDs are VARCHAR (Node IDs).
  */
 public class DataContract implements REST {
 
@@ -93,6 +93,9 @@ public class DataContract implements REST {
         }
     }
 
+    /**
+     * Creates a new data contract based on the 'data_contracts' table in the Canvas.
+     */
     private JSONObject createContract(JSONObject input) throws SQLException {
         Connection conn = null;
         PreparedStatement pstmt = null;
@@ -101,28 +104,27 @@ public class DataContract implements REST {
 
         // 1. Core Meta
         String name = getString(input, "name");
+        String version = getString(input, "version");
+        if (version.isEmpty()) version = "1.0.0";
         String direction = getString(input, "direction");
-        String version = "1.0.0";
         
-        // 2. Partner Associations (Handled as Strings to allow Node IDs or UUIDs)
+        // 2. Node Identities (VARCHAR as per Canvas schema)
         String senderId = getString(input, "sender_partner_id");
         String receiverId = getString(input, "receiver_partner_id");
 
         if (senderId.isEmpty() || receiverId.isEmpty()) {
-            throw new IllegalArgumentException("Both sender_partner_id and receiver_partner_id are mandatory to establish a protocol sequence.");
+            throw new IllegalArgumentException("Both sender_partner_id and receiver_partner_id (Node IDs) are mandatory.");
         }
 
-        // 3. Data Schema
-        JSONObject schemaJson = (JSONObject) input.get("schema_definition");
-        
-        // 4. Governance Package
+        // 3. Data Schema & Governance
+        JSONObject schemaDef = (JSONObject) input.get("schema_definition");
         JSONObject governance = new JSONObject();
         governance.put("retention_days", getInt(input, "retention_policy_days", 30));
         governance.put("pii_fields", input.get("pii_fields"));
 
-        // Note: Parameters 5 and 6 use setObject to allow PostgreSQL to cast strings to UUID if the column is typed as UUID
-        String sql = "INSERT INTO data_contracts (contract_id, name, version, status, direction, sender_partner_id, receiver_partner_id, schema_json, governance_json, updated_at) " +
-                     "VALUES (?, ?, ?, 'Draft', ?, ?, ?, ?::jsonb, ?::jsonb, NOW())";
+        // Aligned with Canvas SQL column order
+        String sql = "INSERT INTO data_contracts (contract_id, name, version, status, direction, sender_partner_id, receiver_partner_id, schema_definition, schema_json, governance_json, updated_at) " +
+                     "VALUES (?, ?, ?, 'Draft', ?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, NOW())";
 
         try {
             conn = pool.getConnection();
@@ -131,14 +133,19 @@ public class DataContract implements REST {
             pstmt.setString(2, name);
             pstmt.setString(3, version);
             pstmt.setString(4, direction);
-            pstmt.setObject(5, senderId);
-            pstmt.setObject(6, receiverId);
-            pstmt.setString(7, schemaJson != null ? schemaJson.toJSONString() : "{}");
-            pstmt.setString(8, governance.toJSONString());
+            pstmt.setString(5, senderId);
+            pstmt.setString(6, receiverId);
+            pstmt.setString(7, schemaDef != null ? schemaDef.toJSONString() : "{}");
+            pstmt.setString(8, schemaDef != null ? schemaDef.toJSONString() : "{}");
+            pstmt.setString(9, governance.toJSONString());
             
             pstmt.executeUpdate();
             
-            return new JSONObject() {{ put("success", true); put("contract_id", newId.toString()); }};
+            return new JSONObject() {{ 
+                put("success", true); 
+                put("contract_id", newId.toString()); 
+                put("message", "Contract established in Draft mode.");
+            }};
         } finally {
             pool.cleanup(null, pstmt, conn);
         }
@@ -199,7 +206,11 @@ public class DataContract implements REST {
                 JSONObject c = new JSONObject();
                 c.put("contract_id", rs.getString("contract_id"));
                 c.put("name", rs.getString("name"));
+                c.put("version", rs.getString("version"));
                 c.put("status", rs.getString("status"));
+                c.put("direction", rs.getString("direction"));
+                c.put("sender_partner_id", rs.getString("sender_partner_id"));
+                c.put("receiver_partner_id", rs.getString("receiver_partner_id"));
                 return Optional.of(c);
             }
         } finally {
@@ -217,14 +228,16 @@ public class DataContract implements REST {
             pstmt = conn.prepareStatement("UPDATE data_contracts SET status = ?, updated_at = NOW() WHERE contract_id = ?");
             pstmt.setString(1, status);
             pstmt.setObject(2, id);
-            pstmt.executeUpdate();
+            int affected = pstmt.executeUpdate();
+            if (affected == 0) throw new SQLException("Contract not found.");
         } finally {
             pool.cleanup(null, pstmt, conn);
         }
         return new JSONObject() {{ put("success", true); put("message", "Contract status transitioned to " + status); }};
     }
 
-    // --- Helpers ---
+    // --- Helpers for Safe Extraction ---
+
     private String getString(JSONObject obj, String key) {
         Object val = obj.get(key);
         return (val == null) ? "" : val.toString();
@@ -240,11 +253,7 @@ public class DataContract implements REST {
     private UUID extractUuid(JSONObject obj, String key) {
         Object val = obj.get(key);
         if (val == null || val.toString().trim().isEmpty()) return null;
-        try { 
-            return UUID.fromString(val.toString()); 
-        } catch(Exception e) { 
-            return null; 
-        }
+        try { return UUID.fromString(val.toString()); } catch(Exception e) { return null; }
     }
 
     private String mapFuncToStatus(String func) {

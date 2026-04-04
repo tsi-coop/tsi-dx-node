@@ -117,7 +117,7 @@
 
             <div class="px-8 mt-6 mb-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest nav-section-label">System</div>
             <a href="audit.html" class="nav-item">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 00-2 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 00-2 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
                 <span class="nav-text">Audit Trail</span>
             </a>
             <a href="users.html" class="nav-item">
@@ -237,7 +237,6 @@
                 </button>
             </div>
 
-            <!-- Wizard Progress Indicators -->
             <div class="px-8 py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-center gap-12">
                 <div class="flex items-center gap-2">
                     <span id="step1-indicator" class="step-pill active w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black">1</span>
@@ -256,7 +255,6 @@
             </div>
 
             <div class="p-8 overflow-y-auto custom-scrollbar flex-1">
-                <!-- Step 1: General Meta -->
                 <div id="step1-content" class="space-y-6">
                     <div class="grid grid-cols-2 gap-6">
                         <div class="col-span-2">
@@ -281,24 +279,21 @@
                     </div>
                 </div>
 
-                <!-- Step 2: Schema Field Builder -->
                 <div id="step2-content" class="hidden space-y-4">
                     <div class="flex items-center justify-between mb-4">
-                        <h4 class="text-xs font-black text-slate-900 uppercase tracking-widest">Fields & Validation Rules</h4>
-                        <button onclick="addSchemaField()" class="text-[10px] font-black text-blue-600 uppercase">+ Add Field Definition</button>
+                        <h4 class="text-xs font-black text-slate-900 uppercase tracking-widest">Fields & Validation</h4>
+                        <button onclick="addSchemaField()" class="text-[10px] font-black text-blue-600 uppercase">+ Add Field</button>
                     </div>
                     <div id="schema-fields-container" class="space-y-3"></div>
                 </div>
 
-                <!-- Step 3: Governance & Retention -->
                 <div id="step3-content" class="hidden space-y-8">
                      <div>
-                        <h4 class="text-xs font-black text-slate-900 uppercase tracking-widest mb-4">PII Handling Constraints</h4>
+                        <h4 class="text-xs font-black text-slate-900 uppercase tracking-widest mb-4">PII Handling</h4>
                         <div id="pii-rules-list" class="grid grid-cols-2 gap-4"></div>
-                        <p class="text-[10px] text-slate-400 mt-2 italic uppercase">Anonymization methods are applied based on global node rules.</p>
                     </div>
                     <div>
-                        <h4 class="text-xs font-black text-slate-900 uppercase tracking-widest mb-4">Lifecycle Retention</h4>
+                        <h4 class="text-xs font-black text-slate-900 uppercase tracking-widest mb-4">Data Retention</h4>
                         <div class="grid grid-cols-2 gap-6">
                             <div>
                                 <label class="block text-[10px] font-black text-slate-500 uppercase mb-2">Retention Period (Days)</label>
@@ -307,17 +302,16 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div id="wiz-error" class="hidden mt-4 p-3 bg-red-50 border border-red-100 rounded text-[10px] font-black text-red-600 uppercase text-center"></div>
             </div>
 
-            <!-- Modal Actions -->
             <div class="px-8 py-6 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
-                <button onclick="closeContractWizard()" class="px-6 py-2.5 text-xs font-black uppercase text-slate-400 hover:text-slate-600 transition-colors">Cancel</button>
+                <button onclick="closeContractWizard()" class="px-6 py-2.5 text-xs font-black uppercase text-slate-400 hover:text-slate-600">Cancel</button>
                 <div class="flex gap-3">
                     <button id="prevBtn" onclick="prevStep()" class="hidden px-6 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl text-xs font-black uppercase transition-all">Previous</button>
-                    <button id="nextBtn" onclick="nextStep()" class="px-8 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-black uppercase shadow-lg transition-all">Next Step</button>
-                    <button id="saveBtn" onclick="submitContract()" class="hidden px-8 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-black uppercase shadow-lg shadow-blue-500/20 transition-all">Establish Contract</button>
+                    <button id="nextBtn" onclick="nextStep()" class="px-8 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-black uppercase shadow-lg">Next Step</button>
+                    <button id="saveBtn" onclick="submitContract()" class="hidden px-8 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-black uppercase shadow-lg">Establish Contract</button>
                 </div>
             </div>
         </div>
@@ -327,7 +321,7 @@
         const API_ENDPOINT = '/api/admin/contracts';
         const PARTNER_API = '/api/admin/partners';
         let currentStep = 1;
-        let partnersMap = {};
+        let partnersMapByNodeId = {};
         let searchTimeout;
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -347,14 +341,14 @@
 
         async function loadPartners() {
             try {
-                // Corrected unwrapping: callApi returns the array directly
+                // Response is the unwrapped array from callApi
                 const response = await callApi(PARTNER_API, { _func: "list_partners", page: 1, limit: 100 });
                 if (response && Array.isArray(response)) {
                     const select = document.getElementById('wiz-partner');
                     select.innerHTML = '<option value="">Select Partner Node...</option>';
                     response.forEach(p => {
-                        partnersMap[p.partner_id] = p.name;
-                        select.innerHTML += `<option value="${p.partner_id}">${p.name}</option>`;
+                        partnersMapByNodeId[p.node_id] = p.name;
+                        select.innerHTML += `<option value="${p.node_id}">${p.name} (${p.node_id})</option>`;
                     });
                 }
             } catch (e) { console.error("Partner sync failed", e); }
@@ -372,7 +366,7 @@
                     limit: 50 
                 });
                 if (response) renderTable(response);
-            } catch (e) { console.error("Contract fetch failed", e); }
+            } catch (e) { console.error("Fetch failed", e); }
         }
 
         function renderTable(contracts) {
@@ -392,10 +386,12 @@
                 const row = document.createElement('tr');
                 row.className = "hover:bg-slate-50 transition-colors";
                 
-                // Use the explicit direction column from the DB if available, fallback to partner ID logic
-                const directionLabel = c.direction || (c.sender_partner_id === localNodeId ? 'Outgoing' : 'Incoming');
+                // Compare with local node ID for relative direction
+                const isOutgoing = c.sender_partner_id === localNodeId;
+                const directionLabel = isOutgoing ? 'Outgoing' : 'Incoming';
                 const statusColor = getStatusColor(c.status);
-                const partnerName = partnersMap[c.sender_partner_id] || partnersMap[c.receiver_partner_id] || 'External Node';
+                const remoteNodeId = isOutgoing ? c.receiver_partner_id : c.sender_partner_id;
+                const partnerName = partnersMapByNodeId[remoteNodeId] || remoteNodeId || 'External Node';
 
                 row.innerHTML = `
                     <td class="px-6 py-4">
@@ -405,7 +401,7 @@
                         </div>
                     </td>
                     <td class="px-6 py-4 font-bold text-slate-600">${partnerName}</td>
-                    <td class="px-6 py-4"><span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${directionLabel === 'Outgoing' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}">${directionLabel}</span></td>
+                    <td class="px-6 py-4"><span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${isOutgoing ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}">${directionLabel}</span></td>
                     <td class="px-6 py-4"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest ${statusColor}">${c.status}</span></td>
                     <td class="px-6 py-4 text-slate-500 text-[11px]">${new Date(c.updated_at).toLocaleDateString()}</td>
                     <td class="px-6 py-4 text-right">
@@ -439,12 +435,12 @@
             wizError.classList.add('hidden');
 
             const localNodeId = localStorage.getItem('dx_node_id');
-            const targetPartner = document.getElementById('wiz-partner').value;
+            const targetPartnerNodeId = document.getElementById('wiz-partner').value;
             const direction = document.getElementById('wiz-direction').value;
             const name = document.getElementById('wiz-name').value;
 
-            // Strict Validation for Mandatory Protocol Identities
-            if (!name || !targetPartner || !localNodeId) {
+            // Strict Validation
+            if (!name || !targetPartnerNodeId || !localNodeId) {
                 wizError.innerText = "Error: Partner selection and contract name are required.";
                 wizError.classList.remove('hidden');
                 return;
@@ -462,8 +458,9 @@
                 version: "1.0.0",
                 description: document.getElementById('wiz-desc').value,
                 direction: direction,
-                sender_partner_id: direction === 'Outgoing' ? localNodeId : targetPartner,
-                receiver_partner_id: direction === 'Incoming' ? localNodeId : targetPartner,
+                // Assign Node ID strings (VARCHAR) based on direction
+                sender_partner_id: direction === 'Outgoing' ? localNodeId : targetPartnerNodeId,
+                receiver_partner_id: direction === 'Incoming' ? localNodeId : targetPartnerNodeId,
                 schema_definition: { type: "object", properties: fields },
                 retention_policy_days: parseInt(document.getElementById('wiz-retention').value) || 30,
                 pii_fields: []
@@ -474,7 +471,7 @@
                 closeContractWizard();
                 fetchContracts();
             } else {
-                wizError.innerText = "Failed to establish contract. Verify protocol identity.";
+                wizError.innerText = "Failed to establish contract. Verify protocol identity parameters.";
                 wizError.classList.remove('hidden');
             }
         }
@@ -524,7 +521,14 @@
         }
 
         function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
-        function openContractWizard() { document.getElementById('contractWizard').classList.remove('hidden'); goToStep(1); }
+        function openContractWizard() { 
+            document.getElementById('wiz-name').value = '';
+            document.getElementById('wiz-desc').value = '';
+            document.getElementById('schema-fields-container').innerHTML = '';
+            document.getElementById('wiz-error').classList.add('hidden');
+            document.getElementById('contractWizard').classList.remove('hidden'); 
+            goToStep(1); 
+        }
         function closeContractWizard() { document.getElementById('contractWizard').classList.add('hidden'); }
         function logout() { localStorage.clear(); window.location.href = 'index.html'; }
 

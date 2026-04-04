@@ -98,22 +98,23 @@ CREATE TABLE validation_scripts (
 
 -- 8. `data_contracts` Table
 -- Defines the agreements for data exchange between partners.
-CREATE TABLE data_contracts (
+CREATE TABLE IF NOT EXISTS data_contracts (
     contract_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(255) NOT NULL,
     version VARCHAR(50),
     description TEXT NULL,
-    sender_partner_id UUID NOT NULL REFERENCES partners(partner_id) ON DELETE RESTRICT,
-    receiver_partner_id UUID NOT NULL REFERENCES partners(partner_id) ON DELETE RESTRICT,
+    -- Changed from UUID to VARCHAR to support Node IDs (Local & Remote)
+    sender_partner_id VARCHAR(255) NOT NULL,
+    receiver_partner_id VARCHAR(255) NOT NULL,
     schema_definition JSONB NOT NULL,
-    metadata JSONB NULL, -- Additional contract metadata (purpose, security classification)
+    metadata JSONB NULL, 
     validation_script_id UUID NULL REFERENCES validation_scripts(script_id) ON DELETE SET NULL,
-    retention_policy_days INT NULL, -- Data retention period in days for this contract
-    pii_fields TEXT[] NULL, -- Array of field names identified as PII
+    retention_policy_days INT NULL,
+    pii_fields TEXT[] NULL,
     direction VARCHAR(50),
     schema_json JSONB,
     governance_json JSONB,
-    status VARCHAR(50) NOT NULL DEFAULT 'Draft', -- 'Draft', 'Proposed', 'Active', 'Terminated', 'Rejected'
+    status VARCHAR(50) NOT NULL DEFAULT 'Draft',
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
