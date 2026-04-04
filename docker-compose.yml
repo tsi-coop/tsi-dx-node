@@ -9,7 +9,8 @@ services:
   # 1. PostgreSQL Database Service
   postgres_db:
     image: postgres:15-alpine
-    container_name: tsi_dx_node_db
+    # REMOVED: container_name to allow multiple instances via project flags
+    # container_name: tsi_dx_node_db
     restart: unless-stopped
     environment:
       <<: *db-credentials
@@ -23,9 +24,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - tsi_internal
-
+   
   # 2. Java Jetty Web Application Service
   jetty_app:
     # Uses the IMAGE_NAME from .env, defaults to latest if not set
@@ -37,7 +36,8 @@ services:
       dockerfile: Dockerfile
     
     user: "root"
-    container_name: tsi_dx_node_server
+    # REMOVED: container_name to allow multiple instances via project flags
+    # container_name: tsi_dx_node_server
     restart: unless-stopped
     
     ports:
@@ -57,14 +57,9 @@ services:
     depends_on:
       postgres_db:
         condition: service_healthy
-    networks:
-      - tsi_internal
+   
 
 # Infrastructure Definitions
-networks:
-  tsi_internal:
-    driver: bridge
-
 volumes:
   postgres_data:      
   tsi_reports_data:
