@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Accept Contract Request",
+  "description": "Schema for a counterparty to accept a proposed data contract, transitioning it to 'Active' status.",
+  "type": "object",
+  "required": [
+    "_func",
+    "contract_id"
+  ],
+  "properties": {
+    "_func": {
+      "type": "string",
+      "const": "accept_contract",
+      "description": "The internal function identifier for the acceptance action."
+    },
+    "contract_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "The unique UUID of the contract to be accepted."
+    }
+  },
+  "additionalProperties": false
+}

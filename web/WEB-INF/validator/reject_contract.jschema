@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Reject Contract Request",
+  "description": "Schema for a counterparty to reject a proposed data contract, transitioning it to 'Rejected' status.",
+  "type": "object",
+  "required": [
+    "_func",
+    "contract_id"
+  ],
+  "properties": {
+    "_func": {
+      "type": "string",
+      "const": "reject_contract",
+      "description": "The internal function identifier for the rejection action."
+    },
+    "contract_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "The unique UUID of the contract to be rejected."
+    }
+  },
+  "additionalProperties": false
+}

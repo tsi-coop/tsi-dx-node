@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Propose Contract Request",
+  "description": "Schema for transitioning a data contract from 'Draft' to 'Proposed' status to initiate the P2P handshake.",
+  "type": "object",
+  "required": [
+    "_func",
+    "contract_id"
+  ],
+  "properties": {
+    "_func": {
+      "type": "string",
+      "const": "propose_contract",
+      "description": "The internal function identifier for the proposal action."
+    },
+    "contract_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "The unique UUID of the contract to be proposed."
+    }
+  },
+  "additionalProperties": false
+}

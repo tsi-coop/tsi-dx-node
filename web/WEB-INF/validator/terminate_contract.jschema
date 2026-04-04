@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Terminate Contract Request",
+  "description": "Schema for terminating an active data contract, transitioning it to 'Terminated' status.",
+  "type": "object",
+  "required": [
+    "_func",
+    "contract_id"
+  ],
+  "properties": {
+    "_func": {
+      "type": "string",
+      "const": "terminate_contract",
+      "description": "The internal function identifier for the termination action."
+    },
+    "contract_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "The unique UUID of the contract to be terminated."
+    }
+  },
+  "additionalProperties": false
+}
