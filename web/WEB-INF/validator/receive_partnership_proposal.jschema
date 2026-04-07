@@ -1,0 +1,39 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Partnership Protocol Schemas",
+  "description": "Schemas for both sides of the identity handshake: the administrative trigger and the peer-to-peer reception.",
+  "definitions": {
+    "propose_partnership": {
+      "type": "object",
+      "description": "Schema for the UI to trigger an outbound handshake from the local node.",
+      "required": ["_func", "partner_id"],
+      "properties": {
+        "_func": { "type": "string", "const": "propose_partnership" },
+        "partner_id": { "type": "string", "format": "uuid" }
+      }
+    },
+    "receive_partnership_proposal": {
+      "type": "object",
+      "description": "Schema for Node 2 to receive and auto-register Node 1's identity during the handshake.",
+      "required": ["_func", "sender_node_id", "sender_fqdn", "sender_public_key"],
+      "properties": {
+        "_func": { 
+          "type": "string", 
+          "const": "receive_partnership_proposal" 
+        },
+        "sender_node_id": { 
+          "type": "string", 
+          "description": "The unique identity of the node initiating the handshake." 
+        },
+        "sender_fqdn": { 
+          "type": "string", 
+          "description": "The network address (IP:Port or Domain) Node 2 should use to call Node 1 back." 
+        },
+        "sender_public_key": { 
+          "type": "string", 
+          "description": "The PEM encoded certificate of the sender, required for future mTLS verification." 
+        }
+      }
+    }
+  }
+}

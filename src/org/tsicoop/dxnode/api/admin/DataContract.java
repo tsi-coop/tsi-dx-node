@@ -128,7 +128,7 @@ public class DataContract implements REST {
                 payload.put("receiver_partner_id", rs.getString("receiver_partner_id"));
                 payload.put("schema_definition", new JSONParser().parse(rs.getString("schema_definition")));
                 
-                // Send local metadata so the receiver can auto-register us
+                // Ensure local metadata is present in the payload
                 payload.put("sender_fqdn", rs.getString("local_fqdn"));
                 payload.put("sender_node_id", rs.getString("local_node"));
 
@@ -172,17 +172,21 @@ public class DataContract implements REST {
             String senderNodeId = (String) input.get("sender_node_id");
             String senderFqdn = (String) input.get("sender_fqdn");
             
-            if (senderNodeId != null && senderFqdn != null) {
-                // Upsert partner: If the Node ID exists, update FQDN. If not, insert as 'Discovery'
+            if (senderNodeId != null && !senderNodeId.trim().isEmpty()) {
+                System.out.println("[P2P-DISCOVERY] Processing sender identity: " + senderNodeId + " at " + senderFqdn);
+                
+                // Upsert partner: If the Node ID exists, update metadata. If not, insert as 'Discovery'
                 String partnerSql = "INSERT INTO partners (partner_id, node_id, name, fqdn, status, created_at) " +
                                    "VALUES (?, ?, ?, ?, 'Discovery', NOW()) " +
-                                   "ON CONFLICT (node_id) DO UPDATE SET fqdn = EXCLUDED.fqdn";
+                                   "ON CONFLICT (node_id) DO UPDATE SET fqdn = EXCLUDED.fqdn, name = COALESCE(partners.name, EXCLUDED.name)";
                 pstmtPartner = conn.prepareStatement(partnerSql);
                 pstmtPartner.setObject(1, UUID.randomUUID());
                 pstmtPartner.setString(2, senderNodeId);
                 pstmtPartner.setString(3, "Auto-Discovered: " + senderNodeId);
-                pstmtPartner.setString(4, senderFqdn);
+                pstmtPartner.setString(4, senderFqdn != null ? senderFqdn : "unknown-origin");
                 pstmtPartner.executeUpdate();
+            } else {
+                System.out.println("[P2P-DISCOVERY] WARNING: Inbound proposal missing sender_node_id. Discovery skipped.");
             }
 
             // 2. REGISTER CONTRACT
@@ -206,7 +210,7 @@ public class DataContract implements REST {
             if (conn != null) conn.rollback();
             throw e;
         } finally {
-            if (pstmtPartner != null) pstmtPartner.close();
+            if (pstmtPartner != null) try { pstmtPartner.close(); } catch (Exception ignore) {}
             pool.cleanup(null, pstmtContract, conn);
         }
     }
@@ -245,8 +249,6 @@ public class DataContract implements REST {
 
     @Override
     public boolean validate(String method, HttpServletRequest req, HttpServletResponse res) {
-        // If the request is a P2P protocol handshake, authorization is handled by the InterceptingFilter's token check.
-        // Otherwise, perform standard input validation for administrative actions.
         String p2pHeader = req.getHeader("X-DX-P2P-HANDSHAKE");
         if (P2P_HANDSHAKE_TOKEN.equals(p2pHeader)) {
             return true;

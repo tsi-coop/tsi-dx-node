@@ -75,6 +75,7 @@
 </head>
 <body class="flex h-screen overflow-hidden">
 
+    <!-- Sidebar Navigation -->
     <aside id="sidebar" class="sidebar bg-slate-900 flex flex-col z-20">
         <div class="p-6 mb-4">
             <div class="flex items-center gap-3 brand-container">
@@ -93,7 +94,7 @@
         <nav class="flex-1 overflow-y-auto custom-scrollbar">
             <div class="px-8 mb-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest nav-section-label">Operational Hub</div>
             <a href="dashboard.html" class="nav-item">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6z" /></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2V6z" /></svg>
                 <span class="nav-text">Dashboard</span>
             </a>
 
@@ -117,7 +118,7 @@
                 <span class="nav-text">Audit Trail</span>
             </a>
             <a href="users.html" class="nav-item">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
                 <span class="nav-text">Users & Roles</span>
             </a>
             <a href="settings.html" class="nav-item">
@@ -135,6 +136,7 @@
     </aside>
 
     <main class="flex-1 flex flex-col min-w-0">
+        <!-- Header -->
         <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 z-10">
             <div class="flex items-center gap-4">
                 <button onclick="toggleSidebar()" class="p-2 hover:bg-slate-100 rounded-lg text-slate-500">
@@ -142,7 +144,7 @@
                 </button>
                 <div class="h-8 w-px bg-slate-200 mx-2"></div>
                 <div class="flex flex-col">
-                    <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-tight">Current Node Instance</span>
+                    <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-tight">Identity Context</span>
                     <span class="text-xs font-black text-slate-900 leading-tight" id="header-node-id">FETCHING...</span>
                 </div>
             </div>
@@ -150,7 +152,7 @@
             <div class="flex items-center gap-3">
                 <div class="flex flex-col items-end">
                     <span class="text-xs font-bold text-slate-900" id="header-username">Admin User</span>
-                    <span class="text-[10px] text-slate-400 font-medium uppercase tracking-tighter" id="header-role">Node Administrator</span>
+                    <span class="text-[10px] text-slate-400 font-medium uppercase tracking-tighter" id="header-role">Administrator</span>
                 </div>
                 <div class="h-10 w-10 bg-slate-200 rounded-xl border-2 border-white shadow-sm overflow-hidden">
                     <img src="" id="header-avatar" alt="Avatar">
@@ -158,19 +160,33 @@
             </div>
         </header>
 
+        <!-- Dynamic View Area -->
         <div class="flex-1 overflow-y-auto p-8 custom-scrollbar">
+            <!-- Handshake Alert -->
+            <div id="handshake-alert" class="hidden mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl flex items-center gap-4">
+                <div class="p-2 bg-blue-100 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <p id="alert-text" class="text-[11px] text-blue-700 font-black uppercase tracking-widest flex-1"></p>
+                <button onclick="this.parentElement.classList.add('hidden')" class="text-blue-400 hover:text-blue-800">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+
             <nav class="flex text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">
                 <a href="dashboard.html" class="hover:text-blue-500 transition-colors">TSI DX NODE</a>
                 <span class="mx-2">/</span>
-                <span class="text-slate-900">Partners</span>
+                <span class="text-slate-900">Partner Registry</span>
             </nav>
 
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                 <div>
-                    <h1 class="text-2xl font-black text-slate-900 uppercase tracking-tight">Partner Registry</h1>
-                    <p class="text-xs text-slate-500 font-medium">Manage and monitor your decentralized P2P network connections.</p>
+                    <h1 class="text-2xl font-black text-slate-900 uppercase tracking-tight">Node Partners</h1>
+                    <p class="text-xs text-slate-500 font-medium">Verify peer identities through the Protocol Handshake before exchanging contracts.</p>
                 </div>
-                <button onclick="openPartnerModal()" class="inline-flex items-center px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-500/20 transition-all transform hover:-translate-y-0.5 active:translate-y-0">
+                <button onclick="openPartnerModal()" class="inline-flex items-center px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-500/20 transition-all transform hover:-translate-y-0.5">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
                     Add New Partner
                 </button>
@@ -179,7 +195,7 @@
             <div class="card p-4 mb-6 flex flex-wrap gap-4 items-center">
                 <div class="flex-1 min-w-[240px] relative">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                    <input type="text" id="partnerSearch" oninput="handleSearch()" placeholder="Search by name, node ID or FQDN..." class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
+                    <input type="text" id="partnerSearch" oninput="handleSearch()" placeholder="Search by name, node ID or FQDN..." class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500/20 transition-all">
                 </div>
             </div>
 
@@ -187,39 +203,31 @@
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-sm">
                         <thead>
-                            <tr class="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-50">
+                            <tr class="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-50 border-b">
                                 <th class="px-6 py-4">Partner Entity</th>
                                 <th class="px-6 py-4">FQDN / Address</th>
                                 <th class="px-6 py-4">Node Identity</th>
                                 <th class="px-6 py-4">Status</th>
-                                <th class="px-6 py-4">Created At</th>
                                 <th class="px-6 py-4 text-right">Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="partner-table-body" class="divide-y divide-slate-100">
-                            </tbody>
+                        <tbody id="partner-table-body" class="divide-y divide-slate-100"></tbody>
                     </table>
                 </div>
-                <div id="no-partners-msg" class="hidden p-12 text-center">
-                    <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">No partners found in registry.</p>
-                </div>
-                <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest" id="partner-count-display">Showing 0 Partners</p>
-                    <div class="flex gap-2">
-                        <button onclick="changePage(-1)" id="prevBtn" class="px-3 py-1 bg-white border border-slate-200 rounded text-[10px] font-bold text-slate-600 disabled:opacity-50">Prev</button>
-                        <button onclick="changePage(1)" id="nextBtn" class="px-3 py-1 bg-white border border-slate-200 rounded text-[10px] font-bold text-slate-600 disabled:opacity-50">Next</button>
-                    </div>
+                <div id="no-partners-msg" class="hidden p-12 text-center text-slate-400 text-xs font-bold uppercase">
+                    No partners found in local registry.
                 </div>
             </div>
         </div>
     </main>
 
+    <!-- Register Partner Modal -->
     <div id="partnerModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop">
         <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
             <div class="px-8 py-6 bg-slate-900 flex items-center justify-between">
                 <div>
                     <h3 class="text-xl font-black text-white uppercase tracking-tight">Register Partner Node</h3>
-                    <p class="text-[10px] text-blue-400 font-bold uppercase tracking-[0.2em] mt-1">Configure Protocol Trust</p>
+                    <p class="text-[10px] text-blue-400 font-bold uppercase tracking-[0.2em] mt-1">Local Identity Setup</p>
                 </div>
                 <button onclick="closePartnerModal()" class="text-slate-400 hover:text-white transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -227,36 +235,28 @@
             </div>
 
             <div class="p-8 overflow-y-auto custom-scrollbar flex-1">
-                <form id="addPartnerForm" class="space-y-6">
+                <form id="addPartnerForm" onsubmit="handleCreatePartner(event)" class="space-y-6">
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-[10px] font-black text-slate-500 uppercase mb-2">Display Name</label>
-                            <input type="text" id="partnerName" required placeholder="e.g. Acme Corp" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm">
+                            <input type="text" id="partnerName" required placeholder="e.g. Acme Corp" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500/20">
                         </div>
                         <div>
-                            <label class="block text-[10px] font-black text-slate-500 uppercase mb-2">FQDN</label>
-                            <input type="text" id="partnerFqdn" required placeholder="dx.partner-domain.com" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm">
+                            <label class="block text-[10px] font-black text-slate-500 uppercase mb-2">FQDN (IP:Port)</label>
+                            <input type="text" id="partnerFqdn" required placeholder="192.168.1.68:8083" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500/20">
                         </div>
                     </div>
 
                     <div>
-                        <label class="block text-[10px] font-black text-slate-500 uppercase mb-2">Node ID</label>
-                        <input type="text" id="partnerNodeId" required placeholder="UUID format required" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm">
+                        <label class="block text-[10px] font-black text-slate-500 uppercase mb-2">Target Node ID</label>
+                        <input type="text" id="partnerNodeId" required placeholder="Partner's system node ID" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500/20">
                     </div>
 
                     <div>
-                        <label class="block text-[10px] font-black text-slate-500 uppercase mb-2">Public Key (PEM)</label>
+                        <label class="block text-[10px] font-black text-slate-500 uppercase mb-2">Public Certificate (PEM)</label>
                         <div class="relative group">
                             <textarea id="partnerPublicKey" rows="6" placeholder="-----BEGIN CERTIFICATE-----&#10;...&#10;-----END CERTIFICATE-----" 
                                 class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none"></textarea>
-                            <div class="mt-2 flex items-center justify-between">
-                                <span class="text-[9px] text-slate-400 font-bold uppercase italic">Manual input or file upload required</span>
-                                <label class="cursor-pointer inline-flex items-center px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded text-[9px] font-black uppercase tracking-widest text-slate-600 transition-all">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-                                    Upload Cert File
-                                    <input type="file" id="certFileLoader" class="hidden" accept=".pem,.crt,.cer">
-                                </label>
-                            </div>
                         </div>
                     </div>
 
@@ -265,36 +265,25 @@
             </div>
 
             <div class="px-8 py-6 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-4">
-                <button onclick="closePartnerModal()" class="px-6 py-2.5 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-colors">Cancel</button>
-                <button id="submitPartnerBtn" onclick="handleCreatePartner()" class="px-8 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-slate-900/20 transition-all">Establish Connection</button>
+                <button type="button" onclick="closePartnerModal()" class="px-6 py-2.5 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-colors">Cancel</button>
+                <button form="addPartnerForm" type="submit" id="submitPartnerBtn" class="px-8 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-slate-900/20 transition-all">Establish Entry</button>
             </div>
         </div>
     </div>
 
     <script>
         const API_ENDPOINT = '/api/admin/partners';
-        let currentPage = 1;
-        const pageLimit = 10;
-        let searchTimeout = null;
+        let searchTimeout;
 
         document.addEventListener('DOMContentLoaded', () => {
             initSession();
             fetchPartners();
-            
-            document.getElementById('certFileLoader').addEventListener('change', function(e) {
-                const file = e.target.files[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = (e) => document.getElementById('partnerPublicKey').value = e.target.result;
-                reader.readAsText(file);
-            });
         });
 
         function initSession() {
-            // Corrected LocalStorage keys to match login logic
             const user = localStorage.getItem('dx_user') || 'Admin User';
             const role = localStorage.getItem('dx_role') || 'Node Administrator';
-            const nodeId = localStorage.getItem('dx_node_id') || 'DX-PROD-SOUTH-01';
+            const nodeId = localStorage.getItem('dx_node_id') || 'DX-NODE-INIT';
 
             document.getElementById('header-username').innerText = user;
             document.getElementById('header-role').innerText = role;
@@ -302,208 +291,131 @@
             document.getElementById('header-avatar').src = `https://ui-avatars.com/api/?name=${user}&background=0f172a&color=fff`;
         }
 
-        function handleSearch() {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(() => {
-                currentPage = 1;
-                fetchPartners();
-            }, 500);
-        }
-
-        function changePage(delta) {
-            currentPage += delta;
-            if (currentPage < 1) currentPage = 1;
-            fetchPartners();
-        }
-
         async function fetchPartners() {
             const search = document.getElementById('partnerSearch').value;
-            
-            try {
-                const response = await fetch(API_ENDPOINT, {
-                    method: 'POST',
-                    headers: getAuthHeaders(),
-                    body: JSON.stringify({ 
-                        _func: "list_partners",
-                        page: currentPage,
-                        limit: pageLimit,
-                        search: search || ""
-                    })
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    renderPartnerTable(result.data);
-                } else {
-                    console.error("Partner fetch failed");
-                }
-            } catch (err) {
-                console.error("Network error fetching partners", err);
-            }
+            const res = await callApi("list_partners", { search: search });
+            if (res) renderTable(res);
         }
 
-        function renderPartnerTable(partners) {
-            const tableBody = document.getElementById('partner-table-body');
-            const noPartnersMsg = document.getElementById('no-partners-msg');
-            const countDisplay = document.getElementById('partner-count-display');
+        function renderTable(partners) {
+            const tbody = document.getElementById('partner-table-body');
+            const noMsg = document.getElementById('no-partners-msg');
+            tbody.innerHTML = '';
 
-            tableBody.innerHTML = '';
-            countDisplay.innerText = `Showing ${partners.length} Partners (Page ${currentPage})`;
-            
-            document.getElementById('prevBtn').disabled = currentPage === 1;
-            document.getElementById('nextBtn').disabled = partners.length < pageLimit;
-
-            if (partners.length === 0) {
-                noPartnersMsg.classList.remove('hidden');
+            if (!partners || partners.length === 0) {
+                noMsg.classList.remove('hidden');
                 return;
             }
+            noMsg.classList.add('hidden');
 
-            noPartnersMsg.classList.add('hidden');
             partners.forEach(p => {
+                const isPending = p.status === 'Pending' || p.status === 'Discovery';
                 const row = document.createElement('tr');
                 row.className = "hover:bg-slate-50 transition-colors";
-                
-                // Corrected field mapping to p.name and p.node_id
-                const statusColor = p.status === 'Active' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700';
-                const partnerName = p.name || 'Unknown Partner';
-                const nodeId = p.node_id || 'ID_PENDING';
-
                 row.innerHTML = `
                     <td class="px-6 py-4">
                         <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-[10px]">${partnerName.substring(0, 2).toUpperCase()}</div>
-                            <div>
-                                <p class="font-bold text-slate-900 leading-none">${partnerName}</p>
-                                <p class="text-[10px] text-slate-400 mt-1 uppercase font-bold tracking-tighter">Registered Partner</p>
-                            </div>
+                            <div class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-[10px]">${p.name.substring(0, 2).toUpperCase()}</div>
+                            <span class="font-bold text-slate-900">${p.name}</span>
                         </div>
                     </td>
+                    <td class="px-6 py-4 text-xs text-slate-500 font-mono">${p.fqdn}</td>
+                    <td class="px-6 py-4 text-[10px] text-slate-400 font-mono">${p.node_id}</td>
                     <td class="px-6 py-4">
-                        <p class="text-[11px] font-medium text-slate-600">${p.fqdn || 'N/A'}</p>
-                    </td>
-                    <td class="px-6 py-4">
-                        <code class="text-[10px] bg-slate-100 px-2 py-1 rounded text-slate-500 font-mono">${nodeId}</code>
-                    </td>
-                    <td class="px-6 py-4">
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest ${statusColor}">
-                            ${p.status || 'Pending'}
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${p.status === 'Active' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}">
+                            ${p.status}
                         </span>
                     </td>
-                    <td class="px-6 py-4">
-                        <p class="text-[11px] text-slate-500">${p.created_at ? new Date(p.created_at).toLocaleDateString() : 'N/A'}</p>
-                    </td>
                     <td class="px-6 py-4 text-right">
-                        <div class="flex items-center justify-end gap-2">
-                            <button onclick="handleDeletePartner('${p.partner_id}')" class="text-red-400 hover:text-red-600 text-[10px] font-black uppercase" title="Remove Partner">Delete</button>
+                        <div class="flex items-center justify-end gap-3">
+                            ${isPending ? `<button onclick="initiateHandshake('${p.partner_id}')" class="text-blue-600 text-[10px] font-black uppercase hover:underline">Verify Identity</button>` : '<span class="text-green-500 text-[9px] font-black uppercase">Verified</span>'}
+                            <button onclick="handleDeletePartner('${p.partner_id}')" class="text-red-300 hover:text-red-600 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
                         </div>
                     </td>
                 `;
-                tableBody.appendChild(row);
+                tbody.appendChild(row);
             });
         }
 
-        async function handleCreatePartner() {
+        async function initiateHandshake(id) {
+            const alert = document.getElementById('handshake-alert');
+            const alertText = document.getElementById('alert-text');
+            alert.className = "mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl flex items-center gap-4";
+            alertText.innerText = "Initiating protocol handshake...";
+            alert.classList.remove('hidden');
+
+            const res = await callApi("propose_partnership", { partner_id: id });
+            if (res) {
+                alertText.innerText = "Handshake Successful. Identity verified and node trust established.";
+                alert.className = "mb-6 p-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-4 text-green-700";
+                fetchPartners();
+            } else {
+                alertText.innerText = "Handshake failed. Verify target FQDN/Port and ensure peer is online.";
+                alert.className = "mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-4 text-red-600";
+            }
+        }
+
+        async function handleCreatePartner(e) {
+            e.preventDefault();
             const btn = document.getElementById('submitPartnerBtn');
             const errorArea = document.getElementById('form-error');
             
             const payload = {
-                _func: "create_partner",
                 name: document.getElementById('partnerName').value,
                 fqdn: document.getElementById('partnerFqdn').value,
                 node_id: document.getElementById('partnerNodeId').value,
                 public_key_pem: document.getElementById('partnerPublicKey').value
             };
 
-            if (!payload.name || !payload.fqdn || !payload.node_id || !payload.public_key_pem) {
-                showFormError("All fields are mandatory.");
-                return;
-            }
-
             btn.disabled = true;
             btn.innerText = "COMMITTING...";
             errorArea.classList.add('hidden');
 
-            try {
-                const response = await fetch(API_ENDPOINT, {
-                    method: 'POST',
-                    headers: getAuthHeaders(),
-                    body: JSON.stringify(payload)
-                });
-
-                const result = await response.json();
-
-                if (response.status === 201 || result.success) {
-                    closePartnerModal();
-                    fetchPartners(); 
-                    document.getElementById('addPartnerForm').reset();
-                } else {
-                    showFormError(result.message || "Registration Rejected.");
-                }
-            } catch (err) {
-                showFormError("Network Error: Could not reach service.");
-            } finally {
+            const result = await callApi("create_partner", payload);
+            if (result) {
+                closePartnerModal();
+                fetchPartners();
+            } else {
+                errorArea.innerText = "Submission failed. Ensure the Node ID is unique.";
+                errorArea.classList.remove('hidden');
                 btn.disabled = false;
-                btn.innerText = "Establish Connection";
+                btn.innerText = "Establish Entry";
             }
         }
 
-        async function handleDeletePartner(partnerId) {
-            if (!confirm("Are you sure you want to revoke trust and delete this partner?")) return;
+        async function handleDeletePartner(id) {
+            if (confirm("Permanently revoke trust and remove this partner from registry?")) {
+                await callApi("delete_partner", { partner_id: id });
+                fetchPartners();
+            }
+        }
 
+        async function callApi(func, data) {
             try {
-                const response = await fetch(API_ENDPOINT, {
+                const res = await fetch(API_ENDPOINT, {
                     method: 'POST',
-                    headers: getAuthHeaders(),
-                    body: JSON.stringify({ 
-                        _func: "delete_partner",
-                        partner_id: partnerId 
-                    })
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('dx_token')}` },
+                    body: JSON.stringify({ _func: func, ...data })
                 });
-
-                if (response.ok) {
-                    fetchPartners();
-                }
-            } catch (err) {
-                console.error("Partner removal failed", err);
+                const out = await res.json();
+                return res.ok ? (out.data || out) : null;
+            } catch (e) {
+                return null;
             }
         }
 
-        function getAuthHeaders() {
-            const token = localStorage.getItem('dx_token');
-            return {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            };
+        function handleSearch() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(fetchPartners, 500);
         }
 
-        function showFormError(msg) {
-            const errorArea = document.getElementById('form-error');
-            errorArea.innerText = msg;
-            errorArea.classList.remove('hidden');
+        function openPartnerModal() { document.getElementById('partnerModal').classList.remove('hidden'); }
+        function closePartnerModal() { 
+            document.getElementById('partnerModal').classList.add('hidden'); 
+            document.getElementById('addPartnerForm').reset();
         }
-
-        function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('collapsed');
-        }
-
-        function openPartnerModal() {
-            document.getElementById('partnerModal').classList.remove('hidden');
-        }
-
-        function closePartnerModal() {
-            document.getElementById('partnerModal').classList.add('hidden');
-            document.getElementById('form-error').classList.add('hidden');
-        }
-
-        function logout() {
-            localStorage.clear();
-            window.location.href = 'index.html';
-        }
-
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') closePartnerModal();
-        });
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
+        function logout() { localStorage.clear(); window.location.href = 'index.html'; }
     </script>
 </body>
 </html>
