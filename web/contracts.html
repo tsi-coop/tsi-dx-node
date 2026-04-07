@@ -117,7 +117,7 @@
 
             <div class="px-8 mt-6 mb-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest nav-section-label">System</div>
             <a href="audit.html" class="nav-item">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 00-2 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 00-2 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
                 <span class="nav-text">Audit Trail</span>
             </a>
             <a href="users.html" class="nav-item">
@@ -166,6 +166,20 @@
 
         <!-- Dynamic View Area -->
         <div class="flex-1 overflow-y-auto p-8 custom-scrollbar">
+            <!-- P2P Handshake Error Alert -->
+            <div id="protocol-error" class="hidden mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-4">
+                <div class="p-2 bg-red-100 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                </div>
+                <div class="flex-1">
+                    <h4 class="text-xs font-black text-red-800 uppercase tracking-widest">Protocol Handshake Failed</h4>
+                    <p id="error-message" class="text-[11px] text-red-600 font-bold mt-1 leading-relaxed whitespace-pre-wrap">Handshake failed. Peer node unreachable.</p>
+                    <button onclick="this.parentElement.parentElement.classList.add('hidden')" class="text-[10px] font-black text-red-400 uppercase mt-2 hover:text-red-800 transition-colors underline">Dismiss Warning</button>
+                </div>
+            </div>
+
             <nav class="flex text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">
                 <a href="dashboard.html" class="hover:text-blue-500 transition-colors">TSI DX NODE</a>
                 <span class="mx-2">/</span>
@@ -341,15 +355,16 @@
 
         async function loadPartners() {
             try {
-                // Response is the unwrapped array from callApi
                 const response = await callApi(PARTNER_API, { _func: "list_partners", page: 1, limit: 100 });
                 if (response && Array.isArray(response)) {
                     const select = document.getElementById('wiz-partner');
-                    select.innerHTML = '<option value="">Select Partner Node...</option>';
-                    response.forEach(p => {
-                        partnersMapByNodeId[p.node_id] = p.name;
-                        select.innerHTML += `<option value="${p.node_id}">${p.name} (${p.node_id})</option>`;
-                    });
+                    if (select) {
+                        select.innerHTML = '<option value="">Select Partner Node...</option>';
+                        response.forEach(p => {
+                            partnersMapByNodeId[p.node_id] = p.name;
+                            select.innerHTML += `<option value="${p.node_id}">${p.name} (${p.node_id})</option>`;
+                        });
+                    }
                 }
             } catch (e) { console.error("Partner sync failed", e); }
         }
@@ -386,7 +401,6 @@
                 const row = document.createElement('tr');
                 row.className = "hover:bg-slate-50 transition-colors";
                 
-                // Compare with local node ID for relative direction
                 const isOutgoing = c.sender_partner_id === localNodeId;
                 const directionLabel = isOutgoing ? 'Outgoing' : 'Incoming';
                 const statusColor = getStatusColor(c.status);
@@ -425,9 +439,24 @@
         }
 
         async function updateStatus(id, action) {
-            const func = action + "_contract";
-            await callApi(API_ENDPOINT, { _func: func, contract_id: id });
-            fetchContracts();
+            const errorAlert = document.getElementById('protocol-error');
+            const errorText = document.getElementById('error-message');
+            errorAlert.classList.add('hidden');
+
+            const result = await callApi(API_ENDPOINT, { _func: action + "_contract", contract_id: id });
+            
+            // Extract specific error details if provided by the backend error object
+            if (result && result.error) {
+                errorText.innerText = `Protocol Violation (HTTP ${result.status}): ${result.message}`;
+                errorAlert.classList.remove('hidden');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else if (!result) {
+                errorText.innerText = "Protocol Handshake Failed: Peer node unreachable or connection refused.";
+                errorAlert.classList.remove('hidden');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else {
+                fetchContracts();
+            }
         }
 
         async function submitContract() {
@@ -439,7 +468,6 @@
             const direction = document.getElementById('wiz-direction').value;
             const name = document.getElementById('wiz-name').value;
 
-            // Strict Validation
             if (!name || !targetPartnerNodeId || !localNodeId) {
                 wizError.innerText = "Error: Partner selection and contract name are required.";
                 wizError.classList.remove('hidden');
@@ -458,33 +486,42 @@
                 version: "1.0.0",
                 description: document.getElementById('wiz-desc').value,
                 direction: direction,
-                // Assign Node ID strings (VARCHAR) based on direction
                 sender_partner_id: direction === 'Outgoing' ? localNodeId : targetPartnerNodeId,
                 receiver_partner_id: direction === 'Incoming' ? localNodeId : targetPartnerNodeId,
-                schema_definition: { type: "object", properties: fields },
-                retention_policy_days: parseInt(document.getElementById('wiz-retention').value) || 30,
-                pii_fields: []
+                schema_definition: { type: "object", properties: fields }
             };
 
             const response = await callApi(API_ENDPOINT, payload);
-            if (response) {
+            if (response && !response.error) {
                 closeContractWizard();
                 fetchContracts();
             } else {
-                wizError.innerText = "Failed to establish contract. Verify protocol identity parameters.";
+                wizError.innerText = response && response.message ? response.message : "Failed to establish contract locally.";
                 wizError.classList.remove('hidden');
             }
         }
 
         async function callApi(url, data) {
             const token = localStorage.getItem('dx_token');
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify(data)
-            });
-            const result = await response.json();
-            return response.ok ? (result.data || result) : null;
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    // Map the specific backend error status and message for the UI alert
+                    return { error: true, status: response.status, message: result.message || "Protocol Identity Rejected" };
+                }
+                
+                return result.data || result;
+            } catch (e) {
+                console.error("API Call Exception:", e);
+                return null;
+            }
         }
 
         function getStatusColor(s) {

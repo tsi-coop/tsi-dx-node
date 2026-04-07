@@ -7,103 +7,97 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.*;
 
+/**
+ * Global request filter for the TSI DX Node.
+ * Handles CORS, character encoding, and protocol-level authorization bypass.
+ */
 public class InterceptingFilter implements Filter {
 
     private static final String URL_DELIMITER = "/";
     private static final String ADMIN_URI = "admin";
     private static final String CLIENT_URI = "client";
+    
+    // Must match the token defined in DataContract.java
+    private static final String P2P_HANDSHAKE_TOKEN = "DX-P2P-PROTOCOL-V1";
 
-    private static final HashMap<String, String> filterConfig = new HashMap<String, String>();
     @Override
     public void destroy() {
-        // Any cleanup of resources
-    }
-
-    static {
-        //log.info("Logger inits");
+        // Resources cleanup
     }
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
-        //System.out.println("Inside controller");
-        String responseJson = "";
         HttpServletRequest req = (HttpServletRequest) request;
         HttpServletResponse res = (HttpServletResponse) response;
         String method = req.getMethod();
         String servletPath = req.getServletPath();
-        String uri = req.getRequestURI();
         String classname = null;
-        String operation = null;
         Properties apiRegistry = null;
-        Properties config = null;
-        boolean validrequest = true;
         boolean validheader = true;
 
-        // set response header
-        /*String origin = req.getHeader("Origin");
-        if if (origin != null && (origin.contains("localhost"))) {
-            res.setHeader("Access-Control-Allow-Origin", origin); // Echo back the origin
-            res.setHeader("Access-Control-Allow-Credentials", "true"); // Allow credentials
-        }*/
-        /* res.setHeader("Access-Control-Allow-Origin", "http://localhost:3000"); // Echo back the origin
-        res.setHeader("Access-Control-Allow-Credentials", "true"); // Allow credentials
-        res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-        res.setHeader("Access-Control-Allow-Headers", "Origin, Content-Type, Accept, Authorization, Access-Control-Allow-Headers, access-control-allow-origin, access-control-allow-credentials, access-control-allow-methods");
-        res.setHeader("Access-Control-Max-Age", "3600");*/
+        // Standard Response Headers
         res.setCharacterEncoding("UTF-8");
         res.setContentType("application/json");
 
         apiRegistry = SystemConfig.getProcessorConfig();
-        config = SystemConfig.getAppConfig();
 
         if (apiRegistry.containsKey(servletPath.trim())) {
             StringTokenizer strTok = new StringTokenizer(servletPath, URL_DELIMITER);
             strTok.nextToken(); // skip api keyword
             String uriIdentifier = strTok.nextToken();
-            //System.out.println("uriIdentifier:"+uriIdentifier);
-            if (!(uriIdentifier.equalsIgnoreCase(ADMIN_URI)||uriIdentifier.equalsIgnoreCase(CLIENT_URI))){
+            
+            if (!(uriIdentifier.equalsIgnoreCase(ADMIN_URI) || uriIdentifier.equalsIgnoreCase(CLIENT_URI))){
                 res.sendError(400);
                 return;
             }
 
-            // Check
-            //System.out.println("servletPath:"+servletPath);
              try {
+                 // AUTHENTICATION GATEKEEPER
                  if(servletPath.contains("api/admin")
                          && !servletPath.contains("api/admin/login")
                          && !servletPath.contains("api/admin/register")) {
-                     validheader = InputProcessor.processAdminHeader(req, res);
-                 }else if(servletPath.contains("api/client")) {
+                     
+                     // 1. P2P PROTOCOL BYPASS
+                     // If the request comes from a trusted partner node using the handshake token,
+                     // we bypass the requirement for an administrative user JWT.
+                     String p2pHeader = req.getHeader("X-DX-P2P-HANDSHAKE");
+                     if (P2P_HANDSHAKE_TOKEN.equals(p2pHeader)) {
+                         validheader = true;
+                     } else {
+                         // 2. Standard Admin JWT validation
+                         validheader = InputProcessor.processAdminHeader(req, res);
+                     }
+                 } else if(servletPath.contains("api/client")) {
                      validheader = true;
                  }
-                 //System.out.println(servletPath+" "+validheader);
+
                  if(!validheader) {
-                     res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
-                 }else{
+                     // If validation failed and InputProcessor hasn't already sent an error
+                     if (!res.isCommitted()) {
+                        res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized - Protocol identity rejected.");
+                     }
+                 } else {
+                     // REQUEST EXECUTION
                      InputProcessor.processInput(req, res);
-                     operation = strTok.nextToken();
                      classname = apiRegistry.getProperty(servletPath.trim());
-                     //System.out.println("operation:" + operation + " classname:" + classname);
-                     if (classname == null || method == null) res.sendError(400);
+                     
+                     if (classname == null || method == null) {
+                         res.sendError(400);
+                         return;
+                     }
 
-                     //System.out.println("c:"+req.getParameter(Constants.NOTIF_PARAM));
-                     // Check notification
-
+                     // Instantiate the REST action class (e.g., DataContract)
                      REST action = ((REST) Class.forName(classname).getConstructor().newInstance());
-                     validrequest = action.validate(method, req, res);
-                     //System.out.println("validrequest:" + validrequest);
-                     if (validrequest) {
+                     
+                     // Action-level validation (checks params, schema, and re-verifies P2P token)
+                     if (action.validate(method, req, res)) {
                          if (method.equalsIgnoreCase("GET")) {
-                             res.setContentType("application/json");
                              action.get(req, res);
                          } else if (method.equalsIgnoreCase("POST")) {
-                             res.setContentType("application/json");
                              action.post(req, res);
                          } else if (method.equalsIgnoreCase("PUT")) {
-                             res.setContentType("application/json");
                              action.put(req, res);
                          } else if (method.equalsIgnoreCase("DELETE")) {
-                             res.setContentType("application/json");
                              action.delete(req, res);
                          } else {
                              res.sendError(400);
@@ -112,21 +106,16 @@ public class InterceptingFilter implements Filter {
                  }
             } catch (Exception e) {
                 e.printStackTrace();
-                res.sendError(400);
+                if (!res.isCommitted()) res.sendError(500, "Internal Filter Error: " + e.getMessage());
             }
         }
     }
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
-        //System.out.println("Inside Init");
         SystemConfig.loadProcessors(filterConfig.getServletContext());
-        System.out.println("Loaded TSI Processor Config");
         SystemConfig.loadAppConfig(filterConfig.getServletContext());
-
-        System.out.println("Loaded TSI App Config");
         JSONSchemaValidator.createInstance(filterConfig.getServletContext());
-        System.out.println("Loaded TSI Schema Validator");
-        System.out.println("TSI DX Node started in "+System.getenv("TSI_DX_NODE_ENV")+" environment");
+        System.out.println("TSI DX Node Intercepting Filter Initialized");
     }
 }
