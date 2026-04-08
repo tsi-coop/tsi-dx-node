@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Get Contract Request",
+  "description": "Schema for retrieving the full details of a specific data contract including its metadata and JSON schema definition.",
+  "type": "object",
+  "required": [
+    "_func",
+    "contract_id"
+  ],
+  "properties": {
+    "_func": {
+      "type": "string",
+      "const": "get_contract",
+      "description": "The internal function identifier for contract retrieval."
+    },
+    "contract_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "The unique identifier (UUID) of the contract to be retrieved from the registry.",
+      "examples": [
+        "c7b3d8e0-f2a1-4b3c-8d9e-0f1a2b3c4d5e"
+      ]
+    }
+  },
+  "additionalProperties": false
+}

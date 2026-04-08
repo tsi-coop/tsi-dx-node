@@ -46,6 +46,16 @@ public class DataContract implements REST {
                     OutputProcessor.send(res, HttpServletResponse.SC_OK, listContractsFromDb(getString(input, "status"), getString(input, "search"), getInt(input, "page", 1), getInt(input, "limit", 50)));
                     break;
 
+                case "get_contract":
+                    if (contractId == null) throw new IllegalArgumentException("contract_id required.");
+                    JSONObject details = getContractByIdFromDb(contractId);
+                    if (details != null) {
+                        OutputProcessor.send(res, HttpServletResponse.SC_OK, details);
+                    } else {
+                        OutputProcessor.errorResponse(res, HttpServletResponse.SC_NOT_FOUND, "Not Found", "Contract not found.", req.getRequestURI());
+                    }
+                    break;
+
                 case "create_contract":
                     JSONObject created = createContract(input);
                     OutputProcessor.send(res, HttpServletResponse.SC_CREATED, created);
@@ -247,6 +257,51 @@ public class DataContract implements REST {
     public boolean validate(String method, HttpServletRequest req, HttpServletResponse res) {
         if (P2P_HANDSHAKE_TOKEN.equals(req.getHeader("X-DX-P2P-HANDSHAKE"))) return true;
         return InputProcessor.validate(req, res);
+    }
+
+    /**
+     * Fetches the complete record for a single contract, including its JSON schema.
+     */
+    private JSONObject getContractByIdFromDb(UUID id) throws SQLException {
+        Connection conn = null; PreparedStatement pstmt = null; ResultSet rs = null; PoolDB pool = new PoolDB();
+        try {
+            conn = pool.getConnection();
+            pstmt = conn.prepareStatement("SELECT * FROM data_contracts WHERE contract_id = ?");
+            pstmt.setObject(1, id);
+            rs = pstmt.executeQuery();
+            if (rs.next()) {
+                JSONObject c = new JSONObject();
+                c.put("contract_id", rs.getString("contract_id"));
+                c.put("name", rs.getString("name"));
+                c.put("version", rs.getString("version"));
+                c.put("description", rs.getString("description"));
+                c.put("direction", rs.getString("direction"));
+                c.put("sender_partner_id", rs.getString("sender_partner_id"));
+                c.put("receiver_partner_id", rs.getString("receiver_partner_id"));
+                c.put("status", rs.getString("status"));
+                c.put("retention_policy_days", rs.getInt("retention_policy_days"));
+                
+                java.sql.Array piiArray = rs.getArray("pii_fields");
+                if (piiArray != null) {
+                    JSONArray piiJson = new JSONArray();
+                    for (Object o : (String[]) piiArray.getArray()) piiJson.add(o);
+                    c.put("pii_fields", piiJson);
+                }
+
+                try {
+                    JSONParser parser = new JSONParser();
+                    String schemaRaw = rs.getString("schema_definition");
+                    c.put("schema_definition", schemaRaw != null ? parser.parse(schemaRaw) : new JSONObject());
+                } catch (Exception e) {
+                    c.put("schema_definition", new JSONObject());
+                }
+
+                c.put("created_at", rs.getTimestamp("created_at").toString());
+                c.put("updated_at", rs.getTimestamp("updated_at").toString());
+                return c;
+            }
+        } finally { pool.cleanup(rs, pstmt, conn); }
+        return null;
     }
 
     /**
