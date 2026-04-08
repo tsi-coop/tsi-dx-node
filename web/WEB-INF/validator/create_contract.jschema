@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Create Contract Request",
-  "description": "Schema for establishing a new data exchange contract. Now supports direct JSON Schema objects for payload validation.",
+  "description": "Flexible schema for all data exchange types. Metadata defines the storage and processing architecture.",
   "type": "object",
   "required": [
     "_func",
@@ -9,72 +9,39 @@
     "direction",
     "sender_partner_id",
     "receiver_partner_id",
-    "schema_definition"
+    "schema_definition",
+    "metadata"
   ],
   "properties": {
-    "_func": {
-      "type": "string",
-      "const": "create_contract",
-      "description": "The internal function identifier for contract creation."
-    },
-    "name": {
-      "type": "string",
-      "minLength": 1,
-      "description": "The unique designation for the data contract."
-    },
-    "version": {
-      "type": "string",
-      "default": "1.0.0",
-      "description": "The semver string for the contract version."
-    },
-    "description": {
-      "type": "string",
-      "description": "Optional business context or purpose statement for the exchange."
-    },
-    "direction": {
-      "type": "string",
-      "enum": ["Outgoing", "Incoming", "Bidirectional"],
-      "description": "The primary flow of data relative to the local node."
-    },
-    "sender_partner_id": {
-      "type": "string",
-      "description": "The identity (Node ID) of the data source."
-    },
-    "receiver_partner_id": {
-      "type": "string",
-      "description": "The identity (Node ID) of the data consumer."
-    },
+    "_func": { "type": "string", "const": "create_contract" },
+    "name": { "type": "string", "minLength": 1 },
+    "version": { "type": "string", "default": "1.0.0" },
+    "description": { "type": "string" },
+    "direction": { "type": "string", "enum": ["Outgoing", "Incoming", "Bidirectional"] },
+    "sender_partner_id": { "type": "string" },
+    "receiver_partner_id": { "type": "string" },
     "schema_definition": {
       "type": "object",
-      "description": "A valid JSON Schema (Draft 07) that governs the data payload.",
-      "required": ["type"],
-      "properties": {
-        "type": {
-          "type": "string",
-          "enum": ["object", "array"]
-        },
-        "properties": {
-          "type": "object",
-          "description": "Map of keys to their respective type definitions."
-        },
-        "required": {
-          "type": "array",
-          "items": { "type": "string" }
-        }
-      },
+      "description": "JSON Schema governing either the JSON payload or the file metadata properties.",
       "additionalProperties": true
     },
-    "retention_policy_days": {
-      "type": "integer",
-      "minimum": 0,
-      "default": 30,
-      "description": "Duration in days to retain active staging data."
+    "metadata": {
+      "type": "object",
+      "description": "Architectural metadata mandatory for both structured and stream categories.",
+      "required": ["transfer_category", "storage_engine"],
+      "properties": {
+        "transfer_category": { 
+          "type": "string", 
+          "enum": ["structured", "stream"] 
+        },
+        "storage_engine": { 
+          "type": "string", 
+          "enum": ["LOG_REGISTRY", "FILE_SYSTEM"] 
+        }
+      }
     },
-    "pii_fields": {
-      "type": "array",
-      "items": { "type": "string" },
-      "description": "A list of field paths marked for PII anonymization."
-    }
+    "retention_policy_days": { "type": "integer", "default": 30 },
+    "pii_fields": { "type": "array", "items": { "type": "string" } }
   },
   "additionalProperties": false
 }

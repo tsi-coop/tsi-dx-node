@@ -81,6 +81,11 @@
             font-family: 'JetBrains Mono', 'Fira Code', monospace;
             line-height: 1.5;
         }
+
+        .category-card.selected {
+            border-color: var(--dx-accent);
+            background-color: #eff6ff;
+        }
     </style>
 </head>
 <body class="flex h-screen overflow-hidden">
@@ -104,7 +109,7 @@
         <nav class="flex-1 overflow-y-auto custom-scrollbar">
             <div class="px-8 mb-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest nav-section-label">Operational Hub</div>
             <a href="dashboard.html" class="nav-item">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2V6z" /></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6z" /></svg>
                 <span class="nav-text">Dashboard</span>
             </a>
             
@@ -243,16 +248,17 @@
             <div class="px-8 py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-center gap-12">
                 <div class="flex items-center gap-2">
                     <span id="step1-indicator" class="step-pill active w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black">1</span>
-                    <span class="text-[10px] font-bold uppercase tracking-widest text-slate-900">Identity</span>
+                    <span class="text-[10px] font-bold uppercase tracking-widest text-slate-900">Identity & Type</span>
                 </div>
                 <div class="h-px w-12 bg-slate-200"></div>
                 <div class="flex items-center gap-2">
                     <span id="step2-indicator" class="step-pill w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-black text-slate-500">2</span>
-                    <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Schema</span>
+                    <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400" id="step2-label">Payload Schema</span>
                 </div>
             </div>
 
             <div class="p-8 overflow-y-auto custom-scrollbar flex-1">
+                <!-- Step 1: Identity & Transfer Type -->
                 <div id="step1-content" class="space-y-6">
                     <div class="grid grid-cols-2 gap-6">
                         <div class="col-span-2">
@@ -271,18 +277,39 @@
                             </select>
                         </div>
                     </div>
+
+                    <div class="pt-4 border-t border-slate-100">
+                        <label class="block text-[10px] font-black text-slate-500 uppercase mb-4 tracking-widest">Transfer Architecture</label>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div id="type-structured" onclick="selectTransferType('structured')" class="category-card selected p-4 border-2 rounded-2xl cursor-pointer transition-all">
+                                <div class="flex items-center gap-3 mb-2">
+                                    <div class="p-2 bg-blue-100 text-blue-600 rounded-lg"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 1.105 4.477 2 10 2s10-.895 10-2V7M4 7c0 1.105 4.477 2 10 2s10-.895 10-2M4 7c0-1.105 4.477-2 10-2s10 .895 10 2m-10 1v10" /></svg></div>
+                                    <span class="text-xs font-black uppercase text-slate-900">Structured Data</span>
+                                </div>
+                                <p class="text-[10px] text-slate-500 font-medium">Small payloads (JSON/XML). Stored in DB logs for immediate inspection.</p>
+                            </div>
+                            <div id="type-stream" onclick="selectTransferType('stream')" class="category-card p-4 border-2 border-slate-100 rounded-2xl cursor-pointer transition-all hover:border-blue-200">
+                                <div class="flex items-center gap-3 mb-2">
+                                    <div class="p-2 bg-slate-100 text-slate-600 rounded-lg"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg></div>
+                                    <span class="text-xs font-black uppercase text-slate-900">Binary Streaming</span>
+                                </div>
+                                <p class="text-[10px] text-slate-500 font-medium">Large files (GB+). Streamed direct-to-disk. Database stores metadata only.</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
+                <!-- Step 2: JSON Editor (Adapts to Payload or Metadata) -->
                 <div id="step2-content" class="hidden space-y-4">
                     <div class="flex items-center justify-between mb-4">
-                        <h4 class="text-xs font-black text-slate-900 uppercase tracking-widest">JSON Schema Definition</h4>
+                        <h4 class="text-xs font-black text-slate-900 uppercase tracking-widest" id="step2-title">JSON Schema Definition</h4>
                     </div>
                     <div class="relative">
                         <textarea id="wiz-schema-json" rows="14" spellcheck="false"
-                            placeholder='{&#10;  "type": "object",&#10;  "properties": {&#10;    "field_name": { "type": "string" }&#10;  }&#10;}'
+                            placeholder='{ ... }'
                             class="w-full p-4 json-editor rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 resize-none custom-scrollbar text-xs font-mono"></textarea>
                     </div>
-                    <p class="text-[9px] text-slate-400 uppercase font-black tracking-tighter">Enter a valid JSON Schema object to define the expected data payload.</p>
+                    <p class="text-[9px] text-slate-400 uppercase font-black tracking-tighter" id="step2-desc">Enter a valid JSON Schema object to define the expected data payload.</p>
                 </div>
 
                 <div id="wiz-error" class="hidden mt-6 p-3 bg-red-50 border border-red-100 rounded text-[10px] font-black text-red-600 uppercase text-center tracking-tighter"></div>
@@ -354,8 +381,28 @@
         const API_ENDPOINT = '/api/admin/contracts';
         const PARTNER_API = '/api/admin/partners';
         let currentStep = 1;
+        let selectedType = 'structured';
         let partnersMapByNodeId = {};
         const localNodeId = localStorage.getItem('dx_node_id');
+
+        // Predefined Metadata Schema for Binary Streaming
+        const BINARY_METADATA_SCHEMA = {
+            "type": "object",
+            "properties": {
+                "file_name": { "type": "string", "description": "Original name of the transferred file." },
+                "file_size_bytes": { "type": "integer", "description": "Size of the binary object in bytes." },
+                "mime_type": { "type": "string", "description": "Detected media type." },
+                "sha256_hash": { "type": "string", "description": "Cryptographic checksum for integrity verification." }
+            },
+            "required": ["file_name", "file_size_bytes", "sha256_hash"]
+        };
+
+        const DEFAULT_JSON_SCHEMA = {
+            "type": "object",
+            "properties": {
+                "field_1": { "type": "string" }
+            }
+        };
 
         document.addEventListener('DOMContentLoaded', () => {
             initSession();
@@ -369,6 +416,20 @@
             document.getElementById('header-role').innerText = role;
             document.getElementById('header-node-id').innerText = localNodeId || 'DX-UNSET';
             document.getElementById('header-avatar').src = `https://ui-avatars.com/api/?name=${user}&background=0f172a&color=fff`;
+        }
+
+        function selectTransferType(type) {
+            selectedType = type;
+            const sCard = document.getElementById('type-structured');
+            const bCard = document.getElementById('type-stream');
+            
+            if (type === 'structured') {
+                sCard.classList.add('selected', 'border-blue-500', 'bg-blue-50');
+                bCard.classList.remove('selected', 'border-blue-500', 'bg-blue-50');
+            } else {
+                bCard.classList.add('selected', 'border-blue-500', 'bg-blue-50');
+                sCard.classList.remove('selected', 'border-blue-500', 'bg-blue-50');
+            }
         }
 
         async function loadPartners() {
@@ -524,7 +585,11 @@
                 direction: direction,
                 sender_partner_id: direction === 'Outgoing' ? localNodeId : partnerNodeId,
                 receiver_partner_id: direction === 'Incoming' ? localNodeId : partnerNodeId,
-                schema_definition: schemaDefinition
+                schema_definition: schemaDefinition,
+                metadata: {
+                    transfer_category: selectedType,
+                    storage_engine: selectedType === 'stream' ? 'FILE_SYSTEM' : 'LOG_REGISTRY'
+                }
             };
 
             const response = await callApi(API_ENDPOINT, payload);
@@ -563,6 +628,29 @@
 
         function goToStep(step) {
             currentStep = step;
+            
+            // Contextual labeling and automatic schema population
+            const step2Label = document.getElementById('step2-label');
+            const step2Title = document.getElementById('step2-title');
+            const step2Desc = document.getElementById('step2-desc');
+            const editor = document.getElementById('wiz-schema-json');
+
+            if (selectedType === 'stream') {
+                step2Label.innerText = 'Metadata Schema';
+                step2Title.innerText = 'Binary Metadata Definition';
+                step2Desc.innerText = 'Predefined schema for file attributes (filename, size, hash). System enforced.';
+                if (!editor.value || editor.value.includes('field_1')) {
+                    editor.value = JSON.stringify(BINARY_METADATA_SCHEMA, null, 2);
+                }
+            } else {
+                step2Label.innerText = 'Payload Schema';
+                step2Title.innerText = 'JSON Schema Definition';
+                step2Desc.innerText = 'Define the structured fields and types expected in the JSON data payload.';
+                if (editor.value.includes('file_name')) {
+                    editor.value = JSON.stringify(DEFAULT_JSON_SCHEMA, null, 2);
+                }
+            }
+
             ['step1-content', 'step2-content'].forEach((id, idx) => {
                 const el = document.getElementById(id);
                 if (el) el.classList.toggle('hidden', idx + 1 !== step);
@@ -575,7 +663,7 @@
             document.getElementById('prevBtn').classList.toggle('hidden', step === 1);
             document.getElementById('nextBtn').classList.toggle('hidden', step === 2);
             document.getElementById('saveBtn').classList.toggle('hidden', step !== 2);
-            document.getElementById('wizard-subtitle').innerText = step === 1 ? "Identity & Direction" : "JSON Schema Payload";
+            document.getElementById('wizard-subtitle').innerText = step === 1 ? "Identity & Type" : (selectedType === 'stream' ? "Metadata Governance" : "Payload Governance");
         }
 
         function nextStep() { if (currentStep < 2) goToStep(currentStep + 1); }
@@ -583,9 +671,10 @@
         function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
         function openContractWizard() { 
             document.getElementById('wiz-name').value = '';
-            document.getElementById('wiz-schema-json').value = '{\n  "type": "object",\n  "properties": {\n    "field_1": { "type": "string" }\n  }\n}';
+            document.getElementById('wiz-schema-json').value = '';
             document.getElementById('wiz-error').classList.add('hidden');
             document.getElementById('contractWizard').classList.remove('hidden'); 
+            selectTransferType('structured');
             goToStep(1); 
         }
         function closeContractWizard() { document.getElementById('contractWizard').classList.add('hidden'); }
