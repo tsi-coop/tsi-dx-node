@@ -23,7 +23,7 @@ import java.util.UUID;
 /**
  * Service to manage Data Contracts.
  * Enforces an 'Active' partner handshake prerequisite and supports bidirectional status synchronization.
- * Refined to ensure only the proposal recipient can Accept or Reject a contract.
+ * Refined to support direct JSON Schema capture and extended metadata (version, description).
  */
 public class DataContract implements REST {
 
@@ -76,7 +76,6 @@ public class DataContract implements REST {
                     if (contractId == null) throw new IllegalArgumentException("contract_id required.");
                     
                     // AUTHORITY CHECK: Ensure the local node is NOT the one who initiated this proposal
-                    // The proposer cannot accept their own proposal; they must wait for the partner.
                     if (isLocalNodeProposer(contractId)) {
                         OutputProcessor.errorResponse(res, HttpServletResponse.SC_FORBIDDEN, "Action Not Allowed", 
                             "This node initiated the proposal. Waiting for partner to Accept/Reject.", req.getRequestURI());
@@ -97,7 +96,7 @@ public class DataContract implements REST {
                     break;
 
                 case "receive_status_update":
-                    // Receiving end of status propagation (triggered by partner's Accept/Reject/Terminate)
+                    // Receiving end of status propagation
                     if (contractId == null) throw new IllegalArgumentException("contract_id required.");
                     updateStatusInDb(contractId, getString(input, "status"));
                     OutputProcessor.send(res, HttpServletResponse.SC_OK, new JSONObject() {{ put("success", true); }});
@@ -109,7 +108,7 @@ public class DataContract implements REST {
             }
         } catch (ConnectException | HttpTimeoutException e) {
             OutputProcessor.errorResponse(res, HttpServletResponse.SC_GATEWAY_TIMEOUT, "P2P Connectivity Error", 
-                "Partner node unreachable. Protocol synchronization interrupted.", req.getRequestURI());
+                "Partner unreachable. Protocol synchronization interrupted.", req.getRequestURI());
         } catch (IllegalStateException e) {
             OutputProcessor.errorResponse(res, HttpServletResponse.SC_FORBIDDEN, "Trust Baseline Missing", e.getMessage(), req.getRequestURI());
         } catch (Exception e) {
@@ -120,16 +119,11 @@ public class DataContract implements REST {
 
     /**
      * Determines if the local node was the one that initiated the 'Proposed' state.
-     * Logic: In our flow, if a node is the sender_partner_id for an 'Outgoing' contract 
-     * or the receiver_partner_id for an 'Incoming' contract, and they triggered 'Propose', 
-     * they are the proposer.
      */
     private boolean isLocalNodeProposer(UUID contractId) throws SQLException {
         Connection conn = null; PreparedStatement pstmt = null; ResultSet rs = null; PoolDB pool = new PoolDB();
         try {
             conn = pool.getConnection();
-            // We check if the local node's identity matches the partner ID that would logically initiate the proposal
-            // for the given data direction.
             String sql = "SELECT c.direction, c.sender_partner_id, c.receiver_partner_id, cfg.node_id as local_node " +
                          "FROM data_contracts c " +
                          "CROSS JOIN (SELECT node_id FROM node_config LIMIT 1) cfg " +
@@ -144,10 +138,8 @@ public class DataContract implements REST {
                 String receiver = rs.getString("receiver_partner_id");
 
                 if ("Outgoing".equalsIgnoreCase(direction)) {
-                    // For Outgoing data, the local node (sender) usually initiates
                     return localNode.equals(sender);
                 } else {
-                    // For Incoming data, the local node (receiver) usually initiates the request
                     return localNode.equals(receiver);
                 }
             }
@@ -172,10 +164,10 @@ public class DataContract implements REST {
             if (rs.next()) {
                 String status = rs.getString("status");
                 if (!"Active".equalsIgnoreCase(status)) {
-                    throw new IllegalStateException("Partner '" + rs.getString("name") + "' is not Verified. Complete Identity Handshake in Partner Registry first.");
+                    throw new IllegalStateException("Partner '" + rs.getString("name") + "' is not Verified. Complete Identity Handshake first.");
                 }
             } else {
-                throw new IllegalStateException("Target partner mapping missing for this contract.");
+                throw new IllegalStateException("Target partner mapping missing.");
             }
         } finally { pool.cleanup(rs, pstmt, conn); }
     }
@@ -187,17 +179,11 @@ public class DataContract implements REST {
         Connection conn = null; PreparedStatement pstmt = null; ResultSet rs = null; PoolDB pool = new PoolDB();
         try {
             conn = pool.getConnection();
-            String sql = "SELECT c.*, p.fqdn FROM data_contracts c " +
-                         "JOIN partners p ON (p.node_id = c.sender_partner_id OR p.node_id = c.receiver_partner_id) " +
-                         "CROSS JOIN (SELECT node_id FROM node_config LIMIT 1) cfg " +
-                         "WHERE c.contract_id = ? AND p.node_id != cfg.node_id";
-            
-            pstmt = conn.prepareStatement(sql);
-            pstmt.setObject(1, contractId);
-            rs = pstmt.executeQuery();
-
+            String sql = "SELECT c.*, p.fqdn FROM data_contracts c JOIN partners p ON (p.node_id = c.sender_partner_id OR p.node_id = c.receiver_partner_id) " +
+                         "WHERE c.contract_id = ? AND p.node_id != (SELECT node_id FROM node_config LIMIT 1)";
+            pstmt = conn.prepareStatement(sql); pstmt.setObject(1, contractId); rs = pstmt.executeQuery();
             if (rs.next()) {
-                String targetFqdn = rs.getString("fqdn");
+                String fqdn = rs.getString("fqdn");
                 JSONObject payload = new JSONObject();
                 payload.put("_func", "receive_proposed_contract");
                 payload.put("contract_id", rs.getString("contract_id"));
@@ -208,27 +194,14 @@ public class DataContract implements REST {
                 payload.put("receiver_partner_id", rs.getString("receiver_partner_id"));
                 payload.put("schema_definition", new JSONParser().parse(rs.getString("schema_definition")));
 
-                String targetUrl = (targetFqdn.startsWith("http") ? targetFqdn : "http://" + targetFqdn) + "/api/admin/contracts";
-                
-                HttpRequest request = HttpRequest.newBuilder()
-                        .uri(URI.create(targetUrl))
-                        .header("Content-Type", "application/json")
-                        .header("X-DX-P2P-HANDSHAKE", P2P_HANDSHAKE_TOKEN)
-                        .POST(HttpRequest.BodyPublishers.ofString(payload.toJSONString()))
-                        .build();
-
+                String targetUrl = (fqdn.startsWith("http") ? fqdn : "http://" + fqdn) + "/api/admin/contracts";
+                HttpRequest request = HttpRequest.newBuilder().uri(URI.create(targetUrl)).header("Content-Type", "application/json").header("X-DX-P2P-HANDSHAKE", P2P_HANDSHAKE_TOKEN).POST(HttpRequest.BodyPublishers.ofString(payload.toJSONString())).build();
                 HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-
-                if (response.statusCode() >= 200 && response.statusCode() < 300) {
-                    return new JSONObject() {{ put("success", true); put("message", "Contract synchronized with peer: " + targetFqdn); }};
-                } else {
-                    throw new Exception("Peer rejected contract (HTTP " + response.statusCode() + "): " + response.body());
-                }
+                if (response.statusCode() >= 200 && response.statusCode() < 300) return new JSONObject() {{ put("success", true); }};
+                else throw new Exception("Partner rejected contract push: " + response.body());
             }
-            throw new Exception("Partner FQDN not found.");
-        } finally {
-            pool.cleanup(rs, pstmt, conn);
-        }
+            throw new Exception("Partner configuration missing.");
+        } finally { pool.cleanup(rs, pstmt, conn); }
     }
 
     /**
@@ -239,52 +212,32 @@ public class DataContract implements REST {
         String sql = "INSERT INTO data_contracts (contract_id, name, version, status, direction, sender_partner_id, receiver_partner_id, schema_definition, updated_at) " +
                      "VALUES (?, ?, ?, 'Proposed', ?, ?, ?, ?::jsonb, NOW()) " +
                      "ON CONFLICT (contract_id) DO UPDATE SET status = 'Proposed', updated_at = NOW(), name = EXCLUDED.name";
-
         try {
-            conn = pool.getConnection();
-            pstmt = conn.prepareStatement(sql);
+            conn = pool.getConnection(); pstmt = conn.prepareStatement(sql);
             pstmt.setObject(1, UUID.fromString((String) input.get("contract_id")));
-            pstmt.setString(2, (String) input.get("name"));
-            pstmt.setString(3, (String) input.get("version"));
-            pstmt.setString(4, (String) input.get("direction"));
-            pstmt.setString(5, (String) input.get("sender_partner_id"));
-            pstmt.setString(6, (String) input.get("receiver_partner_id"));
-            pstmt.setString(7, ((JSONObject) input.get("schema_definition")).toJSONString());
+            pstmt.setString(2, (String) input.get("name")); pstmt.setString(3, (String) input.get("version"));
+            pstmt.setString(4, (String) input.get("direction")); pstmt.setString(5, (String) input.get("sender_partner_id"));
+            pstmt.setString(6, (String) input.get("receiver_partner_id")); pstmt.setString(7, ((JSONObject) input.get("schema_definition")).toJSONString());
             pstmt.executeUpdate();
-            return new JSONObject() {{ put("success", true); put("message", "Proposal registered."); }};
+            return new JSONObject() {{ put("success", true); }};
         } finally { pool.cleanup(null, pstmt, conn); }
     }
 
-    /**
-     * Pushes a status update back to the peer to keep both nodes in sync.
-     */
     private void pushStatusUpdateToPartner(UUID contractId, String status) throws Exception {
         Connection conn = null; PreparedStatement pstmt = null; ResultSet rs = null; PoolDB pool = new PoolDB();
         try {
             conn = pool.getConnection();
-            String sql = "SELECT p.fqdn FROM data_contracts c " +
-                         "JOIN partners p ON (p.node_id = c.sender_partner_id OR p.node_id = c.receiver_partner_id) " +
-                         "CROSS JOIN (SELECT node_id FROM node_config LIMIT 1) cfg " +
-                         "WHERE c.contract_id = ? AND p.node_id != cfg.node_id";
-            pstmt = conn.prepareStatement(sql);
-            pstmt.setObject(1, contractId);
-            rs = pstmt.executeQuery();
-
+            String sql = "SELECT p.fqdn FROM data_contracts c JOIN partners p ON (p.node_id = c.sender_partner_id OR p.node_id = c.receiver_partner_id) " +
+                         "WHERE c.contract_id = ? AND p.node_id != (SELECT node_id FROM node_config LIMIT 1)";
+            pstmt = conn.prepareStatement(sql); pstmt.setObject(1, contractId); rs = pstmt.executeQuery();
             if (rs.next()) {
                 String fqdn = rs.getString("fqdn");
                 JSONObject payload = new JSONObject();
                 payload.put("_func", "receive_status_update");
                 payload.put("contract_id", contractId.toString());
                 payload.put("status", status);
-
                 String targetUrl = (fqdn.startsWith("http") ? fqdn : "http://" + fqdn) + "/api/admin/contracts";
-                HttpRequest request = HttpRequest.newBuilder()
-                        .uri(URI.create(targetUrl))
-                        .header("Content-Type", "application/json")
-                        .header("X-DX-P2P-HANDSHAKE", P2P_HANDSHAKE_TOKEN)
-                        .POST(HttpRequest.BodyPublishers.ofString(payload.toJSONString()))
-                        .build();
-
+                HttpRequest request = HttpRequest.newBuilder().uri(URI.create(targetUrl)).header("Content-Type", "application/json").header("X-DX-P2P-HANDSHAKE", P2P_HANDSHAKE_TOKEN).POST(HttpRequest.BodyPublishers.ofString(payload.toJSONString())).build();
                 httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             }
         } finally { pool.cleanup(rs, pstmt, conn); }
@@ -292,23 +245,28 @@ public class DataContract implements REST {
 
     @Override
     public boolean validate(String method, HttpServletRequest req, HttpServletResponse res) {
-        String p2pHeader = req.getHeader("X-DX-P2P-HANDSHAKE");
-        if (P2P_HANDSHAKE_TOKEN.equals(p2pHeader)) {
-            return true;
-        }
+        if (P2P_HANDSHAKE_TOKEN.equals(req.getHeader("X-DX-P2P-HANDSHAKE"))) return true;
         return InputProcessor.validate(req, res);
     }
 
-    // --- Helpers and Database Selectors ---
-
+    /**
+     * Updated to handle 'version' and 'description' from the new schema.
+     */
     private JSONObject createContract(JSONObject input) throws SQLException {
         Connection conn = null; PreparedStatement pstmt = null; PoolDB pool = new PoolDB(); UUID id = UUID.randomUUID();
-        String sql = "INSERT INTO data_contracts (contract_id, name, direction, sender_partner_id, receiver_partner_id, schema_definition, status, updated_at) VALUES (?, ?, ?, ?, ?, ?::jsonb, 'Draft', NOW())";
+        String sql = "INSERT INTO data_contracts (contract_id, name, version, description, direction, sender_partner_id, receiver_partner_id, schema_definition, status, updated_at) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?::jsonb, 'Draft', NOW())";
         try {
             conn = pool.getConnection(); pstmt = conn.prepareStatement(sql);
-            pstmt.setObject(1, id); pstmt.setString(2, getString(input, "name")); pstmt.setString(3, getString(input, "direction"));
-            pstmt.setString(4, getString(input, "sender_partner_id")); pstmt.setString(5, getString(input, "receiver_partner_id"));
-            JSONObject schema = (JSONObject) input.get("schema_definition"); pstmt.setString(6, schema != null ? schema.toJSONString() : "{}");
+            pstmt.setObject(1, id); 
+            pstmt.setString(2, getString(input, "name")); 
+            pstmt.setString(3, getString(input, "version").isEmpty() ? "1.0.0" : getString(input, "version"));
+            pstmt.setString(4, getString(input, "description"));
+            pstmt.setString(5, getString(input, "direction"));
+            pstmt.setString(6, getString(input, "sender_partner_id")); 
+            pstmt.setString(7, getString(input, "receiver_partner_id"));
+            JSONObject schema = (JSONObject) input.get("schema_definition"); 
+            pstmt.setString(8, schema != null ? schema.toJSONString() : "{}");
             pstmt.executeUpdate(); return new JSONObject() {{ put("success", true); put("contract_id", id.toString()); }};
         } finally { pool.cleanup(null, pstmt, conn); }
     }

@@ -74,6 +74,13 @@
 
         .step-pill.active { background-color: var(--dx-accent); color: white; }
         .step-pill.completed { background-color: #10b981; color: white; }
+        
+        .json-editor {
+            background-color: #0f172a;
+            color: #38bdf8;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            line-height: 1.5;
+        }
     </style>
 </head>
 <body class="flex h-screen overflow-hidden">
@@ -260,10 +267,14 @@
 
                 <div id="step2-content" class="hidden space-y-4">
                     <div class="flex items-center justify-between mb-4">
-                        <h4 class="text-xs font-black text-slate-900 uppercase tracking-widest">Field Specifications</h4>
-                        <button onclick="addSchemaField()" class="text-[10px] font-black text-blue-600 uppercase tracking-widest">+ Add Attribute</button>
+                        <h4 class="text-xs font-black text-slate-900 uppercase tracking-widest">JSON Schema Definition</h4>
                     </div>
-                    <div id="schema-fields-container" class="space-y-3"></div>
+                    <div class="relative">
+                        <textarea id="wiz-schema-json" rows="14" spellcheck="false"
+                            placeholder='{&#10;  "type": "object",&#10;  "properties": {&#10;    "field_name": { "type": "string" }&#10;  }&#10;}'
+                            class="w-full p-4 json-editor rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 resize-none custom-scrollbar text-xs font-mono"></textarea>
+                    </div>
+                    <p class="text-[9px] text-slate-400 uppercase font-black tracking-tighter">Enter a valid JSON Schema object to define the expected data payload.</p>
                 </div>
 
                 <div id="wiz-error" class="hidden mt-6 p-3 bg-red-50 border border-red-100 rounded text-[10px] font-black text-red-600 uppercase text-center tracking-tighter"></div>
@@ -334,9 +345,6 @@
                 const remoteNodeId = isOutgoing ? c.receiver_partner_id : c.sender_partner_id;
                 const partnerName = partnersMapByNodeId[remoteNodeId] || remoteNodeId;
                 
-                // Logic based on DataContract.java: isLocalNodeProposer
-                // For Outgoing: localNode (sender) is proposer.
-                // For Incoming: localNode (receiver) is proposer.
                 const amIProposer = (c.direction === 'Outgoing' && c.sender_partner_id === localNodeId) || 
                                    (c.direction === 'Incoming' && c.receiver_partner_id === localNodeId);
 
@@ -405,19 +413,25 @@
             const name = document.getElementById('wiz-name').value;
             const partnerNodeId = document.getElementById('wiz-partner').value;
             const direction = document.getElementById('wiz-direction').value;
+            const schemaJsonText = document.getElementById('wiz-schema-json').value;
             const errEl = document.getElementById('wiz-error');
             
+            errEl.classList.add('hidden');
+
             if (!name || !partnerNodeId) {
                 errEl.innerText = "Error: Designation and Partner are mandatory.";
                 errEl.classList.remove('hidden');
                 return;
             }
 
-            const fields = [];
-            document.querySelectorAll('.field-row').forEach(row => {
-                const fName = row.querySelector('.f-name').value;
-                if(fName) fields.push({ name: fName, type: row.querySelector('.f-type').value });
-            });
+            let schemaDefinition;
+            try {
+                schemaDefinition = JSON.parse(schemaJsonText || '{"type":"object","properties":{}}');
+            } catch (e) {
+                errEl.innerText = "Invalid JSON syntax in schema definition.";
+                errEl.classList.remove('hidden');
+                return;
+            }
 
             const payload = {
                 _func: "create_contract",
@@ -425,7 +439,7 @@
                 direction: direction,
                 sender_partner_id: direction === 'Outgoing' ? localNodeId : partnerNodeId,
                 receiver_partner_id: direction === 'Incoming' ? localNodeId : partnerNodeId,
-                schema_definition: { type: "object", properties: fields }
+                schema_definition: schemaDefinition
             };
 
             const response = await callApi(API_ENDPOINT, payload);
@@ -433,7 +447,7 @@
                 closeContractWizard();
                 fetchContracts();
             } else {
-                errEl.innerText = "Registration failed. Registry integrity check mismatch.";
+                errEl.innerText = response?.message || "Registration failed. Registry integrity check mismatch.";
                 errEl.classList.remove('hidden');
             }
         }
@@ -462,23 +476,6 @@
             }
         }
 
-        function addSchemaField() {
-            const container = document.getElementById('schema-fields-container');
-            const div = document.createElement('div');
-            div.className = "field-row p-3 bg-slate-50 border border-slate-200 rounded-xl flex gap-4 items-center";
-            div.innerHTML = `
-                <input type="text" placeholder="Attribute Key" class="f-name flex-1 bg-white border p-2 rounded text-[11px] font-bold outline-none">
-                <select class="f-type bg-white border p-2 rounded text-[11px] font-bold text-slate-600 outline-none">
-                    <option value="string">String</option>
-                    <option value="number">Number</option>
-                    <option value="boolean">Boolean</option>
-                    <option value="uuid">UUID</option>
-                </select>
-                <button onclick="this.parentElement.remove()" class="text-red-300 hover:text-red-600 px-2 font-black">×</button>
-            `;
-            container.appendChild(div);
-        }
-
         function goToStep(step) {
             currentStep = step;
             ['step1-content', 'step2-content'].forEach((id, idx) => {
@@ -493,13 +490,15 @@
             document.getElementById('prevBtn').classList.toggle('hidden', step === 1);
             document.getElementById('nextBtn').classList.toggle('hidden', step === 2);
             document.getElementById('saveBtn').classList.toggle('hidden', step !== 2);
-            document.getElementById('wizard-subtitle').innerText = step === 1 ? "Identity & Direction" : "Field Specifications";
+            document.getElementById('wizard-subtitle').innerText = step === 1 ? "Identity & Direction" : "JSON Schema Payload";
         }
 
         function nextStep() { if (currentStep < 2) goToStep(currentStep + 1); }
         function prevStep() { if (currentStep > 1) goToStep(currentStep - 1); }
         function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
         function openContractWizard() { 
+            document.getElementById('wiz-name').value = '';
+            document.getElementById('wiz-schema-json').value = '{\n  "type": "object",\n  "properties": {\n    "field_1": { "type": "string" }\n  }\n}';
             document.getElementById('wiz-error').classList.add('hidden');
             document.getElementById('contractWizard').classList.remove('hidden'); 
             goToStep(1); 

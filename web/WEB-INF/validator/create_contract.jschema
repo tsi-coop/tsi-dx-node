@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Create Contract Request",
-  "description": "Schema for establishing a new data exchange contract between nodes, including schema definitions and governance rules.",
+  "description": "Schema for establishing a new data exchange contract. Now supports direct JSON Schema objects for payload validation.",
   "type": "object",
   "required": [
     "_func",
@@ -38,33 +38,31 @@
     },
     "sender_partner_id": {
       "type": "string",
-      "description": "The identity (UUID or Node ID) of the data source."
+      "description": "The identity (Node ID) of the data source."
     },
     "receiver_partner_id": {
       "type": "string",
-      "description": "The identity (UUID or Node ID) of the data consumer."
+      "description": "The identity (Node ID) of the data consumer."
     },
     "schema_definition": {
       "type": "object",
-      "required": ["type", "properties"],
+      "description": "A valid JSON Schema (Draft 07) that governs the data payload.",
+      "required": ["type"],
       "properties": {
         "type": {
           "type": "string",
-          "const": "object"
+          "enum": ["object", "array"]
         },
         "properties": {
+          "type": "object",
+          "description": "Map of keys to their respective type definitions."
+        },
+        "required": {
           "type": "array",
-          "description": "A list of field definitions for validation.",
-          "items": {
-            "type": "object",
-            "required": ["name", "type"],
-            "properties": {
-              "name": { "type": "string" },
-              "type": { "type": "string", "enum": ["string", "number", "boolean", "uuid"] }
-            }
-          }
+          "items": { "type": "string" }
         }
-      }
+      },
+      "additionalProperties": true
     },
     "retention_policy_days": {
       "type": "integer",
