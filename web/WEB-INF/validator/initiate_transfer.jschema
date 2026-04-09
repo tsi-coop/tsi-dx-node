@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Initiate Transfer Request",
+  "description": "Schema for triggering a new data exchange sequence between the local node and a verified partner.",
+  "type": "object",
+  "required": [
+    "_func",
+    "contract_id",
+    "receiver_node_id",
+    "file_name",
+    "file_size"
+  ],
+  "properties": {
+    "_func": {
+      "type": "string",
+      "const": "initiate_transfer",
+      "description": "The internal function identifier for initiating an outbound transfer."
+    },
+    "contract_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "The unique identifier (UUID) of the Data Contract governing this exchange."
+    },
+    "receiver_node_id": {
+      "type": "string",
+      "description": "The unique Node ID of the target partner receiving the data.",
+      "examples": ["DX-PROD-NORTH-02"]
+    },
+    "file_name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The designation or filename for the data payload.",
+      "examples": ["weekly_loan_applications.json"]
+    },
+    "file_size": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "The size of the payload in bytes."
+    }
+  },
+  "additionalProperties": false
+}
