@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Create Contract Request",
-  "description": "Flexible schema for all data exchange types. Metadata defines the storage and processing architecture.",
+  "description": "Simplified schema for registering JSON or CSV data exchange contracts. Governance rules and PII tags are embedded within the schema_definition and pii_fields array.",
   "type": "object",
   "required": [
     "_func",
@@ -13,35 +13,63 @@
     "metadata"
   ],
   "properties": {
-    "_func": { "type": "string", "const": "create_contract" },
-    "name": { "type": "string", "minLength": 1 },
-    "version": { "type": "string", "default": "1.0.0" },
-    "description": { "type": "string" },
-    "direction": { "type": "string", "enum": ["Outgoing", "Incoming", "Bidirectional"] },
-    "sender_partner_id": { "type": "string" },
-    "receiver_partner_id": { "type": "string" },
+    "_func": {
+      "type": "string",
+      "const": "create_contract",
+      "description": "The internal function identifier for contract registration."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The administrative designation for the contract (e.g., Daily Mortgage Leads)."
+    },
+    "version": {
+      "type": "string",
+      "default": "1.0.0"
+    },
+    "description": {
+      "type": "string"
+    },
+    "direction": {
+      "type": "string",
+      "enum": ["Outgoing", "Incoming", "Bidirectional"],
+      "description": "The logical flow of data relative to the local node."
+    },
+    "sender_partner_id": {
+      "type": "string",
+      "description": "The verified Node ID of the sending party."
+    },
+    "receiver_partner_id": {
+      "type": "string",
+      "description": "The verified Node ID of the receiving party."
+    },
     "schema_definition": {
       "type": "object",
-      "description": "JSON Schema governing either the JSON payload or the file metadata properties.",
+      "description": "For JSON: A valid Draft-07 JSON Schema. For CSV: An object containing a 'fields' array with column definitions.",
       "additionalProperties": true
     },
     "metadata": {
       "type": "object",
-      "description": "Architectural metadata mandatory for both structured and stream categories.",
-      "required": ["transfer_category", "storage_engine"],
+      "description": "System-level metadata defining the data exchange type.",
+      "required": ["format"],
       "properties": {
-        "transfer_category": { 
-          "type": "string", 
-          "enum": ["structured", "stream"] 
-        },
-        "storage_engine": { 
-          "type": "string", 
-          "enum": ["LOG_REGISTRY", "FILE_SYSTEM"] 
+        "format": {
+          "type": "string",
+          "enum": ["json", "csv"],
+          "description": "Determines the validation and inspection logic applied to the data stream."
         }
       }
     },
-    "retention_policy_days": { "type": "integer", "default": 30 },
-    "pii_fields": { "type": "array", "items": { "type": "string" } }
+    "retention_policy_days": {
+      "type": "integer",
+      "default": 30,
+      "description": "Number of days the data remains in the active staging path before archiving/purging."
+    },
+    "pii_fields": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "A flat list of field names or JSON paths flagged for PII masking/anonymization."
+    }
   },
   "additionalProperties": false
 }

@@ -4,9 +4,7 @@
   "description": "Schema for listing data contracts with filtering, search, and pagination support.",
   "type": "object",
   "required": [
-    "_func",
-    "page",
-    "limit"
+    "_func"
   ],
   "properties": {
     "_func": {

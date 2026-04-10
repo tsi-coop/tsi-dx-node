@@ -3,181 +3,232 @@ package org.tsicoop.dxnode.api.admin;
 import org.tsicoop.dxnode.framework.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.Part;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 /**
  * Service to manage and monitor data transfers.
- * Updated to fix the 'Internal Protocol Error' caused by missing mandatory 'message_timestamp'.
+ * Implements administrative initiation (JSON/CSV upload) and P2P protocol reception.
  */
 public class DXManager implements REST {
 
     @Override
-    public void get(HttpServletRequest req, HttpServletResponse res) {
-        OutputProcessor.errorResponse(res, HttpServletResponse.SC_METHOD_NOT_ALLOWED, "Method Not Allowed", "Use POST with '_func' attribute.", req.getRequestURI());
-    }
-
-    @Override
-    public void put(HttpServletRequest req, HttpServletResponse res) {
-        OutputProcessor.errorResponse(res, HttpServletResponse.SC_METHOD_NOT_ALLOWED, "Method Not Allowed", "Use POST with '_func' attribute.", req.getRequestURI());
-    }
-
-    @Override
-    public void delete(HttpServletRequest req, HttpServletResponse res) {
-        OutputProcessor.errorResponse(res, HttpServletResponse.SC_METHOD_NOT_ALLOWED, "Method Not Allowed", "Use POST with '_func' attribute.", req.getRequestURI());
-    }
-
-    @Override
     public void post(HttpServletRequest req, HttpServletResponse res) {
-        JSONObject input = null;
         try {
-            input = InputProcessor.getInput(req);
-            String func = (String) input.get("_func");
+            // 1. Identification: Check for P2P Headers or UI/Admin Body
+            String func = req.getHeader("X-DX-FUNCTION");
+            JSONObject input = null;
 
-            if (func == null || func.trim().isEmpty()) {
-                OutputProcessor.errorResponse(res, HttpServletResponse.SC_BAD_REQUEST, "Bad Request", "Missing required '_func' attribute.", req.getRequestURI());
+            // Handle Multipart (Administrative Upload) vs JSON (Standard Listing)
+            boolean isMultipart = req.getContentType() != null && req.getContentType().toLowerCase().contains("multipart/form-data");
+            
+            if (func == null || func.isEmpty()) {
+                if (isMultipart) {
+                    func = req.getParameter("_func");
+                } else {
+                    input = InputProcessor.getInput(req);
+                    func = (String) input.get("_func");
+                }
+            }
+
+            if (func == null) {
+                OutputProcessor.errorResponse(res, 400, "Bad Request", "Transfer function identifier missing.", req.getRequestURI());
                 return;
             }
 
             switch (func.toLowerCase()) {
                 case "list_transfers":
-                    // Aligned with list_transfers_schema.json
-                    String statusFilter = (String) input.get("status");
-                    String search = (String) input.get("search");
-                    int page = getInt(input, "page", 1);
-                    int limit = getInt(input, "limit", 50);
-                    OutputProcessor.send(res, HttpServletResponse.SC_OK, listTransfersFromDb(statusFilter, search, page, limit));
+                    OutputProcessor.send(res, HttpServletResponse.SC_OK, listTransfersFromDb(input));
                     break;
 
                 case "initiate_transfer":
-                    // FIX: Implemented to handle single transfer initiation and satisfy DB constraints
-                    OutputProcessor.send(res, HttpServletResponse.SC_CREATED, initiateTransfer(input));
+                    // Administrative UI Trigger: Upload file and stage for P2P engine
+                    JSONObject initResult = handleOutboundInitiation(req);
+                    // Trigger the background TransferEngine for network delivery
+                    TransferEngine.getInstance().startTransfer(UUID.fromString((String) initResult.get("transfer_id")));
+                    OutputProcessor.send(res, HttpServletResponse.SC_CREATED, initResult);
                     break;
 
-                case "get_transfer":
-                    UUID tid = extractUuid(input, "transfer_id");
-                    if (tid == null) {
-                        OutputProcessor.errorResponse(res, HttpServletResponse.SC_BAD_REQUEST, "Bad Request", "'transfer_id' required.", req.getRequestURI());
-                        return;
-                    }
-                    JSONObject transfer = getTransferByIdFromDb(tid);
-                    if (transfer != null && !transfer.isEmpty()) {
-                        OutputProcessor.send(res, HttpServletResponse.SC_OK, transfer);
-                    } else {
-                        OutputProcessor.errorResponse(res, HttpServletResponse.SC_NOT_FOUND, "Not Found", "Transfer not found.", req.getRequestURI());
-                    }
+                case "receive_transfer_stream":
+                    // P2P Protocol Endpoint: Receive binary stream from a remote TransferEngine
+                    handleIncomingStream(req, res);
                     break;
 
                 default:
-                    OutputProcessor.errorResponse(res, HttpServletResponse.SC_BAD_REQUEST, "Bad Request", "Unknown function: " + func, req.getRequestURI());
-                    break;
+                    OutputProcessor.errorResponse(res, HttpServletResponse.SC_BAD_REQUEST, "Unknown Function", func, req.getRequestURI());
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
-            OutputProcessor.errorResponse(res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Database Error", e.getMessage(), req.getRequestURI());
+        } catch (IllegalArgumentException e) {
+            OutputProcessor.errorResponse(res, 400, "Validation Error", e.getMessage(), req.getRequestURI());
         } catch (Exception e) {
             e.printStackTrace();
-            OutputProcessor.errorResponse(res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Internal Protocol Error", e.getMessage(), req.getRequestURI());
+            OutputProcessor.errorResponse(res, 500, "Internal Protocol Error", e.getMessage(), req.getRequestURI());
         }
     }
 
     /**
-     * Resolves the 'Database Error' by ensuring all mandatory columns including 'file_checksum', 
-     * 'sequence_number', and 'message_timestamp' are populated during the initial insertion.
+     * Logic for Node Administrator to upload a file (JSON/CSV) and start the exchange.
      */
-    private JSONObject initiateTransfer(JSONObject input) throws Exception {
+    private JSONObject handleOutboundInitiation(HttpServletRequest req) throws Exception {
         Connection conn = null; PreparedStatement pstmt = null; ResultSet rs = null; PoolDB pool = new PoolDB();
         
         try {
             conn = pool.getConnection();
             
-            // 1. Resolve local Node ID to satisfy 'sender_node_id'
-            String localNodeId = null;
-            pstmt = conn.prepareStatement("SELECT node_id FROM node_config LIMIT 1");
+            // 1. Resolve Configuration (Path and Identity)
+            String localNodeId = "";
+            String activePath = "";
+            pstmt = conn.prepareStatement("SELECT node_id, storage_active_path FROM node_config LIMIT 1");
             rs = pstmt.executeQuery();
-            if (rs.next()) localNodeId = rs.getString("node_id");
-            if (localNodeId == null) throw new IllegalStateException("Node identity not configured. Set Identity first.");
+            if (rs.next()) {
+                localNodeId = rs.getString("node_id");
+                activePath = rs.getString("storage_active_path");
+            }
             pstmt.close();
 
-            // 2. Insert with placeholders for mandatory engine fields
+            if (localNodeId.isEmpty()) throw new IllegalStateException("Node identity not configured.");
+
+            // 2. Extract Multipart Parameters
+            String contractId = req.getParameter("contract_id");
+            String receiverNodeId = req.getParameter("receiver_node_id");
+            Part filePart = req.getPart("payload_file");
+            
+            if (filePart == null) throw new IllegalArgumentException("Physical data file missing from request.");
+            
+            String fileName = filePart.getSubmittedFileName();
+            String extension = fileName.substring(fileName.lastIndexOf(".") + 1).toLowerCase();
+
+            // 3. Simple Format Restriction
+            if (!"json".equals(extension) && !"csv".equals(extension)) {
+                throw new IllegalArgumentException("Restricted format: Only JSON and CSV files are permitted.");
+            }
+
+            // 4. Persist to Staging Path (Disk only, no DB storage for file content)
+            Path targetPath = Path.of(activePath, fileName);
+            try (InputStream is = filePart.getInputStream()) {
+                Files.copy(is, targetPath, StandardCopyOption.REPLACE_EXISTING);
+            }
+
+            // 5. Create Metadata Registry Entry
             UUID tid = UUID.randomUUID();
-            // FIX: Added 'message_timestamp' to the column list to resolve Not-Null constraint violation
             String sql = "INSERT INTO data_transfers (transfer_id, contract_id, sender_node_id, receiver_node_id, file_name, file_size_bytes, file_checksum, sequence_number, message_timestamp, status, start_time) " +
-                         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), 'Pending', NOW())";
+                         "VALUES (?, ?, ?, ?, ?, ?, ?, 0, NOW(), 'Pending', NOW())";
             
             pstmt = conn.prepareStatement(sql);
             pstmt.setObject(1, tid);
-            pstmt.setObject(2, UUID.fromString((String) input.get("contract_id")));
+            pstmt.setObject(2, UUID.fromString(contractId));
             pstmt.setString(3, localNodeId);
-            pstmt.setString(4, (String) input.get("receiver_node_id"));
-            pstmt.setString(5, (String) input.get("file_name"));
+            pstmt.setString(4, receiverNodeId);
+            pstmt.setString(5, fileName);
+            pstmt.setLong(6, filePart.getSize());
+            pstmt.setString(7, "UPLOAD_STAGED"); // Checksum calculated by engine during stream
             
-            Object fs = input.get("file_size");
-            long size = (fs instanceof Number) ? ((Number) fs).longValue() : 0L;
-            pstmt.setLong(6, size);
-            
-            // Satisfy 'file_checksum' NOT NULL constraint
-            pstmt.setString(7, "PENDING_SHA256"); 
-
-            // Satisfy 'sequence_number' NOT NULL constraint
-            pstmt.setLong(8, 0L);
-
             pstmt.executeUpdate();
-            
+
             JSONObject response = new JSONObject();
             response.put("success", true);
             response.put("transfer_id", tid.toString());
             return response;
+
+        } finally {
+            pool.cleanup(rs, pstmt, conn);
+        }
+    }
+
+    /**
+     * Protocol Logic for acting as a receiver in the P2P chain.
+     */
+    private void handleIncomingStream(HttpServletRequest req, HttpServletResponse res) throws Exception {
+        String transferId = req.getHeader("X-DX-TRANSFER-ID");
+        String contractId = req.getHeader("X-DX-CONTRACT-ID");
+        String senderId = req.getHeader("X-DX-SENDER-ID");
+        String fileName = req.getHeader("X-DX-FILE-NAME");
+        String sequence = req.getHeader("X-DX-SEQUENCE");
+
+        Connection conn = null; PreparedStatement pstmt = null; ResultSet rs = null; PoolDB pool = new PoolDB();
+        try {
+            conn = pool.getConnection();
+            String activePath = "";
+            String localNodeId = "";
+            pstmt = conn.prepareStatement("SELECT node_id, storage_active_path FROM node_config LIMIT 1");
+            rs = pstmt.executeQuery();
+            if (rs.next()) {
+                localNodeId = rs.getString("node_id");
+                activePath = rs.getString("storage_active_path");
+            }
+            pstmt.close();
+
+            // Direct Pipe: Network Stream -> Disk Path
+            Path targetFile = Path.of(activePath, fileName);
+            try (InputStream is = req.getInputStream()) {
+                Files.copy(is, targetFile, StandardCopyOption.REPLACE_EXISTING);
+            }
+
+            // Sync Transfer Registry (Upsert for correlation)
+            String sql = "INSERT INTO data_transfers (transfer_id, contract_id, sender_node_id, receiver_node_id, file_name, file_size_bytes, file_checksum, sequence_number, message_timestamp, status, start_time, end_time) " +
+                         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), 'Received', NOW(), NOW()) " +
+                         "ON CONFLICT (transfer_id) DO UPDATE SET status = 'Received', end_time = NOW()";
             
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setObject(1, UUID.fromString(transferId));
+            pstmt.setObject(2, UUID.fromString(contractId));
+            pstmt.setString(3, senderId);
+            pstmt.setString(4, localNodeId);
+            pstmt.setString(5, fileName);
+            pstmt.setLong(6, Files.size(targetFile));
+            pstmt.setString(7, "RECEPTION_VERIFIED"); 
+            pstmt.setLong(8, Long.parseLong(sequence));
+            
+            pstmt.executeUpdate();
+
+            JSONObject success = new JSONObject();
+            success.put("success", true);
+            OutputProcessor.send(res, 200, success);
         } finally { pool.cleanup(rs, pstmt, conn); }
     }
 
-    private JSONObject listTransfersFromDb(String statusFilter, String search, int page, int limit) throws SQLException {
+    private JSONObject listTransfersFromDb(JSONObject input) throws SQLException {
         JSONObject response = new JSONObject();
         JSONArray arr = new JSONArray();
         Connection conn = null; PreparedStatement pstmt = null; ResultSet rs = null; PoolDB pool = new PoolDB();
 
         try {
             conn = pool.getConnection();
-            
-            // Resolve local node for direction calculation
             String localNodeId = "";
             PreparedStatement idStmt = conn.prepareStatement("SELECT node_id FROM node_config LIMIT 1");
             ResultSet idRs = idStmt.executeQuery();
             if (idRs.next()) localNodeId = idRs.getString("node_id");
             idRs.close(); idStmt.close();
 
+            String status = input != null ? (String) input.get("status") : "";
+            String search = input != null ? (String) input.get("search") : "";
+            
             StringBuilder sql = new StringBuilder(
                 "SELECT t.*, c.name as contract_name FROM data_transfers t " +
-                "LEFT JOIN data_contracts c ON t.contract_id = c.contract_id " +
-                "WHERE 1=1"
+                "LEFT JOIN data_contracts c ON t.contract_id = c.contract_id WHERE 1=1"
             );
-            List<Object> params = new ArrayList<>();
-
-            if (statusFilter != null && !statusFilter.isEmpty()) {
-                sql.append(" AND t.status = ?");
-                params.add(statusFilter);
-            }
-            if (search != null && !search.isEmpty()) {
-                sql.append(" AND (t.file_name ILIKE ? OR t.transfer_id::text ILIKE ?)");
-                String wrap = "%" + search + "%";
-                params.add(wrap); params.add(wrap);
-            }
-
-            sql.append(" ORDER BY t.start_time DESC LIMIT ? OFFSET ?");
-            params.add(limit);
-            params.add((page - 1) * limit);
+            
+            if (status != null && !status.isEmpty()) sql.append(" AND t.status = ?");
+            if (search != null && !search.isEmpty()) sql.append(" AND (t.file_name ILIKE ? OR t.transfer_id::text ILIKE ?)");
+            sql.append(" ORDER BY t.start_time DESC LIMIT 50");
 
             pstmt = conn.prepareStatement(sql.toString());
-            for (int i = 0; i < params.size(); i++) pstmt.setObject(i + 1, params.get(i));
+            int idx = 1;
+            if (status != null && !status.isEmpty()) pstmt.setString(idx++, status);
+            if (search != null && !search.isEmpty()) {
+                String f = "%" + search + "%";
+                pstmt.setString(idx++, f);
+                pstmt.setString(idx++, f);
+            }
             
             rs = pstmt.executeQuery();
             while (rs.next()) {
@@ -201,39 +252,8 @@ public class DXManager implements REST {
         return response;
     }
 
-    private JSONObject getTransferByIdFromDb(UUID id) throws SQLException {
-        Connection conn = null; PreparedStatement pstmt = null; ResultSet rs = null; PoolDB pool = new PoolDB();
-        JSONObject t = new JSONObject();
-        try {
-            conn = pool.getConnection();
-            pstmt = conn.prepareStatement("SELECT * FROM data_transfers WHERE transfer_id = ?");
-            pstmt.setObject(1, id);
-            rs = pstmt.executeQuery();
-            if (rs.next()) {
-                t.put("transfer_id", rs.getString("transfer_id"));
-                t.put("status", rs.getString("status"));
-                t.put("file_name", rs.getString("file_name"));
-                t.put("file_size_bytes", rs.getLong("file_size_bytes"));
-                t.put("file_checksum", rs.getString("file_checksum"));
-                t.put("sequence_number", rs.getLong("sequence_number"));
-                t.put("message_timestamp", rs.getTimestamp("message_timestamp").toString());
-                t.put("start_time", rs.getTimestamp("start_time").toString());
-            }
-        } finally { pool.cleanup(rs, pstmt, conn); }
-        return t;
-    }
-
-    private int getInt(JSONObject obj, String key, int def) {
-        Object val = obj.get(key);
-        if (val instanceof Number) return ((Number) val).intValue();
-        return def;
-    }
-
-    private UUID extractUuid(JSONObject obj, String key) {
-        Object val = obj.get(key);
-        if (val == null || val.toString().trim().isEmpty()) return null;
-        try { return UUID.fromString(val.toString()); } catch (Exception e) { return null; }
-    }
-
-    @Override public boolean validate(String m, HttpServletRequest req, HttpServletResponse res) { return "POST".equalsIgnoreCase(m) && InputProcessor.validate(req, res); }
+    @Override public boolean validate(String m, HttpServletRequest req, HttpServletResponse res) { return true; }
+    @Override public void get(HttpServletRequest req, HttpServletResponse res) {}
+    @Override public void put(HttpServletRequest req, HttpServletResponse res) {}
+    @Override public void delete(HttpServletRequest req, HttpServletResponse res) {}
 }

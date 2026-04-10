@@ -55,7 +55,7 @@
 
         <div class="flex-1 overflow-y-auto p-8">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-                <div><h1 class="text-2xl font-black text-slate-900 uppercase">Transfer Monitoring</h1><p class="text-xs text-slate-500 font-medium">Full audit trail of direct organization-to-organization exchanges.</p></div>
+                <div><h1 class="text-2xl font-black text-slate-900 uppercase">Transfer Monitoring</h1><p class="text-xs text-slate-500 font-medium">Audit trail of direct organisation-to-organisation JSON/CSV exchanges.</p></div>
                 <button onclick="openTransferModal()" class="px-4 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-black uppercase shadow-lg shadow-blue-500/20">Initiate Transfer</button>
             </div>
 
@@ -87,13 +87,10 @@
     <!-- Transfer Initiation Modal -->
     <div id="transferModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop">
         <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden">
-            <!-- Modal Header -->
             <div class="px-8 py-6 bg-slate-900 flex items-center justify-between">
                 <h3 class="text-xl font-black text-white uppercase tracking-tight">Initiate Outbound Exchange</h3>
                 <button onclick="closeTransferModal()" class="text-slate-400 hover:text-white transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
             </div>
             
@@ -108,14 +105,14 @@
                         <select id="m-contract" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-blue-500/10 transition-all"></select>
                     </div>
                     <div>
-                        <label class="block text-[10px] font-black text-slate-500 uppercase mb-2 tracking-widest">3. Exchange Name</label>
-                        <input type="text" id="m-filename" required placeholder="e.g. Weekly Audit Payload" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500/10 transition-all">
+                        <label class="block text-[10px] font-black text-slate-500 uppercase mb-2 tracking-widest">3. Select Data File (JSON or CSV only)</label>
+                        <input type="file" id="m-file" accept=".json, .csv" required class="w-full p-2 bg-slate-50 border border-dashed border-slate-300 rounded-lg text-xs file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-[10px] file:font-black file:uppercase file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-all">
                     </div>
                 </div>
                 
                 <div class="flex gap-4 pt-2">
                     <button type="button" onclick="closeTransferModal()" class="flex-1 py-3 text-xs font-black uppercase text-slate-400 hover:text-slate-600 transition-colors">Cancel</button>
-                    <button type="submit" class="flex-1 py-4 bg-slate-900 text-white rounded-xl text-xs font-black uppercase shadow-lg shadow-slate-900/20 hover:bg-slate-800 transition-all transform hover:-translate-y-0.5">Start Sequence</button>
+                    <button type="submit" id="submitBtn" class="flex-1 py-4 bg-slate-900 text-white rounded-xl text-xs font-black uppercase shadow-lg shadow-slate-900/20 hover:bg-slate-800 transition-all transform hover:-translate-y-0.5">Upload & Start</button>
                 </div>
             </form>
         </div>
@@ -132,31 +129,67 @@
             const res = await callApi(API, { _func: "list_transfers", status: status });
             const tbody = document.getElementById('transfer-table-body');
             tbody.innerHTML = '';
-            if (res) res.forEach(t => {
-                const row = document.createElement('tr');
-                row.className = "hover:bg-slate-50";
-                row.innerHTML = `
-                    <td class="px-6 py-4 font-mono text-[10px] text-slate-500">${t.transfer_id.substring(0,8)}...</td>
-                    <td class="px-6 py-4 font-bold text-slate-900">${t.peer_node_id}</td>
-                    <td class="px-6 py-4 font-medium text-slate-600">${t.file_name}</td>
-                    <td class="px-6 py-4"><span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${t.direction === 'Outgoing' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}">${t.direction}</span></td>
-                    <td class="px-6 py-4"><span class="text-[10px] font-bold ${t.status === 'Delivered' ? 'text-green-600' : 'text-orange-500'}">${t.status}</span></td>
-                    <td class="px-6 py-4 text-right">...</td>
-                `;
-                tbody.appendChild(row);
-            });
+            if (res && res.data) {
+                res.data.forEach(t => {
+                    const row = document.createElement('tr');
+                    row.className = "hover:bg-slate-50";
+                    row.innerHTML = `
+                        <td class="px-6 py-4 font-mono text-[10px] text-slate-500">${t.transfer_id.substring(0,8)}...</td>
+                        <td class="px-6 py-4 font-bold text-slate-900">${t.peer_node_id}</td>
+                        <td class="px-6 py-4 font-medium text-slate-600">${t.file_name}</td>
+                        <td class="px-6 py-4"><span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${t.direction === 'Outgoing' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}">${t.direction}</span></td>
+                        <td class="px-6 py-4"><span class="text-[10px] font-bold ${t.status === 'Delivered' ? 'text-green-600' : 'text-orange-500'}">${t.status}</span></td>
+                        <td class="px-6 py-4 text-right">...</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            }
         }
 
         async function handleInitiate(e) {
             e.preventDefault();
-            const res = await callApi(API, {
-                _func: "initiate_transfer",
-                contract_id: document.getElementById('m-contract').value,
-                receiver_node_id: document.getElementById('m-partner').value,
-                file_name: document.getElementById('m-filename').value,
-                file_size: 1024 // Mock size
-            });
-            if (res) { closeTransferModal(); fetchTransfers(); }
+            const btn = document.getElementById('submitBtn');
+            const fileInput = document.getElementById('m-file');
+            const file = fileInput.files[0];
+
+            if (!file) return;
+
+            // Client-side format guard
+            const ext = file.name.split('.').pop().toLowerCase();
+            if (ext !== 'json' && ext !== 'csv') {
+                alert("Only JSON and CSV files are permitted for exchange.");
+                return;
+            }
+            
+            btn.disabled = true;
+            btn.innerText = "UPLOADING...";
+
+            const formData = new FormData();
+            formData.append("_func", "initiate_transfer");
+            formData.append("contract_id", document.getElementById('m-contract').value);
+            formData.append("receiver_node_id", document.getElementById('m-partner').value);
+            formData.append("payload_file", file);
+
+            try {
+                const response = await fetch(API, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('dx_token')}` },
+                    body: formData
+                });
+                
+                const data = await response.json();
+                if (response.ok) {
+                    closeTransferModal();
+                    fetchTransfers();
+                } else {
+                    alert("Initiation failed: " + data.message);
+                }
+            } catch (err) {
+                alert("Network error during upload.");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Upload & Start";
+            }
         }
 
         async function populateModal() {
@@ -167,7 +200,7 @@
             cSel.innerHTML = '<option value="">Select Contract Schema...</option>';
             pSel.innerHTML = '<option value="">Select Target Partner...</option>';
             if (contracts) contracts.forEach(c => cSel.innerHTML += `<option value="${c.contract_id}">${c.name}</option>`);
-            if (partners) partners.forEach(p => pSel.innerHTML += `<option value="${p.node_id}">${p.name}</option>`);
+            if (partners && partners.data) partners.data.forEach(p => pSel.innerHTML += `<option value="${p.node_id}">${p.name}</option>`);
         }
 
         async function callApi(url, data) {
@@ -187,10 +220,7 @@
 
         function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
         function openTransferModal() { populateModal(); document.getElementById('transferModal').classList.remove('hidden'); }
-        function closeTransferModal() { 
-            document.getElementById('transferModal').classList.add('hidden'); 
-            document.getElementById('transferForm').reset();
-        }
+        function closeTransferModal() { document.getElementById('transferModal').classList.add('hidden'); document.getElementById('transferForm').reset(); }
         function logout() { localStorage.clear(); window.location.href = 'index.html'; }
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('header-node-id').innerText = localNodeId || 'DX-INIT';
