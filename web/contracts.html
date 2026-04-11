@@ -21,13 +21,12 @@
         .step-pill.completed { background-color: #10b981; color: white; }
         .json-editor { background-color: #0f172a; color: #38bdf8; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
         @media print { .no-print { display: none !important; } body { background: white; } .print-only { display: block !important; } .modal-content { position: static; box-shadow: none; border: none; width: 100%; max-width: none; } }
-        
-        /* Toast Notification */
         #toast { position: fixed; bottom: 2rem; right: 2rem; z-index: 100; transition: transform 0.3s ease-out; }
     </style>
 </head>
 <body class="flex h-screen overflow-hidden">
 
+    <!-- Sidebar Navigation -->
     <aside id="sidebar" class="sidebar bg-slate-900 flex flex-col z-20 no-print">
         <div class="p-6 mb-4">
             <div class="flex items-center gap-3">
@@ -72,28 +71,35 @@
                 <span class="nav-text">Configuration</span>
             </a>
         </nav>
-        <div class="p-4 border-t border-slate-800"><button onclick="logout()" class="nav-item w-full text-left hover:text-red-400"><span class="nav-text">Sign Out</span></button></div>
+        <div class="p-4 border-t border-slate-800"><button onclick="logout()" class="nav-item w-full text-left hover:text-red-400">Sign Out</button></div>
     </aside>
 
     <main class="flex-1 flex flex-col min-w-0 overflow-hidden">
         <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 z-10 no-print">
             <div class="flex items-center gap-4">
-                <button onclick="toggleSidebar()" class="p-2 text-slate-500 hover:bg-slate-100 rounded-lg"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg></button>
+                <button onclick="toggleSidebar()" class="p-2 hover:bg-slate-100 rounded-lg text-slate-500"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg></button>
                 <div class="flex flex-col"><span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-tight">Node Instance</span><span class="text-xs font-black text-slate-900 leading-tight" id="header-node-id">...</span></div>
             </div>
-            <div class="flex items-center gap-3">
-                <div class="flex flex-col items-end"><span class="text-xs font-bold text-slate-900" id="header-username">Admin User</span><span class="text-[10px] text-slate-400 font-medium uppercase" id="header-role">Administrator</span></div>
-                <div class="h-10 w-10 bg-slate-200 rounded-xl border-2 border-white shadow-sm overflow-hidden"><img src="https://ui-avatars.com/api/?name=Admin&background=0f172a&color=fff" alt="Avatar"></div>
+            <div class="flex items-center gap-4">
+                <div class="flex flex-col items-end mr-2">
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">P2P Registry Sync</span>
+                    <span id="last-sync-time" class="text-[10px] font-black text-slate-900 leading-none italic">Initializing...</span>
+                </div>
+                <div class="h-8 w-px bg-slate-100 mx-2"></div>
+                <div class="flex items-center gap-3">
+                    <div class="flex flex-col items-end"><span class="text-xs font-bold text-slate-900" id="header-username">...</span><span class="text-[10px] text-slate-400 font-medium uppercase" id="header-role">Administrator</span></div>
+                    <div class="h-10 w-10 bg-slate-200 rounded-xl border-2 border-white shadow-sm overflow-hidden"><img src="" id="header-avatar" alt="Avatar"></div>
+                </div>
             </div>
         </header>
 
         <div class="flex-1 overflow-y-auto p-8 no-print">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-                <div>
-                    <h1 class="text-2xl font-black text-slate-900 uppercase tracking-tight">Contract Registry</h1>
-                    <p class="text-xs text-slate-500 font-medium">Govern JSON and CSV exchanges with verified partners.</p>
+                <div><h1 class="text-2xl font-black text-slate-900 uppercase tracking-tight">Contract Registry</h1><p class="text-xs text-slate-500 font-medium">Govern JSON and CSV exchanges. Statuses sync automatically across nodes.</p></div>
+                <div class="flex gap-3">
+                    <button onclick="fetchContracts()" class="p-2.5 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 shadow-sm" title="Refresh Registry"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg></button>
+                    <button onclick="openContractWizard()" class="px-4 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-black uppercase shadow-lg hover:bg-blue-700 transition-all">New Contract</button>
                 </div>
-                <button onclick="openContractWizard()" class="px-4 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-black uppercase shadow-lg shadow-blue-500/20 hover:bg-blue-700 transition-all">New Contract</button>
             </div>
 
             <div class="card overflow-hidden">
@@ -115,19 +121,7 @@
         </div>
     </main>
 
-    <!-- Toast Notification -->
-    <div id="toast" class="hidden max-w-sm w-full bg-white rounded-xl shadow-2xl border border-slate-200 p-4 flex items-start gap-4">
-        <div id="toast-icon-bg" class="p-2 rounded-lg">
-            <svg id="toast-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"></svg>
-        </div>
-        <div class="flex-1">
-            <p id="toast-title" class="text-xs font-black uppercase tracking-tight text-slate-900"></p>
-            <p id="toast-msg" class="text-[11px] font-medium text-slate-500 mt-1 leading-relaxed"></p>
-        </div>
-        <button onclick="hideToast()" class="text-slate-300 hover:text-slate-600"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
-    </div>
-
-    <!-- Contract Wizard Modal -->
+    <!-- Wizard Modal -->
     <div id="contractWizard" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop no-print">
         <div class="bg-white w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh]">
             <div class="px-8 py-6 bg-slate-900 flex justify-between items-center">
@@ -142,11 +136,11 @@
             <div class="p-8 overflow-y-auto flex-1">
                 <div id="step1-content" class="space-y-6">
                     <div class="grid grid-cols-2 gap-6">
-                        <div class="col-span-2"><label class="block text-[10px] font-black text-slate-500 uppercase mb-2 tracking-widest">Contract Designation</label><input type="text" id="wiz-name" class="w-full px-4 py-2.5 bg-slate-50 border rounded-lg text-sm outline-none"></div>
-                        <div><label class="block text-[10px] font-black text-slate-500 uppercase mb-2 tracking-widest">Target Partner</label><select id="wiz-partner" class="w-full px-4 py-2.5 bg-slate-50 border rounded-lg text-sm font-bold"></select></div>
-                        <div><label class="block text-[10px] font-black text-slate-500 uppercase mb-2 tracking-widest">Data Format</label><select id="wiz-format" class="w-full px-4 py-2.5 bg-slate-50 border rounded-lg text-sm font-bold"><option value="json">JSON (Structured Schema)</option><option value="csv">CSV (Tabular Template)</option></select></div>
-                        <div><label class="block text-[10px] font-black text-slate-500 uppercase mb-2 tracking-widest">Exchange Direction</label><select id="wiz-direction" class="w-full px-4 py-2.5 bg-slate-50 border rounded-lg text-sm font-bold"><option value="Outgoing">Outgoing (We Send)</option><option value="Incoming">Incoming (We Receive)</option></select></div>
-                        <div><label class="block text-[10px] font-black text-slate-500 uppercase mb-2 tracking-widest">Retention Policy (Days)</label><input type="number" id="wiz-retention" value="30" class="w-full px-4 py-2.5 bg-slate-50 border rounded-lg text-sm outline-none"></div>
+                        <div class="col-span-2"><label class="block text-[10px] font-black text-slate-500 uppercase mb-2">Contract Name</label><input type="text" id="wiz-name" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none"></div>
+                        <div><label class="block text-[10px] font-black text-slate-500 uppercase mb-2">Target Partner</label><select id="wiz-partner" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold text-slate-700"></select></div>
+                        <div><label class="block text-[10px] font-black text-slate-500 uppercase mb-2">Data Format</label><select id="wiz-format" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold text-slate-700"><option value="json">JSON (Structured Schema)</option><option value="csv">CSV (Tabular Template)</option></select></div>
+                        <div><label class="block text-[10px] font-black text-slate-500 uppercase mb-2">Flow Direction</label><select id="wiz-direction" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold text-slate-700"><option value="Outgoing">Outgoing (We Send)</option><option value="Incoming">Incoming (We Receive)</option></select></div>
+                        <div><label class="block text-[10px] font-black text-slate-500 uppercase mb-2">Retention Policy (Days)</label><input type="number" id="wiz-retention" value="30" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none"></div>
                     </div>
                 </div>
                 <div id="step2-content" class="hidden space-y-4">
@@ -166,62 +160,84 @@
                         </div>
                     </div>
                 </div>
-                <div id="wiz-error" class="hidden mt-6 p-3 bg-red-50 text-red-600 text-[10px] font-black uppercase text-center rounded"></div>
             </div>
             <div class="px-8 py-6 bg-slate-50 border-t flex justify-between">
                 <button onclick="closeContractWizard()" class="text-xs font-black uppercase text-slate-400">Cancel</button>
                 <div class="flex gap-3">
-                    <button id="prevBtn" onclick="prevStep()" class="hidden px-6 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl text-xs font-black uppercase">Previous</button>
-                    <button id="nextBtn" onclick="nextStep()" class="px-8 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-black uppercase shadow-lg">Next Phase</button>
-                    <button id="saveBtn" onclick="submitContract()" class="hidden px-8 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-black uppercase shadow-lg">Register Contract</button>
+                    <button id="prevBtn" onclick="prevStep()" class="hidden px-6 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl text-xs font-black uppercase shadow-sm transition-all">Previous</button>
+                    <button id="nextBtn" onclick="nextStep()" class="px-8 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-black uppercase shadow-lg transition-all transform hover:-translate-y-0.5">Next Phase</button>
+                    <button id="saveBtn" onclick="submitContract()" class="hidden px-8 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-black uppercase shadow-lg transition-all transform hover:-translate-y-0.5">Register Contract</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Printable Contract Inspector -->
+    <!-- Inspector Modal -->
     <div id="contractInspector" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop">
         <div class="bg-white w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh] modal-content">
             <div class="px-8 py-6 bg-slate-900 flex justify-between items-center no-print">
-                <div><h3 class="text-xl font-black text-white uppercase tracking-tight">Contract Inspector</h3><p class="text-[10px] text-blue-400 font-bold uppercase tracking-widest mt-1">Governance Audit</p></div>
-                <div class="flex gap-4"><button onclick="window.print()" class="px-4 py-2 bg-slate-800 text-white text-[10px] font-black uppercase rounded-lg border border-slate-700 hover:bg-slate-700">Print Doc</button><button onclick="closeInspector()" class="text-slate-400 hover:text-white transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button></div>
+                <div><h3 class="text-xl font-black text-white uppercase tracking-tight">Contract Inspector</h3><p class="text-[10px] text-blue-400 font-bold uppercase tracking-widest mt-1">Audit Mode</p></div>
+                <div class="flex gap-4"><button onclick="window.print()" class="px-4 py-2 bg-slate-800 text-white text-[10px] font-black uppercase rounded-lg border border-slate-700 hover:bg-slate-700 transition-all">Print Doc</button><button onclick="closeInspector()" class="text-slate-400 hover:text-white transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button></div>
             </div>
             <div class="p-12 overflow-y-auto flex-1 bg-white">
                 <div class="flex justify-between items-start border-b-2 border-slate-900 pb-6 mb-8">
-                    <div><h2 id="ins-name" class="text-3xl font-black text-slate-900 uppercase">---</h2><p id="ins-id" class="text-[10px] font-mono text-slate-400 mt-1">UUID: ---</p></div>
+                    <div><h2 id="ins-name" class="text-3xl font-black text-slate-900 uppercase tracking-tight">---</h2><p id="ins-id" class="text-[10px] font-mono text-slate-400 mt-1">UUID: ---</p></div>
                     <div class="text-right"><span id="ins-status" class="px-4 py-1.5 bg-green-100 text-green-700 rounded-full text-xs font-black uppercase tracking-widest border border-green-200">Active</span><p class="text-[10px] font-bold text-slate-500 mt-2 uppercase" id="ins-format-label">---</p></div>
                 </div>
                 <div class="grid grid-cols-2 gap-12 mb-12">
-                    <div><h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Sender Node</h4><p id="ins-sender" class="font-bold text-slate-900">---</p></div>
-                    <div><h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Receiver Node</h4><p id="ins-receiver" class="font-bold text-slate-900">---</p></div>
+                    <div><h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Sender Entity</h4><p id="ins-sender" class="font-bold text-slate-900">---</p></div>
+                    <div><h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Receiver Entity</h4><p id="ins-receiver" class="font-bold text-slate-900">---</p></div>
                 </div>
-                <h4 class="text-xs font-black text-slate-900 uppercase tracking-widest mb-4 border-b pb-2">Governance Definition (Fields & PII Status)</h4>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs">
-                        <thead class="bg-slate-50"><tr><th class="p-3 font-black text-slate-500 border-b tracking-widest uppercase">Field Path / Column</th><th class="p-3 font-black text-slate-500 border-b text-center tracking-widest uppercase">Type</th><th class="p-3 font-black text-slate-500 border-b text-center tracking-widest uppercase">PII Tag</th><th class="p-3 font-black text-slate-500 border-b tracking-widest uppercase">Security Note</th></tr></thead>
-                        <tbody id="ins-field-body" class="divide-y divide-slate-100"></tbody>
-                    </table>
-                </div>
-                <div class="mt-12 pt-6 border-t text-[10px] text-slate-400 font-bold uppercase flex justify-between"><span>Generated by TSI DX Protocol Engine</span><span id="ins-timestamp">---</span></div>
+                <h4 class="text-xs font-black text-slate-900 uppercase tracking-widest mb-4 border-b pb-2">Governance Definition</h4>
+                <div class="overflow-x-auto"><table class="w-full text-left text-xs"><thead class="bg-slate-50"><tr><th class="p-3 font-black text-slate-500 border-b tracking-widest uppercase">Field Path / Column</th><th class="p-3 font-black text-slate-500 border-b text-center tracking-widest uppercase">Type</th><th class="p-3 font-black text-slate-500 border-b text-center tracking-widest uppercase">PII Tag</th><th class="p-3 font-black text-slate-500 border-b tracking-widest uppercase">Governance Rule</th></tr></thead><tbody id="ins-field-body" class="divide-y divide-slate-100"></tbody></table></div>
+                <div class="mt-12 pt-6 border-t text-[10px] text-slate-400 font-bold uppercase flex justify-between"><span>Generated by TSI DX Engine v1.2.0</span><span id="ins-timestamp">---</span></div>
             </div>
         </div>
+    </div>
+
+    <!-- Toast Component -->
+    <div id="toast" class="hidden max-w-sm w-full bg-white rounded-xl shadow-2xl border border-slate-200 p-4 flex items-start gap-4">
+        <div id="toast-icon-bg" class="p-2 rounded-lg">
+            <svg id="toast-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"></svg>
+        </div>
+        <div class="flex-1">
+            <p id="toast-title" class="text-xs font-black uppercase tracking-tight text-slate-900"></p>
+            <p id="toast-msg" class="text-[11px] font-medium text-slate-500 mt-1 leading-relaxed"></p>
+        </div>
+        <button onclick="hideToast()" class="text-slate-300 hover:text-slate-600"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
     </div>
 
     <script>
         const API = '/api/admin/contracts';
         const PARTNER_API = '/api/admin/partners';
-        let currentStep = 1;
         let partnersMap = {};
-        const localNodeId = localStorage.getItem('dx_node_id') || 'DX-INIT-NODE';
+        const localNodeId = localStorage.getItem('dx_node_id') || 'DX-DEFAULT-NODE';
 
-        document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('header-node-id').innerText = localNodeId;
-            loadPartners().then(fetchContracts);
+        document.addEventListener('DOMContentLoaded', async () => {
+            initIdentity();
+            // OPTIMIZATION: Load data in parallel to reduce perceived lag
+            try {
+                await Promise.all([loadPartners(), fetchContracts()]);
+            } catch (err) {
+                console.error("Initial load sequence failed", err);
+            }
+            setInterval(() => fetchContracts(true), 15000);
         });
+
+        function initIdentity() {
+            const hNode = document.getElementById('header-node-id');
+            if (hNode) hNode.innerText = localNodeId;
+            const user = localStorage.getItem('dx_user') || 'Admin';
+            const hUser = document.getElementById('header-username');
+            if (hUser) hUser.innerText = user;
+            const hAvatar = document.getElementById('header-avatar');
+            if (hAvatar) hAvatar.src = `https://ui-avatars.com/api/?name=${user}&background=0f172a&color=fff`;
+        }
 
         async function loadPartners() {
             const res = await callApi(PARTNER_API, { _func: "list_partners" });
             const sel = document.getElementById('wiz-partner');
+            if (!sel) return;
             sel.innerHTML = '<option value="">Select Target Partner...</option>';
             if (res && Array.isArray(res)) {
                 res.forEach(p => {
@@ -231,22 +247,41 @@
             }
         }
 
-        async function fetchContracts() {
+        async function fetchContracts(silent = false) {
             const res = await callApi(API, { _func: "list_contracts" });
             const tbody = document.getElementById('contract-table-body');
+            if (!tbody) return;
+            if (res) {
+                const syncEl = document.getElementById('last-sync-time');
+                if (syncEl) syncEl.innerText = `Last sync: ${new Date().toLocaleTimeString()}`;
+            }
+            if (!res || !Array.isArray(res)) return;
+
             tbody.innerHTML = '';
-            if (res && Array.isArray(res)) res.forEach(c => {
-                const partnerId = c.sender_partner_id === localNodeId ? c.receiver_partner_id : c.sender_partner_id;
+            res.forEach(c => {
+                const isInitiator = c.sender_partner_id === localNodeId;
+                const isReceiver = c.receiver_partner_id === localNodeId;
+                const partnerId = isInitiator ? c.receiver_partner_id : c.sender_partner_id;
                 const row = document.createElement('tr');
                 row.className = "hover:bg-slate-50 transition-all";
+                
                 row.innerHTML = `
                     <td class="px-6 py-4 font-black text-slate-900 uppercase text-xs">${partnersMap[partnerId] || partnerId}</td>
                     <td class="px-6 py-4 font-bold text-slate-600">${c.name}</td>
                     <td class="px-6 py-4 text-center"><span class="px-2 py-0.5 bg-slate-100 text-slate-500 rounded text-[9px] font-black uppercase">${c.metadata?.format?.toUpperCase() || 'JSON'}</span></td>
                     <td class="px-6 py-4"><span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${getStatusColor(c.status)}">${c.status}</span></td>
                     <td class="px-6 py-4 text-right">
-                        <button onclick="handleViewDetails('${c.contract_id}')" class="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-[9px] font-black uppercase hover:bg-slate-200">Inspect</button>
-                        ${c.status === 'Draft' ? `<button onclick="handlePropose('${c.contract_id}')" class="ml-2 px-3 py-1.5 bg-slate-900 text-white rounded-lg text-[9px] font-black uppercase">Propose</button>` : ''}
+                        <div class="flex items-center justify-end gap-2">
+                            ${isInitiator && c.status === 'Proposed' ? `
+                                <button onclick="handleForceSync('${c.contract_id}')" class="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-[9px] font-black uppercase hover:bg-blue-100" title="Query peer for status update">Verify Sync</button>
+                            ` : ''}
+                            ${isReceiver && c.status === 'Proposed' ? `
+                                <button onclick="handleAccept('${c.contract_id}')" class="px-3 py-1.5 bg-green-600 text-white rounded-lg text-[9px] font-black uppercase hover:bg-green-700 shadow-sm">Accept</button>
+                                <button onclick="handleReject('${c.contract_id}')" class="px-3 py-1.5 bg-red-600 text-white rounded-lg text-[9px] font-black uppercase hover:bg-red-700 shadow-sm">Reject</button>
+                            ` : ''}
+                            <button onclick="handleViewDetails('${c.contract_id}')" class="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-[9px] font-black uppercase hover:bg-slate-200">Inspect</button>
+                            ${c.status === 'Draft' ? `<button onclick="handlePropose('${c.contract_id}')" class="px-3 py-1.5 bg-slate-900 text-white rounded-lg text-[9px] font-black uppercase hover:bg-slate-800 shadow-sm">Propose</button>` : ''}
+                        </div>
                     </td>
                 `;
                 tbody.appendChild(row);
@@ -260,18 +295,24 @@
                 document.getElementById('ins-id').innerText = `UUID: ${res.contract_id}`;
                 document.getElementById('ins-sender').innerText = partnersMap[res.sender_partner_id] || res.sender_partner_id;
                 document.getElementById('ins-receiver').innerText = partnersMap[res.receiver_partner_id] || res.receiver_partner_id;
-                document.getElementById('ins-status').innerText = res.status;
+                const statusEl = document.getElementById('ins-status');
+                statusEl.innerText = res.status;
+                statusEl.className = `px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest border ${getStatusColor(res.status)}`;
+                
                 const format = res.metadata?.format || 'json';
                 document.getElementById('ins-format-label').innerText = `Governance Format: ${format.toUpperCase()}`;
                 document.getElementById('ins-timestamp').innerText = `Issued: ${res.created_at}`;
+
                 const tbody = document.getElementById('ins-field-body');
                 tbody.innerHTML = '';
                 if (format === 'csv') {
-                    (res.schema_definition.fields || []).forEach(f => {
-                        tbody.innerHTML += `<tr><td class="p-3 font-bold text-slate-900">${f.name}</td><td class="p-3 text-center uppercase font-black text-slate-400">${f.type}</td><td class="p-3 text-center"><span class="${f.pii ? 'text-red-600 font-black' : 'text-slate-200'}">${f.pii ? 'YES' : 'NO'}</span></td><td class="p-3 text-slate-500 italic">${f.pii ? 'Sensitive Data - Masking required' : 'Standard Field'}</td></tr>`;
-                    });
+                    if (res.schema_definition && res.schema_definition.fields) {
+                        res.schema_definition.fields.forEach(f => {
+                            tbody.innerHTML += `<tr><td class="p-3 font-bold text-slate-900">${f.name}</td><td class="p-3 text-center uppercase font-black text-slate-400">${f.type}</td><td class="p-3 text-center"><span class="${f.pii ? 'text-red-600 font-black' : 'text-slate-200'}">${f.pii ? 'YES' : 'NO'}</span></td><td class="p-3 text-slate-500 italic">${f.pii ? 'Sensitive Data - Masking required' : 'Standard Field'}</td></tr>`;
+                        });
+                    }
                 } else {
-                    const props = res.schema_definition.properties || {};
+                    const props = res.schema_definition?.properties || {};
                     const piiFields = res.pii_fields || [];
                     Object.entries(props).forEach(([key, val]) => {
                         const isPii = piiFields.includes(key);
@@ -282,19 +323,27 @@
             }
         }
 
-        async function handlePropose(id) { 
-            const res = await callApi(API, { _func: "propose_contract", contract_id: id }); 
-            if (res) {
-                showToast("Proposal Dispatched", "The data contract definition has been synchronized with the partner node.", "success");
-                fetchContracts(); 
-            }
+        async function handlePropose(id) {
+            const res = await callApi(API, { _func: "propose_contract", contract_id: id });
+            if (res) { showToast("Proposal Dispatched", "Metadata synchronized with peer node.", "success"); fetchContracts(); }
         }
 
-        async function addCsvField() {
-            const body = document.getElementById('csv-field-body');
-            const row = document.createElement('tr');
-            row.innerHTML = `<td class="p-2"><input type="text" class="c-name w-full p-2 border border-slate-200 rounded-lg text-xs" placeholder="e.g. email_id"></td><td class="p-2"><select class="c-type w-full p-2 border border-slate-200 rounded-lg text-xs font-bold"><option value="string">STRING</option><option value="number">NUMBER</option><option value="date">DATE</option></select></td><td class="p-2 text-center"><input type="checkbox" class="c-pii w-4 h-4 rounded"></td><td class="p-2 text-right"><button onclick="this.parentElement.parentElement.remove()" class="text-red-300 hover:text-red-600 transition-colors">×</button></td>`;
-            body.appendChild(row);
+        async function handleForceSync(id) {
+            showToast("Sync Requested", "Querying partner node for latest status...", "info");
+            const res = await callApi(API, { _func: "force_sync_status", contract_id: id });
+            if (res) { fetchContracts(); showToast("Sync Complete", "Registry state aligned with peer.", "success"); }
+        }
+
+        async function handleAccept(id) {
+            const res = await callApi(API, { _func: "accept_contract", contract_id: id });
+            if (res) { showToast("Contract Confirmed", "Transitioned to Active. Partner notified.", "success"); fetchContracts(); }
+        }
+
+        async function handleReject(id) {
+            if (confirm("Decline this proposed data contract?")) {
+                const res = await callApi(API, { _func: "reject_contract", contract_id: id });
+                if (res) { showToast("Proposal Declined", "Rejected status relayed to peer.", "warning"); fetchContracts(); }
+            }
         }
 
         async function submitContract() {
@@ -302,109 +351,52 @@
             const partner = document.getElementById('wiz-partner').value;
             const direction = document.getElementById('wiz-direction').value;
             const format = document.getElementById('wiz-format').value;
-            
-            if (!name || !partner) {
-                showToast("Validation Error", "Please provide a contract name and select a partner.", "error");
-                return;
-            }
+            if (!name || !partner) { showToast("Validation Error", "Name and Partner are required.", "error"); return; }
 
-            let schema; 
-            let pii = [];
-
+            let schema; let pii = [];
             if (format === 'csv') {
                 const fields = [];
                 document.querySelectorAll('#csv-field-body tr').forEach(tr => {
-                    const fname = tr.querySelector('.c-name').value;
-                    const type = tr.querySelector('.c-type').value;
-                    const piiCheck = tr.querySelector('.c-pii').checked;
-                    if (fname) { fields.push({ name: fname, type, pii: piiCheck }); if (piiCheck) pii.push(fname); }
+                    const fn = tr.querySelector('.c-name').value;
+                    const ty = tr.querySelector('.c-type').value;
+                    const pi = tr.querySelector('.c-pii').checked;
+                    if (fn) { fields.push({ name: fn, type: ty, pii: pi }); if (pi) pii.push(fn); }
                 });
-                if (fields.length === 0) {
-                    showToast("Validation Error", "Define at least one data column for the CSV template.", "error");
-                    return;
-                }
+                if (fields.length === 0) { showToast("Validation Error", "Define at least one column.", "error"); return; }
                 schema = { fields };
             } else {
-                const schemaRaw = document.getElementById('wiz-json-schema').value;
-                if (!schemaRaw.trim()) {
-                    showToast("Validation Error", "Provide a JSON schema definition.", "error");
-                    return;
-                }
+                const raw = document.getElementById('wiz-json-schema').value;
                 try { 
-                    schema = JSON.parse(schemaRaw); 
-                    // EXTRACTION: Detect x-pii tags in the JSON Schema
-                    if (schema.properties) {
-                        Object.entries(schema.properties).forEach(([key, val]) => {
-                            if (val['x-pii'] === true) pii.push(key);
-                        });
-                    }
-                } catch(e) { 
-                    showToast("Validation Error", "Invalid JSON Schema syntax.", "error");
-                    return; 
-                }
+                    schema = JSON.parse(raw); 
+                    if (schema.properties) Object.entries(schema.properties).forEach(([k, v]) => { if (v['x-pii'] === true) pii.push(k); });
+                } catch(e) { showToast("Validation Error", "Invalid JSON syntax.", "error"); return; }
             }
 
-            const res = await callApi(API, {
-                _func: "create_contract",
-                name: name,
-                sender_partner_id: direction === 'Outgoing' ? localNodeId : partner,
-                receiver_partner_id: direction === 'Incoming' ? localNodeId : partner,
-                direction: direction,
-                schema_definition: schema,
-                retention_policy_days: parseInt(document.getElementById('wiz-retention').value) || 30,
-                pii_fields: pii,
-                metadata: { format }
-            });
-
-            if (res) { 
-                showToast("Success", "Data contract registered successfully.", "success");
-                closeContractWizard(); 
-                fetchContracts(); 
-            }
+            const res = await callApi(API, { _func: "create_contract", name, sender_partner_id: direction === 'Outgoing' ? localNodeId : partner, receiver_partner_id: direction === 'Incoming' ? localNodeId : partner, direction, schema_definition: schema, pii_fields: pii, metadata: { format } });
+            if (res) { showToast("Success", "Draft registered.", "success"); closeContractWizard(); fetchContracts(); }
         }
 
         async function callApi(url, data) {
             try {
-                const r = await fetch(url, { 
-                    method: 'POST', 
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('dx_token')}` }, 
-                    body: JSON.stringify(data) 
-                });
-                const json = await r.json();
-                if (!r.ok) {
-                    showToast(json.error || "Execution Error", json.message || "Protocol level failure.", "error");
-                    return null;
-                }
-                return json.data || json;
-            } catch (e) { 
-                showToast("Network Failure", "Gateway unreachable. Check node instance status.", "error");
-                return null; 
-            }
+                const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('dx_token')}` }, body: JSON.stringify(data) });
+                const out = await r.json();
+                if (!r.ok) { showToast(out.error || "Execution Error", out.message, "error"); return null; }
+                return out.data || out;
+            } catch (e) { return null; }
         }
 
-        function showToast(title, msg, type) {
-            const t = document.getElementById('toast');
-            const bg = document.getElementById('toast-icon-bg');
-            const icon = document.getElementById('toast-icon');
-            document.getElementById('toast-title').innerText = title;
-            document.getElementById('toast-msg').innerText = msg;
-            
-            if (type === 'error') {
-                bg.className = "p-2 rounded-lg bg-red-100 text-red-600";
-                icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />';
-            } else {
-                bg.className = "p-2 rounded-lg bg-green-100 text-green-600";
-                icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />';
-            }
-            
-            t.classList.remove('hidden');
-            setTimeout(hideToast, 6000);
+        function showToast(t, m, s) {
+            const el = document.getElementById('toast');
+            if (!el) return;
+            document.getElementById('toast-title').innerText = t;
+            document.getElementById('toast-msg').innerText = m;
+            document.getElementById('toast-icon-bg').className = `p-2 rounded-lg ${s === 'error' ? 'bg-red-100 text-red-600' : s === 'warning' ? 'bg-yellow-100 text-yellow-600' : 'bg-green-100 text-green-600'}`;
+            el.classList.remove('hidden');
+            setTimeout(() => el.classList.add('hidden'), 5000);
         }
 
         function hideToast() { document.getElementById('toast').classList.add('hidden'); }
-        
         function goToStep(s) {
-            currentStep = s;
             document.getElementById('step1-content').classList.toggle('hidden', s !== 1);
             document.getElementById('step2-content').classList.toggle('hidden', s !== 2);
             document.getElementById('prevBtn').classList.toggle('hidden', s === 1);
@@ -416,22 +408,26 @@
                 const format = document.getElementById('wiz-format').value;
                 document.getElementById('json-schema-area').classList.toggle('hidden', format !== 'json');
                 document.getElementById('csv-template-area').classList.toggle('hidden', format !== 'csv');
-                if (format === 'json' && !document.getElementById('wiz-json-schema').value) {
-                    document.getElementById('wiz-json-schema').value = '{\n  "type": "object",\n  "properties": {\n    "field_1": { "type": "string" }\n  }\n}';
-                }
+                if (format === 'json' && !document.getElementById('wiz-json-schema').value) document.getElementById('wiz-json-schema').value = '{\n  "type": "object",\n  "properties": {\n    "field_1": { "type": "string" }\n  }\n}';
             }
         }
-
-        function getStatusColor(s) { return s === 'Active' ? 'bg-green-100 text-green-700' : s === 'Proposed' ? 'bg-yellow-100 text-yellow-700' : 'bg-slate-100 text-slate-600'; }
+        function getStatusColor(s) {
+            switch(s) {
+                case 'Active': return 'bg-green-100 text-green-700';
+                case 'Proposed': return 'bg-yellow-100 text-yellow-700';
+                case 'Rejected': return 'bg-red-100 text-red-700';
+                default: return 'bg-slate-100 text-slate-600';
+            }
+        }
+        function addCsvField() {
+            const body = document.getElementById('csv-field-body');
+            const row = document.createElement('tr');
+            row.innerHTML = `<td class="p-2"><input type="text" class="c-name w-full p-2 border border-slate-200 rounded-lg text-xs" placeholder="e.g. lead_id"></td><td class="p-2"><select class="c-type w-full p-2 border border-slate-200 rounded-lg text-xs font-bold"><option value="string">STRING</option><option value="number">NUMBER</option><option value="date">DATE</option></select></td><td class="p-2 text-center"><input type="checkbox" class="c-pii w-4 h-4 rounded"></td><td class="p-2 text-right"><button onclick="this.parentElement.parentElement.remove()" class="text-red-300 hover:text-red-600">×</button></td>`;
+            body.appendChild(row);
+        }
         function nextStep() { goToStep(2); }
         function prevStep() { goToStep(1); }
-        function openContractWizard() { 
-            document.getElementById('wiz-name').value = ''; 
-            document.getElementById('wiz-json-schema').value = '';
-            document.getElementById('csv-field-body').innerHTML = ''; 
-            document.getElementById('contractWizard').classList.remove('hidden'); 
-            goToStep(1); 
-        }
+        function openContractWizard() { document.getElementById('wiz-name').value = ''; document.getElementById('wiz-json-schema').value = ''; document.getElementById('csv-field-body').innerHTML = ''; document.getElementById('contractWizard').classList.remove('hidden'); goToStep(1); }
         function closeContractWizard() { document.getElementById('contractWizard').classList.add('hidden'); }
         function closeInspector() { document.getElementById('contractInspector').classList.add('hidden'); }
         function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
