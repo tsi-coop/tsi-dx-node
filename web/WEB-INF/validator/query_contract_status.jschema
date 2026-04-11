@@ -1,0 +1,34 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "P2P Contract Status Protocol",
+  "description": "Governs the cross-node protocol exchange for retrieving the ground-truth lifecycle state of a data contract.",
+  "oneOf": [
+    {
+      "title": "Query Request",
+      "description": "The outbound payload sent to the partner node.",
+      "required": ["_func", "contract_id"],
+      "properties": {
+        "_func": { 
+          "type": "string", 
+          "const": "query_contract_status" 
+        },
+        "contract_id": { 
+          "type": "string", 
+          "format": "uuid" 
+        }
+      }
+    },
+    {
+      "title": "Query Response",
+      "description": "The status payload returned by the remote node.",
+      "required": ["status"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["Draft", "Proposed", "Active", "Rejected", "Terminated"],
+          "description": "The definitive state stored in the peer's registry."
+        }
+      }
+    }
+  ]
+}
