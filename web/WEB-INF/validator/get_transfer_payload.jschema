@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Get Transfer Payload Request",
+  "description": "Schema for retrieving the raw content of a specific transfer's data file (JSON or CSV) for administrative inspection.",
+  "type": "object",
+  "required": [
+    "_func",
+    "transfer_id"
+  ],
+  "properties": {
+    "_func": {
+      "type": "string",
+      "const": "get_transfer_payload",
+      "description": "The internal function identifier for payload retrieval."
+    },
+    "transfer_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "The unique identifier (UUID) of the transfer whose payload is being requested.",
+      "examples": [
+        "8cec1cdd-a15c-49d2-9b9b-8902b20237fb"
+      ]
+    }
+  },
+  "additionalProperties": false
+}
