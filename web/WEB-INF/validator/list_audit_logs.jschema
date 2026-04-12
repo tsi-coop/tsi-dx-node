@@ -1,0 +1,60 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "List Audit Logs Request",
+  "description": "Schema for validating requests to list system audit logs with support for multi-criteria filtering and pagination.",
+  "type": "object",
+  "required": [
+    "_func",
+    "page",
+    "limit"
+  ],
+  "properties": {
+    "_func": {
+      "type": "string",
+      "const": "list_audit_logs",
+      "description": "The internal function identifier for retrieving audit logs."
+    },
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "HANDSHAKE",
+        "TRANSFER",
+        "CONTRACT",
+        "SECURITY",
+        ""
+      ],
+      "description": "Optional filter for the category of the audit event."
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "CRITICAL",
+        "ERROR",
+        "WARNING",
+        "INFO",
+        ""
+      ],
+      "description": "Optional filter for the log severity level."
+    },
+    "search": {
+      "type": "string",
+      "description": "Optional keyword search targeting event types, actor IDs, or the JSONB details payload."
+    },
+    "page": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "The page number for offset-based pagination."
+    },
+    "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100,
+      "description": "The number of records to return per page."
+    },
+    "actor_id": {
+      "type": "string",
+      "description": "Optional filter for the specific user or system entity that triggered the event."
+    }
+  },
+  "additionalProperties": false
+}
