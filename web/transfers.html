@@ -130,7 +130,6 @@
             const tbody = document.getElementById('transfer-table-body');
             tbody.innerHTML = '';
             
-            // FIX: callApi returns the array directly (the json.data || json logic)
             const dataArr = Array.isArray(res) ? res : (res && res.data ? res.data : []);
             
             dataArr.forEach(t => {
@@ -148,6 +147,11 @@
             });
         }
 
+        /**
+         * APPROACH: JSON-based Base64 Upload.
+         * Bypasses multipart stream issues by treating the file as a string property 
+         * in a standard JSON payload.
+         */
         async function handleInitiate(e) {
             e.preventDefault();
             const btn = document.getElementById('submitBtn');
@@ -163,30 +167,39 @@
             }
             
             btn.disabled = true;
-            btn.innerText = "UPLOADING...";
+            btn.innerText = "ENCODING...";
 
-            const formData = new FormData();
-            formData.append("_func", "initiate_transfer");
-            formData.append("contract_id", document.getElementById('m-contract').value);
-            formData.append("receiver_node_id", document.getElementById('m-partner').value);
-            formData.append("payload_file", file);
+            // Read file as Base64 string
+            const toBase64 = file => new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result.split(',')[1]); // Extract data only
+                reader.onerror = error => reject(error);
+            });
 
             try {
-                const response = await fetch(API, {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${localStorage.getItem('dx_token')}` },
-                    body: formData
-                });
+                const base64Data = await toBase64(file);
                 
-                const data = await response.json();
-                if (response.ok) {
+                const payload = {
+                    _func: "initiate_transfer",
+                    contract_id: document.getElementById('m-contract').value,
+                    receiver_node_id: document.getElementById('m-partner').value,
+                    file_name: file.name,
+                    file_data: base64Data, // Physical file bytes as string
+                    file_size: file.size
+                };
+
+                btn.innerText = "UPLOADING...";
+                const res = await callApi(API, payload);
+
+                if (res && (res.success || res._success)) {
                     closeTransferModal();
                     fetchTransfers();
                 } else {
-                    alert("Initiation failed: " + data.message);
+                    alert("Initiation failed: " + (res ? (res.message || "Unknown gateway error") : "Network failure"));
                 }
             } catch (err) {
-                alert("Network error during upload.");
+                alert("Error during file processing: " + err.message);
             } finally {
                 btn.disabled = false;
                 btn.innerText = "Upload & Start";
@@ -202,8 +215,6 @@
             cSel.innerHTML = '<option value="">Select Contract Schema...</option>';
             pSel.innerHTML = '<option value="">Select Target Partner...</option>';
             
-            // FIX: callApi already returns the inner 'data' array if it exists.
-            // Check if returned value is an array directly.
             if (contracts && Array.isArray(contracts)) {
                 contracts.forEach(c => {
                     if (c.status === 'Active') {
@@ -214,7 +225,6 @@
             
             if (partners && Array.isArray(partners)) {
                 partners.forEach(p => {
-                    // Use node_id as the value for the partner select, matching the initiate_transfer requirement
                     if (p.status === 'Active') {
                         pSel.innerHTML += `<option value="${p.node_id}">${p.name} (${p.node_id})</option>`;
                     }
@@ -230,7 +240,6 @@
                     body: JSON.stringify(data) 
                 });
                 const json = await r.json();
-                // Return the data property if present, otherwise the whole object
                 return json.data || json;
             } catch (e) { return null; }
         }
