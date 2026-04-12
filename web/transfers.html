@@ -129,21 +129,23 @@
             const res = await callApi(API, { _func: "list_transfers", status: status });
             const tbody = document.getElementById('transfer-table-body');
             tbody.innerHTML = '';
-            if (res && res.data) {
-                res.data.forEach(t => {
-                    const row = document.createElement('tr');
-                    row.className = "hover:bg-slate-50";
-                    row.innerHTML = `
-                        <td class="px-6 py-4 font-mono text-[10px] text-slate-500">${t.transfer_id.substring(0,8)}...</td>
-                        <td class="px-6 py-4 font-bold text-slate-900">${t.peer_node_id}</td>
-                        <td class="px-6 py-4 font-medium text-slate-600">${t.file_name}</td>
-                        <td class="px-6 py-4"><span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${t.direction === 'Outgoing' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}">${t.direction}</span></td>
-                        <td class="px-6 py-4"><span class="text-[10px] font-bold ${t.status === 'Delivered' ? 'text-green-600' : 'text-orange-500'}">${t.status}</span></td>
-                        <td class="px-6 py-4 text-right">...</td>
-                    `;
-                    tbody.appendChild(row);
-                });
-            }
+            
+            // FIX: callApi returns the array directly (the json.data || json logic)
+            const dataArr = Array.isArray(res) ? res : (res && res.data ? res.data : []);
+            
+            dataArr.forEach(t => {
+                const row = document.createElement('tr');
+                row.className = "hover:bg-slate-50";
+                row.innerHTML = `
+                    <td class="px-6 py-4 font-mono text-[10px] text-slate-500">${t.transfer_id.substring(0,8)}...</td>
+                    <td class="px-6 py-4 font-bold text-slate-900">${t.peer_node_id}</td>
+                    <td class="px-6 py-4 font-medium text-slate-600">${t.file_name}</td>
+                    <td class="px-6 py-4"><span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${t.direction === 'Outgoing' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}">${t.direction}</span></td>
+                    <td class="px-6 py-4"><span class="text-[10px] font-bold ${t.status === 'Delivered' || t.status === 'Received' ? 'text-green-600' : 'text-orange-500'}">${t.status}</span></td>
+                    <td class="px-6 py-4 text-right">...</td>
+                `;
+                tbody.appendChild(row);
+            });
         }
 
         async function handleInitiate(e) {
@@ -154,7 +156,6 @@
 
             if (!file) return;
 
-            // Client-side format guard
             const ext = file.name.split('.').pop().toLowerCase();
             if (ext !== 'json' && ext !== 'csv') {
                 alert("Only JSON and CSV files are permitted for exchange.");
@@ -197,16 +198,39 @@
             const partners = await callApi(PARTNERS_API, { _func: "list_partners" });
             const cSel = document.getElementById('m-contract');
             const pSel = document.getElementById('m-partner');
+            
             cSel.innerHTML = '<option value="">Select Contract Schema...</option>';
             pSel.innerHTML = '<option value="">Select Target Partner...</option>';
-            if (contracts) contracts.forEach(c => cSel.innerHTML += `<option value="${c.contract_id}">${c.name}</option>`);
-            if (partners && partners.data) partners.data.forEach(p => pSel.innerHTML += `<option value="${p.node_id}">${p.name}</option>`);
+            
+            // FIX: callApi already returns the inner 'data' array if it exists.
+            // Check if returned value is an array directly.
+            if (contracts && Array.isArray(contracts)) {
+                contracts.forEach(c => {
+                    if (c.status === 'Active') {
+                        cSel.innerHTML += `<option value="${c.contract_id}">${c.name}</option>`;
+                    }
+                });
+            }
+            
+            if (partners && Array.isArray(partners)) {
+                partners.forEach(p => {
+                    // Use node_id as the value for the partner select, matching the initiate_transfer requirement
+                    if (p.status === 'Active') {
+                        pSel.innerHTML += `<option value="${p.node_id}">${p.name} (${p.node_id})</option>`;
+                    }
+                });
+            }
         }
 
         async function callApi(url, data) {
             try {
-                const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('dx_token')}` }, body: JSON.stringify(data) });
+                const r = await fetch(url, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('dx_token')}` }, 
+                    body: JSON.stringify(data) 
+                });
                 const json = await r.json();
+                // Return the data property if present, otherwise the whole object
                 return json.data || json;
             } catch (e) { return null; }
         }
@@ -222,6 +246,7 @@
         function openTransferModal() { populateModal(); document.getElementById('transferModal').classList.remove('hidden'); }
         function closeTransferModal() { document.getElementById('transferModal').classList.add('hidden'); document.getElementById('transferForm').reset(); }
         function logout() { localStorage.clear(); window.location.href = 'index.html'; }
+        
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('header-node-id').innerText = localNodeId || 'DX-INIT';
             fetchTransfers();

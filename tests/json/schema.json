@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Sales Lead Exchange Schema",
+  "type": "object",
+  "required": ["lead_id", "first_name", "last_name", "email", "source"],
+  "properties": {
+    "lead_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique system identifier for the lead record."
+    },
+    "first_name": {
+      "type": "string",
+      "minLength": 2,
+      "description": "The lead's given name.",
+      "x-pii": true
+    },
+    "last_name": {
+      "type": "string",
+      "minLength": 2,
+      "description": "The lead's family name.",
+      "x-pii": true
+    },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "description": "Verified business email address.",
+      "x-pii": true
+    },
+    "phone": {
+      "type": "string",
+      "pattern": "^\\+?[1-9]\\d{1,14}$",
+      "description": "Contact number in E.164 format.",
+      "x-pii": true
+    },
+    "company": {
+      "type": "string",
+      "description": "The organization the lead represents."
+    },
+    "source": {
+      "type": "string",
+      "enum": ["Web", "Referral", "Partner", "Event", "Inbound"],
+      "description": "Marketing channel attribution."
+    },
+    "interest_score": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100
+    }
+  }
+}

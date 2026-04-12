@@ -1,0 +1,10 @@
+{
+  "lead_id": "550e8400-e29b-41d4-a716-446655440000",
+  "first_name": "John",
+  "last_name": "Doe",
+  "email": "john.doe@example.com",
+  "phone": "+14155552671",
+  "company": "TSI Consulting",
+  "source": "Web",
+  "interest_score": 85
+}
