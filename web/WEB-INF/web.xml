@@ -9,6 +9,10 @@
 	<filter-name>TSI_DX_Node</filter-name>
 	<filter-class>org.tsicoop.dxnode.framework.InterceptingFilter</filter-class>
 </filter>
+
+<listener>
+		<listener-class>org.tsicoop.dxnode.framework.TransferEngine</listener-class>
+</listener>
 	
 <filter-mapping>
 	<filter-name>TSI_DX_Node</filter-name>
