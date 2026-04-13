@@ -15,7 +15,7 @@ import java.util.UUID;
 /**
  * Dashboard service for the TSI DX Node Admin App.
  * Aggregates system metrics, recent activities, and pending actions.
- * Corrected to match the 'init.sql' schema.
+ * Updated to prioritize Data Contract visibility over storage metrics.
  */
 public class Dashboard implements REST {
 
@@ -46,7 +46,7 @@ public class Dashboard implements REST {
             String func = (String) input.get("_func");
 
             if (func == null || func.trim().isEmpty()) {
-                OutputProcessor.errorResponse(res, HttpServletResponse.SC_BAD_REQUEST, "Bad Request", "Missing required '_func' attribute.", req.getRequestURI());
+                OutputProcessor.errorResponse(res, HttpServletResponse.SC_BAD_REQUEST, "Bad Request", "Missing required '_func' attribute in input JSON.", req.getRequestURI());
                 return;
             }
 
@@ -96,7 +96,7 @@ public class Dashboard implements REST {
         try {
             conn = pool.getConnection();
 
-            // 1. Node Identity & Status (from node_config)
+            // 1. Node Identity & Status
             JSONObject nodeStatus = new JSONObject();
             pstmt = conn.prepareStatement("SELECT node_id, fqdn FROM node_config WHERE config_id = ?");
             pstmt.setObject(1, NODE_CONFIG_SINGLETON_ID);
@@ -113,22 +113,26 @@ public class Dashboard implements REST {
             pstmt.close();
 
             // 2. High-level Metrics
-            // Partners Active
             pstmt = conn.prepareStatement("SELECT COUNT(*) FROM partners WHERE status = 'Active'");
             rs = pstmt.executeQuery();
             summary.put("partners_online", rs.next() ? rs.getInt(1) : 0);
             rs.close();
             pstmt.close();
 
-            // Transfers (Last 24h) - Table name corrected to 'data_transfers', timestamp to 'start_time'
             pstmt = conn.prepareStatement("SELECT COUNT(*) FROM data_transfers WHERE start_time > NOW() - INTERVAL '24 hours'");
             rs = pstmt.executeQuery();
             summary.put("transfers_24h", rs.next() ? rs.getInt(1) : 0);
             rs.close();
             pstmt.close();
 
+            // REVISED: Active Contracts Count
+            pstmt = conn.prepareStatement("SELECT COUNT(*) FROM data_contracts WHERE status = 'Active'");
+            rs = pstmt.executeQuery();
+            summary.put("contracts_active_count", rs.next() ? rs.getInt(1) : 0);
+            rs.close();
+            pstmt.close();
+
             // 3. Recent Transfers
-            // Note: Join logic changed to use data_contracts to find the context
             JSONArray recentTransfers = new JSONArray();
             String transferSql = "SELECT t.transfer_id, t.status, t.sender_node_id, t.receiver_node_id, c.name as contract_name " +
                                  "FROM data_transfers t " +
@@ -139,15 +143,11 @@ public class Dashboard implements REST {
             while (rs.next()) {
                 JSONObject t = new JSONObject();
                 String sender = rs.getString("sender_node_id");
-                String receiver = rs.getString("receiver_node_id");
-                
                 t.put("id", rs.getString("transfer_id"));
-                // If local node is sender, the "partner" is the receiver
-                t.put("partner", localNodeId.equals(sender) ? receiver : sender);
+                t.put("partner", localNodeId.equals(sender) ? rs.getString("receiver_node_id") : sender);
                 t.put("direction", localNodeId.equals(sender) ? "OUTGOING" : "INCOMING");
                 t.put("status", rs.getString("status"));
                 
-                // progress_pct is not in the schema, inferring from status for UI consistency
                 String status = rs.getString("status");
                 int progress = 0;
                 if ("Delivered".equals(status) || "Sent".equals(status) || "Received".equals(status)) progress = 100;
@@ -176,7 +176,7 @@ public class Dashboard implements REST {
             rs.close();
             pstmt.close();
 
-            // 5. Recent Audit Events - Column names aligned with schema (event_type instead of summary)
+            // 5. Recent Audit Events
             JSONArray auditLogs = new JSONArray();
             pstmt = conn.prepareStatement("SELECT timestamp, severity, event_type, actor_id FROM audit_logs ORDER BY timestamp DESC LIMIT 5");
             rs = pstmt.executeQuery();
@@ -189,9 +189,20 @@ public class Dashboard implements REST {
                 auditLogs.add(log);
             }
             summary.put("recent_audit", auditLogs);
+            rs.close();
+            pstmt.close();
 
-            // 6. Storage Metric
-            summary.put("storage_used_pct", 42); // Placeholder
+            // NEW: Recent Active Contracts
+            JSONArray recentContracts = new JSONArray();
+            pstmt = conn.prepareStatement("SELECT name, updated_at FROM data_contracts WHERE status = 'Active' ORDER BY updated_at DESC LIMIT 3");
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                JSONObject c = new JSONObject();
+                c.put("name", rs.getString("name"));
+                c.put("date", rs.getTimestamp("updated_at").toString());
+                recentContracts.add(c);
+            }
+            summary.put("recent_contracts", recentContracts);
 
         } finally {
             pool.cleanup(rs, pstmt, conn);
