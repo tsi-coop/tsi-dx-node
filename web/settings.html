@@ -72,22 +72,18 @@
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
 
-        /* Code Editor Simulation */
-        .code-editor {
-            background-color: #1e293b;
-            color: #e2e8f0;
-            font-family: 'JetBrains Mono', 'Fira Code', monospace;
-            line-height: 1.6;
+        .modal-backdrop {
+            background-color: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(4px);
         }
     </style>
 </head>
 <body class="flex h-screen overflow-hidden">
 
-    <!-- Sidebar Navigation -->
     <aside id="sidebar" class="sidebar bg-slate-900 flex flex-col z-20">
         <div class="p-6 mb-4">
             <div class="flex items-center gap-3 brand-container">
-                <div class="brand-icon bg-blue-600 p-2.5 rounded-xl shadow-lg shadow-blue-900/20 flex-shrink-0">
+                <div class="brand-icon bg-blue-600 p-2.5 rounded-xl shadow-lg flex-shrink-0">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                     </svg>
@@ -100,12 +96,14 @@
         </div>
 
         <nav class="flex-1 overflow-y-auto">
+            <!-- SECTION 1: HUB -->
             <div class="px-8 mb-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest nav-text">Operational Hub</div>
             <a href="dashboard.html" class="nav-item">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
                 <span class="nav-text">Dashboard</span>
             </a>
             
+            <!-- SECTION 2: RESTORED PARTNERSHIP SUB-MENU HEADER -->
             <div class="px-8 mt-6 mb-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest nav-text">Partnership</div>
             <a href="partners.html" class="nav-item">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
@@ -114,13 +112,13 @@
             <a href="contracts.html" class="nav-item">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                 <span class="nav-text">Data Contracts</span>
-                <span class="ml-auto bg-blue-600 text-[10px] px-2 py-0.5 rounded-full text-white font-bold nav-badge">2</span>
             </a>
             <a href="transfers.html" class="nav-item">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
                 <span class="nav-text">Transfer Logs</span>
             </a>
 
+            <!-- SECTION 3: SYSTEM -->
             <div class="px-8 mt-6 mb-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest nav-text">System</div>
             <a href="audit.html" class="nav-item">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 00-2 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
@@ -146,7 +144,6 @@
 
     <!-- Main Content Area -->
     <main class="flex-1 flex flex-col min-w-0">
-        <!-- Header -->
         <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 z-10">
             <div class="flex items-center gap-4">
                 <button onclick="toggleSidebar()" class="p-2 hover:bg-slate-100 rounded-lg text-slate-500">
@@ -154,15 +151,15 @@
                 </button>
                 <div class="h-8 w-px bg-slate-200 mx-2"></div>
                 <div class="flex flex-col">
-                    <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-tight">Current Node Instance</span>
-                    <span class="text-xs font-black text-slate-900 leading-tight" id="header-node-id">DX-PROD-SOUTH-01</span>
+                    <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-tight">Identity Context</span>
+                    <span class="text-xs font-black text-slate-900 leading-tight" id="header-node-id">...</span>
                 </div>
             </div>
 
             <div class="flex items-center gap-3">
                 <div class="flex flex-col items-end">
-                    <span class="text-xs font-bold text-slate-900" id="header-username">Admin User</span>
-                    <span class="text-[10px] text-slate-400 font-medium uppercase tracking-tighter" id="header-role">Node Administrator</span>
+                    <span class="text-xs font-bold text-slate-900" id="header-username">...</span>
+                    <span class="text-[10px] text-slate-400 font-medium uppercase tracking-tighter" id="header-role">...</span>
                 </div>
                 <div class="h-10 w-10 bg-slate-200 rounded-xl border-2 border-white shadow-sm overflow-hidden">
                     <img src="" id="header-avatar" alt="Avatar">
@@ -172,23 +169,20 @@
 
         <!-- Dynamic View Area -->
         <div class="flex-1 flex overflow-hidden">
-            <!-- Configuration Sub-Navigation -->
             <aside class="w-64 bg-white border-r border-slate-200 flex flex-col py-8">
                 <div class="px-8 mb-6">
                     <h2 class="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Node Config</h2>
                 </div>
                 <nav class="flex-1">
                     <button onclick="showSection('node')" id="btn-node" class="sub-nav-item active w-full text-left px-8 py-3 text-xs font-bold uppercase tracking-widest transition-all">Node Settings</button>
-                    <button onclick="showSection('pii')" id="btn-pii" class="sub-nav-item w-full text-left px-8 py-3 text-xs font-bold uppercase tracking-widest text-slate-500 hover:text-slate-900 transition-all">PII Anonymization</button>
-                    <button onclick="showSection('scripts')" id="btn-scripts" class="sub-nav-item w-full text-left px-8 py-3 text-xs font-bold uppercase tracking-widest text-slate-500 hover:text-slate-900 transition-all">Validation Scripts</button>
+                    <!-- PII ANONYMIZATION HIDDEN PER REQUEST -->
+                    <button onclick="showSection('pii')" id="btn-pii" class="hidden sub-nav-item w-full text-left px-8 py-3 text-xs font-bold uppercase tracking-widest text-slate-500 hover:text-slate-900 transition-all">PII Anonymization</button>
                     <button onclick="showSection('retention')" id="btn-retention" class="sub-nav-item w-full text-left px-8 py-3 text-xs font-bold uppercase tracking-widest text-slate-500 hover:text-slate-900 transition-all">Archiving & Purging</button>
                 </nav>
             </aside>
 
-            <!-- Settings Content Container -->
             <div class="flex-1 overflow-y-auto p-12 custom-scrollbar bg-slate-50">
                 <div class="max-w-4xl mx-auto">
-                    <!-- Feedback Alert -->
                     <div id="settings-feedback" class="hidden p-4 mb-8 rounded-xl text-[11px] font-black uppercase text-center border"></div>
 
                     <!-- Node Settings Section -->
@@ -199,69 +193,45 @@
                         </div>
 
                         <div class="card p-8 space-y-6">
-                            <div class="grid grid-cols-2 gap-6">
+                            <div class="grid grid-cols-1 gap-6">
                                 <div>
-                                    <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Local Node ID</label>
+                                    <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Local Node ID (Immutable)</label>
                                     <input type="text" id="node-id-input" disabled class="w-full px-4 py-2.5 bg-slate-100 border border-slate-200 rounded-lg text-sm font-mono text-slate-500 cursor-not-allowed">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Public FQDN (CNAME)</label>
+                                    <input type="text" id="node-fqdn-input" class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500/20">
                                 </div>
                                 <div>
                                     <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Protocol Port (mTLS)</label>
                                     <input type="number" id="node-port-input" class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500/20">
                                 </div>
-                                <div class="col-span-2">
-                                    <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Public FQDN (CNAME)</label>
-                                    <input type="text" id="node-fqdn-input" class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500/20">
-                                </div>
                             </div>
                         </div>
 
-                        <div class="card p-8 space-y-6 opacity-60">
+                        <!-- PKI Management Section -->
+                        <div class="card p-8 space-y-6 border-blue-100 bg-blue-50/10">
                             <div>
                                 <h3 class="text-xs font-black text-slate-900 uppercase tracking-widest">PKI Management</h3>
-                                <p class="text-[10px] text-slate-400 font-medium mt-1 uppercase">Advanced certificate rotations managed via node backend.</p>
+                                <p class="text-[10px] text-slate-400 font-medium mt-1 uppercase">Establish your protocol identity for sovereign mTLS handshakes.</p>
                             </div>
                             <div class="flex gap-4">
-                                <button disabled class="flex-1 py-3 bg-slate-200 text-slate-500 rounded-xl text-[10px] font-black uppercase tracking-widest">Generate new CSR</button>
-                                <button disabled class="flex-1 py-3 bg-slate-200 text-slate-500 rounded-xl text-[10px] font-black uppercase tracking-widest">Import Signed Certificate</button>
+                                <button onclick="openCsrModal()" class="flex-1 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-slate-800 transition-all">Generate CSR</button>
+                                <button onclick="openImportModal()" class="flex-1 py-3 bg-white border border-slate-200 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all">Import Signed Cert</button>
                             </div>
+                            <p class="text-[9px] text-slate-400 italic">Self-signed identity is recommended for private B2B links to prevent metadata leakage to public logs.</p>
                         </div>
                     </section>
 
-                    <!-- PII Anonymization Section -->
+                    <!-- PII Anonymization Section (STAYS HIDDEN) -->
                     <section id="section-pii" class="hidden space-y-8">
                         <div>
                             <h1 class="text-2xl font-black text-slate-900 uppercase tracking-tight">PII Anonymization Rules</h1>
                             <p class="text-xs text-slate-500 font-medium mt-1">Define global data governance templates for sensitive field handling.</p>
                         </div>
                         <div class="card p-8">
-                            <div class="space-y-4" id="pii-rules-container">
-                                <!-- Dynamic Rules -->
-                            </div>
+                            <div class="space-y-4" id="pii-rules-container"></div>
                             <button onclick="handleAddNewPiiRule()" class="mt-4 w-full py-4 border-2 border-dashed border-slate-200 rounded-xl text-[10px] font-black text-slate-400 uppercase tracking-widest hover:bg-white hover:text-blue-600 transition-all">+ Add New Rule Template</button>
-                        </div>
-                    </section>
-
-                    <!-- Validation Scripts Section -->
-                    <section id="section-scripts" class="hidden space-y-8">
-                        <div class="flex justify-between items-end">
-                            <div>
-                                <h1 class="text-2xl font-black text-slate-900 uppercase tracking-tight">Validation Logic</h1>
-                                <p class="text-xs text-slate-500 font-medium mt-1">Manage custom Python/JS validation scripts for contract enforcement.</p>
-                            </div>
-                            <button onclick="saveActiveScript()" class="px-4 py-2 bg-slate-900 text-white rounded-lg text-[10px] font-black uppercase tracking-widest shadow-md">Deploy Active Script</button>
-                        </div>
-                        <div class="card overflow-hidden">
-                            <div class="bg-slate-800 px-6 py-3 flex items-center justify-between">
-                                <div class="flex items-center gap-3">
-                                    <span class="text-[10px] font-black text-slate-400 uppercase">Script Editor:</span>
-                                    <span class="text-[10px] font-black text-blue-400 uppercase" id="script-name-display">...</span>
-                                </div>
-                                <div class="flex gap-4">
-                                    <span class="text-[9px] font-bold text-slate-500 uppercase" id="script-runtime-display">Runtime: ...</span>
-                                    <span class="text-[9px] font-bold text-green-500 uppercase" id="script-status-display">Status: ...</span>
-                                </div>
-                            </div>
-                            <textarea id="script-code-editor" class="w-full h-80 code-editor p-8 text-xs outline-none resize-none custom-scrollbar" spellcheck="false"></textarea>
                         </div>
                     </section>
 
@@ -291,203 +261,230 @@
                         </div>
                     </section>
 
-                    <!-- Global Save Button -->
                     <div class="mt-12 pt-8 border-t border-slate-200 flex justify-end">
-                        <button id="global-save-btn" onclick="handleGlobalSave()" class="px-10 py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-xl shadow-blue-500/20 transition-all transform hover:-translate-y-1 active:translate-y-0">
-                            Apply Active Section Changes
-                        </button>
+                        <button id="global-save-btn" onclick="handleGlobalSave()" class="px-10 py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-xl shadow-blue-500/20 transition-all transform hover:-translate-y-1 active:translate-y-0">Apply Changes</button>
                     </div>
                 </div>
             </div>
         </div>
     </main>
 
-    <script>
-        const API_ENDPOINT = '/api/admin/settings';
-        let activeSection = 'node';
-        let currentScriptId = null;
+    <!-- CSR Generation Modal -->
+    <div id="csrModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop">
+        <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden">
+            <div class="px-8 py-6 bg-slate-900 flex items-center justify-between">
+                <h3 class="text-xl font-black text-white uppercase tracking-tight">Generate Node CSR</h3>
+                <button onclick="closeCsrModal()" class="text-slate-400 hover:text-white transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
+            </div>
+            <div class="p-8 space-y-6">
+                <div id="csr-inputs">
+                    <div>
+                        <label class="block text-[10px] font-black text-slate-500 uppercase mb-2">Common Name (CN / FQDN)</label>
+                        <input type="text" id="csr-cn" placeholder="dx.yourcompany.org" class="w-full p-3 bg-slate-50 border rounded-lg text-sm font-bold outline-none">
+                    </div>
+                    <div class="mt-4">
+                        <label class="block text-[10px] font-black text-slate-500 uppercase mb-2">Organization (O)</label>
+                        <input type="text" id="csr-org" placeholder="TSI Consulting LLP" class="w-full p-3 bg-slate-50 border rounded-lg text-sm outline-none">
+                    </div>
+                </div>
 
-        document.addEventListener('DOMContentLoaded', () => {
-            initSession();
-            fetchAllSettings();
-        });
+                <div id="csr-result-container" class="hidden space-y-4">
+                    <div class="flex justify-between items-center">
+                        <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest">CSR Content (To be signed by CA or Self)</label>
+                        <button onclick="copyCsrToClipboard()" class="text-[10px] font-black text-blue-600 uppercase hover:underline">Copy to Clipboard</button>
+                    </div>
+                    <textarea id="csr-output" readonly class="w-full h-64 p-3 bg-slate-900 text-blue-400 font-mono text-[10px] rounded-lg resize-none custom-scrollbar"></textarea>
+                    <p class="text-[10px] text-slate-400 italic">Generate this block and sign it locally or via partner to establish private trust. Import the result below.</p>
+                </div>
+
+                <div class="flex gap-4 pt-2">
+                    <button id="csr-cancel-btn" onclick="closeCsrModal()" class="flex-1 py-3 text-xs font-black uppercase text-slate-400">Cancel</button>
+                    <button id="csr-submit-btn" onclick="handleGenerateCsr()" class="flex-1 py-3 bg-slate-900 text-white rounded-xl text-xs font-black uppercase shadow-lg">Generate & Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Certificate Import Modal -->
+    <div id="importModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop">
+        <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden">
+            <div class="px-8 py-6 bg-slate-900 flex items-center justify-between">
+                <h3 class="text-xl font-black text-white uppercase tracking-tight">Import Signed Certificate</h3>
+                <button onclick="closeImportModal()" class="text-slate-400 hover:text-white transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
+            </div>
+            <div class="p-8 space-y-6">
+                <div>
+                    <label class="block text-[10px] font-black text-slate-500 uppercase mb-2 tracking-widest">1. Certificate Block (PEM)</label>
+                    <textarea id="import-cert-pem" required class="w-full h-40 p-4 bg-slate-50 border border-slate-200 rounded-xl font-mono text-[10px] outline-none focus:ring-2 focus:ring-blue-500/10" placeholder="-----BEGIN CERTIFICATE-----..."></textarea>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black text-slate-500 uppercase mb-2 tracking-widest">2. Private Key Block (PEM)</label>
+                    <p class="text-[9px] text-slate-400 mb-2 italic">Mandatory: The corresponding key used to generate the CSR.</p>
+                    <textarea id="import-key-pem" required class="w-full h-32 p-4 bg-slate-50 border border-slate-200 rounded-xl font-mono text-[10px] outline-none focus:ring-2 focus:ring-blue-500/10" placeholder="-----BEGIN PRIVATE KEY-----..."></textarea>
+                </div>
+                <div class="flex gap-4 pt-2">
+                    <button onclick="closeImportModal()" class="flex-1 py-3 text-xs font-black uppercase text-slate-400 hover:text-slate-600 transition-colors">Cancel</button>
+                    <button onclick="handleImportCert()" class="flex-1 py-3 bg-blue-600 text-white rounded-xl text-xs font-black uppercase shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-all">Verify & Activate</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_NODE = '/api/admin/node'; 
+        const API_SETTINGS = '/api/admin/settings'; 
+        let activeSection = 'node';
+        let rulesCache = [];
+
+        document.addEventListener('DOMContentLoaded', () => { initSession(); fetchAllSettings(); });
 
         function initSession() {
             const user = localStorage.getItem('dx_user');
             const role = localStorage.getItem('dx_role');
+            const nodeId = localStorage.getItem('dx_node_id');
             if (user) document.getElementById('header-username').innerText = user;
             if (role) document.getElementById('header-role').innerText = role;
-            document.getElementById('header-avatar').src = `https://ui-avatars.com/api/?name=${user || 'Admin'}&background=0f172a&color=fff`;
+            if (nodeId) document.getElementById('header-node-id').innerText = nodeId;
+            document.getElementById('header-avatar').src = `https://ui-avatars.com/api/?name=${user}&background=0f172a&color=fff`;
         }
 
         async function fetchAllSettings() {
             try {
-                const response = await fetch(API_ENDPOINT, {
+                const response = await fetch(API_SETTINGS, {
                     method: 'POST',
                     headers: getAuthHeaders(),
                     body: JSON.stringify({ _func: "get_all_settings" })
                 });
                 const result = await response.json();
-                if (result.success) {
-                    populateUI(result.data);
-                }
-            } catch (err) {
-                console.error("Settings fetch failed", err);
-            }
+                if (result.success) populateUI(result.data);
+            } catch (err) { console.error("Settings fetch failed", err); }
         }
 
         function populateUI(data) {
-            // Node Config
             if (data.node) {
-                document.getElementById('header-node-id').innerText = data.node.node_id;
                 document.getElementById('node-id-input').value = data.node.node_id;
                 document.getElementById('node-fqdn-input').value = data.node.fqdn;
                 document.getElementById('node-port-input').value = data.node.network_port;
             }
-
-            // Retention
             if (data.retention) {
                 document.getElementById('retention-days-input').value = data.retention.active_days;
                 document.getElementById('retention-years-input').value = data.retention.archive_years;
             }
+        }
 
-            // PII Rules
-            renderPiiRules(data.pii_rules);
+        async function handleGenerateCsr() {
+            const cn = document.getElementById('csr-cn').value.trim();
+            const org = document.getElementById('csr-org').value.trim();
+            if(!cn || !org) return;
 
-            // Validation Scripts (loads the first one for the editor)
-            if (data.scripts && data.scripts.length > 0) {
-                const script = data.scripts[0];
-                currentScriptId = script.id;
-                document.getElementById('script-name-display').innerText = script.name;
-                document.getElementById('script-runtime-display').innerText = `Runtime: ${script.runtime}`;
-                document.getElementById('script-status-display').innerText = `Status: ${script.status}`;
-                document.getElementById('script-code-editor').value = script.code;
+            const btn = document.getElementById('csr-submit-btn');
+            btn.disabled = true;
+            btn.innerText = "GENERATING...";
+
+            const res = await callApi(API_NODE, "generate_node_csr", { common_name: cn, organization: org });
+            
+            btn.disabled = false;
+            if (res && res.success && res.data && res.data.csr_pem) {
+                document.getElementById('csr-output').value = res.data.csr_pem;
+                document.getElementById('csr-result-container').classList.remove('hidden');
+                document.getElementById('csr-inputs').classList.add('hidden');
+                btn.innerText = "Regenerate New CSR";
+                showFeedback("Private Key Stored & CSR Generated", "bg-green-50 text-green-600 border-green-100");
+            } else if (res && res.csr_pem) {
+                document.getElementById('csr-output').value = res.csr_pem;
+                document.getElementById('csr-result-container').classList.remove('hidden');
+                document.getElementById('csr-inputs').classList.add('hidden');
+                btn.innerText = "Regenerate New CSR";
+                showFeedback("Private Key Stored & CSR Generated", "bg-green-50 text-green-600 border-green-100");
+            } else {
+                btn.innerText = "Generate & Save";
+                showFeedback("CSR Generation Failed", "bg-red-50 text-red-600 border-red-100");
             }
         }
 
-        function renderPiiRules(rules) {
-            const container = document.getElementById('pii-rules-container');
-            container.innerHTML = '';
+        function copyCsrToClipboard() {
+            const copyText = document.getElementById("csr-output");
+            copyText.select();
+            copyText.setSelectionRange(0, 99999); 
+            document.execCommand("copy");
+            showFeedback("CSR Block Copied to Clipboard", "bg-blue-50 text-blue-600 border-blue-100");
+        }
+
+        async function handleImportCert() {
+            const certPem = document.getElementById('import-cert-pem').value.trim();
+            const keyPem = document.getElementById('import-key-pem').value.trim();
             
-            if (!rules || rules.length === 0) {
-                container.innerHTML = '<p class="text-[10px] text-slate-400 uppercase font-bold italic text-center py-4">No custom rules defined.</p>';
+            if(!certPem || !keyPem) {
+                showFeedback("Validation Error: Certificate and Private Key PEM blocks are required.", "bg-red-50 text-red-600 border-red-100");
                 return;
             }
-
-            rules.forEach(rule => {
-                const div = document.createElement('div');
-                div.className = "flex items-center justify-between p-4 border border-slate-200 rounded-xl hover:border-blue-300 transition-all";
-                div.innerHTML = `
-                    <div>
-                        <p class="text-sm font-bold text-slate-900 uppercase tracking-tight">Rule: ${rule.name}</p>
-                        <p class="text-[10px] text-slate-500 font-medium">Method: ${rule.method} | Params: ${rule.params}</p>
-                    </div>
-                    <button onclick="handleEditPiiRule('${rule.id}')" class="text-[10px] font-black text-slate-400 uppercase hover:text-slate-900">Edit</button>
-                `;
-                container.appendChild(div);
+            
+            const res = await callApi(API_NODE, "import_node_certificate", { 
+                certificate_pem: certPem,
+                private_key_pem: keyPem 
             });
+            
+            if(res && res.success) {
+                closeImportModal();
+                showFeedback("Protocol Identity Activated", "bg-green-50 text-green-600 border-green-100 shadow-sm");
+                fetchAllSettings();
+            } else {
+                const msg = (res && res.message) ? res.message : "Activation Failed: Invalid PEM or cryptographic mismatch.";
+                showFeedback(msg, "bg-red-50 text-red-600 border-red-100");
+            }
         }
+
+        function openCsrModal() { 
+            document.getElementById('csr-inputs').classList.remove('hidden');
+            document.getElementById('csr-result-container').classList.add('hidden');
+            document.getElementById('csr-submit-btn').innerText = "Generate & Save";
+            document.getElementById('csrModal').classList.remove('hidden'); 
+        }
+        function closeCsrModal() { document.getElementById('csrModal').classList.add('hidden'); }
+        function openImportModal() { document.getElementById('importModal').classList.remove('hidden'); }
+        function closeImportModal() { document.getElementById('importModal').classList.add('hidden'); }
 
         async function handleGlobalSave() {
-            const btn = document.getElementById('global-save-btn');
-            btn.disabled = true;
-            btn.innerText = "PROCESSING...";
+            let res;
+            if (activeSection === 'node') {
+                res = await callApi(API_SETTINGS, "update_node_config", { fqdn: document.getElementById('node-fqdn-input').value, network_port: parseInt(document.getElementById('node-port-input').value) });
+            } else if (activeSection === 'retention') {
+                res = await callApi(API_SETTINGS, "update_retention_policy", { active_days: parseInt(document.getElementById('retention-days-input').value), archive_years: parseInt(document.getElementById('retention-years-input').value) });
+            }
+            if (res && res.success) showFeedback(res.message || "Changes Applied", "bg-green-50 text-green-600 border-green-100");
+        }
 
+        async function callApi(endpoint, func, payload) {
             try {
-                let result;
-                if (activeSection === 'node') {
-                    result = await callApi("update_node_config", {
-                        fqdn: document.getElementById('node-fqdn-input').value,
-                        network_port: parseInt(document.getElementById('node-port-input').value)
-                    });
-                } else if (activeSection === 'retention') {
-                    result = await callApi("update_retention_policy", {
-                        active_days: parseInt(document.getElementById('retention-days-input').value),
-                        archive_years: parseInt(document.getElementById('retention-years-input').value)
-                    });
-                } else if (activeSection === 'scripts') {
-                    await saveActiveScript();
-                    return; // saveActiveScript handles its own UI
-                } else {
-                    showFeedback("Select a section to apply changes.", "bg-blue-50 text-blue-600 border-blue-100");
-                    return;
-                }
-
-                if (result.success) {
-                    showFeedback(result.message || "Changes Applied Successfully", "bg-green-50 text-green-600 border-green-100");
-                } else {
-                    showFeedback(result.message || "Update Failed", "bg-red-50 text-red-600 border-red-100");
-                }
-            } catch (err) {
-                showFeedback("Communication failure with node gateway.", "bg-red-50 text-red-600 border-red-100");
-            } finally {
-                btn.disabled = false;
-                btn.innerText = "Apply Active Section Changes";
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ _func: func, ...payload })
+                });
+                return await response.json(); 
+            } catch (e) {
+                return { success: false, message: "Gateway Communication Error." };
             }
-        }
-
-        async function saveActiveScript() {
-            if (!currentScriptId) return;
-            const code = document.getElementById('script-code-editor').value;
-            const result = await callApi("save_validation_script", {
-                script_id: currentScriptId,
-                code: code
-            });
-            if (result.success) {
-                showFeedback("Script deployed and compiled.", "bg-green-50 text-green-600 border-green-100");
-            }
-        }
-
-        async function callApi(func, payload) {
-            const response = await fetch(API_ENDPOINT, {
-                method: 'POST',
-                headers: getAuthHeaders(),
-                body: JSON.stringify({ _func: func, ...payload })
-            });
-            return await response.json();
-        }
-
-        function showFeedback(msg, classes) {
-            const el = document.getElementById('settings-feedback');
-            el.innerText = msg;
-            el.className = `p-4 mb-8 rounded-xl text-[11px] font-black uppercase text-center border ${classes}`;
-            el.classList.remove('hidden');
-            setTimeout(() => el.classList.add('hidden'), 5000);
         }
 
         function showSection(sectionId) {
             activeSection = sectionId;
-            document.querySelectorAll('.sub-nav-item').forEach(btn => {
-                btn.classList.remove('active', 'bg-blue-50');
-                btn.classList.add('text-slate-500');
-            });
-            const activeBtn = document.getElementById(`btn-${sectionId}`);
-            activeBtn.classList.add('active');
-            activeBtn.classList.remove('text-slate-500');
-
+            document.querySelectorAll('.sub-nav-item').forEach(btn => { btn.classList.remove('active'); btn.classList.add('text-slate-500'); });
+            document.getElementById(`btn-${sectionId}`).classList.add('active');
+            document.getElementById(`btn-${sectionId}`).classList.remove('text-slate-500');
             document.querySelectorAll('section').forEach(sec => sec.classList.add('hidden'));
             document.getElementById(`section-${sectionId}`).classList.remove('hidden');
-            
-            // Contextual Button Name
-            const btn = document.getElementById('global-save-btn');
-            btn.innerText = `Save ${sectionId.charAt(0).toUpperCase() + sectionId.slice(1)} Changes`;
         }
 
-        function getAuthHeaders() {
-            return {
-                'Authorization': `Bearer ${localStorage.getItem('dx_token')}`,
-                'Content-Type': 'application/json'
-            };
+        function showFeedback(msg, classes) {
+            const el = document.getElementById('settings-feedback');
+            el.innerText = msg; el.className = `p-4 mb-8 rounded-xl text-[11px] font-black uppercase text-center border ${classes}`;
+            el.classList.remove('hidden'); setTimeout(() => el.classList.add('hidden'), 5000);
         }
 
-        function logout() {
-            localStorage.clear();
-            window.location.href = 'index.html';
-        }
-
-        function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('collapsed');
-        }
+        function getAuthHeaders() { return { 'Authorization': `Bearer ${localStorage.getItem('dx_token')}`, 'Content-Type': 'application/json' }; }
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
+        function logout() { localStorage.clear(); window.location.href = 'index.html'; }
     </script>
 </body>
 </html>

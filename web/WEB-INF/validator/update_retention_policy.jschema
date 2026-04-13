@@ -1,0 +1,33 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Update Retention Policy Request",
+  "description": "Schema for updating the data lifecycle and disposal policies of the TSI DX Node.",
+  "type": "object",
+  "required": [
+    "_func",
+    "active_days",
+    "archive_years"
+  ],
+  "properties": {
+    "_func": {
+      "type": "string",
+      "const": "update_retention_policy",
+      "description": "The internal function identifier for the retention policy update."
+    },
+    "active_days": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "The number of days a data payload remains in high-performance staging before being transitioned to the archive storage.",
+      "default": 30,
+      "examples": [30]
+    },
+    "archive_years": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "The number of years data is maintained in the archive before permanent forensic destruction.",
+      "default": 7,
+      "examples": [7]
+    }
+  },
+  "additionalProperties": false
+}

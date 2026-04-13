@@ -1,21 +1,30 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Generated schema for Root",
+  "title": "Import Node Certificate Request",
+  "description": "Schema for importing a signed X.509 certificate and activating the node's protocol identity for mTLS handshakes.",
   "type": "object",
-  "properties": {
-    "_func": {
-      "type": "string"
-    },
-    "certificate_pem": {
-      "type": "string"
-    },
-    "private_key_pem": {
-      "type": "string"
-    }
-  },
   "required": [
     "_func",
-    "certificate_pem",
-    "private_key_pem"
-  ]
+    "certificate_pem"
+  ],
+  "properties": {
+    "_func": {
+      "type": "string",
+      "const": "import_node_certificate",
+      "description": "The internal function identifier for certificate activation."
+    },
+    "certificate_pem": {
+      "type": "string",
+      "minLength": 64,
+      "description": "The signed public certificate in PEM format. Must include the header and footer blocks.",
+      "examples": [
+        "-----BEGIN CERTIFICATE-----\nMIICcTCC...\n-----END CERTIFICATE-----\n"
+      ]
+    },
+    "private_key_pem": {
+      "type": "string",
+      "description": "The corresponding private key in PEM format. Optional if the key was previously generated and stored during the CSR phase."
+    }
+  },
+  "additionalProperties": false
 }
