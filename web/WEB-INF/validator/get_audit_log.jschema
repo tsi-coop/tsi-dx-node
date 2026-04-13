@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Get Audit Log Request",
+  "description": "Schema for retrieving the complete metadata and JSONB details of a specific audit event.",
+  "type": "object",
+  "required": [
+    "_func",
+    "log_id"
+  ],
+  "properties": {
+    "_func": {
+      "type": "string",
+      "const": "get_audit_log",
+      "description": "The internal function identifier for specific log retrieval."
+    },
+    "log_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "The unique identifier (UUID) of the audit log entry to be retrieved.",
+      "examples": [
+        "c8275043-64d3-485c-9cba-b7dbe238e17e"
+      ]
+    }
+  },
+  "additionalProperties": false
+}

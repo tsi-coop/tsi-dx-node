@@ -18,17 +18,16 @@ import java.util.UUID;
 /**
  * Service to manage and monitor data transfers.
  * Standardized on JSON-based exchanges (Base64 encoded payloads).
- * Supports Outbound Initiation (UI), Inbound Protocol (P2P), and Payload Inspection.
+ * Instrumented with forensic audit logging.
  */
 public class DXManager implements REST {
 
     @Override
     public void post(HttpServletRequest req, HttpServletResponse res) {
         try {
-            // Standard JSON retrieval - compatible with InterceptingFilter's reader usage
-            JSONObject input = InputProcessor.getInput(req);
+            // FIX: Changed getRawInput to getInput to match the InputProcessor framework utility
+            JSONObject input = InputProcessor.getInput(req); 
             
-            // Routing priority: Protocol Header (P2P) -> JSON Body (UI)
             String func = req.getHeader("X-DX-FUNCTION");
             if (func == null || func.isEmpty()) {
                 func = (input != null) ? (String) input.get("_func") : null;
@@ -45,21 +44,17 @@ public class DXManager implements REST {
                     break;
 
                 case "initiate_transfer":
-                    // Triggered by Admin UI: Encodes file as string in JSON
-                    JSONObject initResult = handleOutboundInitiation(input);
-                    // Engage background TransferEngine for P2P delivery
+                    JSONObject initResult = handleOutboundInitiation(input, req);
                     TransferEngine.getInstance().startTransfer(UUID.fromString((String) initResult.get("transfer_id")));
                     OutputProcessor.send(res, 201, initResult);
                     break;
 
                 case "receive_transfer_stream":
-                    // Triggered by Partner Node: Receives Base64 data inside standard JSON body
-                    handleIncomingJsonTransfer(input, res);
+                    handleIncomingJsonTransfer(input, res, req);
                     break;
 
                 case "get_transfer_payload":
-                    // Feature: Fetches the raw CSV/JSON content for UI preview
-                    OutputProcessor.send(res, 200, getTransferPayload(input));
+                    OutputProcessor.send(res, 200, getTransferPayload(input, req));
                     break;
 
                 default:
@@ -73,10 +68,7 @@ public class DXManager implements REST {
         }
     }
 
-    /**
-     * Retrieves the physical file content from the disk for UI inspection.
-     */
-    private JSONObject getTransferPayload(JSONObject input) throws Exception {
+    private JSONObject getTransferPayload(JSONObject input, HttpServletRequest req) throws Exception {
         String tid = (String) input.get("transfer_id");
         if (tid == null) throw new IllegalArgumentException("transfer_id required.");
 
@@ -84,13 +76,11 @@ public class DXManager implements REST {
         try {
             conn = pool.getConnection();
             String activePath = "";
-            // Resolve active storage path
             pstmt = conn.prepareStatement("SELECT storage_active_path FROM node_config LIMIT 1");
             rs = pstmt.executeQuery();
             if (rs.next()) activePath = rs.getString(1);
             rs.close(); pstmt.close();
 
-            // Find filename associated with this UUID
             pstmt = conn.prepareStatement("SELECT file_name FROM data_transfers WHERE transfer_id = ?");
             pstmt.setObject(1, UUID.fromString(tid));
             rs = pstmt.executeQuery();
@@ -101,25 +91,24 @@ public class DXManager implements REST {
                 
                 if (Files.exists(filePath)) {
                     String content = Files.readString(filePath, StandardCharsets.UTF_8);
+                    
+                    JSONObject details = new JSONObject();
+                    details.put("file_name", fileName);
+                    details.put("action", "UI_INSPECTION");
+                    // AUDIT: Record admin access
+                    logAudit("SECURITY", "WARNING", InputProcessor.getEmail(req), tid, details, req);
+
                     JSONObject out = new JSONObject();
                     out.put("success", true);
                     out.put("payload", content);
                     return out;
                 }
             }
-            JSONObject fail = new JSONObject();
-            fail.put("success", false);
-            fail.put("message", "File content purged or unreachable.");
-            return fail;
+            return new JSONObject() {{ put("success", false); put("message", "File content purged."); }};
         } finally { pool.cleanup(rs, pstmt, conn); }
     }
 
-    /**
-     * Decodes UI-uploaded Base64 and stages it for the P2P engine.
-     */
-    private JSONObject handleOutboundInitiation(JSONObject input) throws Exception {
-        if (input == null) throw new IllegalArgumentException("Payload missing.");
-
+    private JSONObject handleOutboundInitiation(JSONObject input, HttpServletRequest req) throws Exception {
         Connection conn = null; PreparedStatement pstmt = null; ResultSet rs = null; PoolDB pool = new PoolDB();
         try {
             conn = pool.getConnection();
@@ -137,22 +126,17 @@ public class DXManager implements REST {
             String fileName = (String) input.get("file_name");
             String fileDataBase64 = (String) input.get("file_data");
 
-            if (fileDataBase64 == null) throw new IllegalArgumentException("Physical payload (Base64) missing.");
-
             byte[] fileBytes = Base64.getDecoder().decode(fileDataBase64);
             File storageDir = new File(activePath);
             if (!storageDir.exists()) storageDir.mkdirs();
             
             File targetFile = new File(storageDir, fileName);
-            try (FileOutputStream fos = new FileOutputStream(targetFile)) {
-                fos.write(fileBytes);
-            }
+            try (FileOutputStream fos = new FileOutputStream(targetFile)) { fos.write(fileBytes); }
 
             UUID tid = UUID.randomUUID();
-            // Database Sync: Satisfying NOT NULL constraints
             String sql = "INSERT INTO data_transfers (transfer_id, contract_id, sender_node_id, receiver_node_id, " +
                          "file_name, file_size_bytes, file_checksum, sequence_number, message_timestamp, status, start_time) " +
-                         "VALUES (?, ?, ?, ?, ?, ?, ?, 0, NOW(), 'Pending', NOW())";
+                         "VALUES (?, ?, ?, ?, ?, ?, 'UPLOAD_STAGED', 0, NOW(), 'Pending', NOW())";
             
             pstmt = conn.prepareStatement(sql);
             pstmt.setObject(1, tid);
@@ -161,21 +145,19 @@ public class DXManager implements REST {
             pstmt.setString(4, receiverNodeId);
             pstmt.setString(5, fileName);
             pstmt.setLong(6, (long) fileBytes.length);
-            pstmt.setString(7, "UPLOAD_STAGED");
-            
             pstmt.executeUpdate();
 
-            JSONObject response = new JSONObject();
-            response.put("success", true);
-            response.put("transfer_id", tid.toString());
-            return response;
+            // AUDIT: Successful Staging
+            JSONObject details = new JSONObject();
+            details.put("receiver", receiverNodeId);
+            details.put("file", fileName);
+            logAudit("TRANSFER", "INFO", InputProcessor.getEmail(req), tid.toString(), details, req);
+
+            return new JSONObject() {{ put("success", true); put("transfer_id", tid.toString()); }};
         } finally { pool.cleanup(rs, pstmt, conn); }
     }
 
-    /**
-     * Receives P2P JSON payload from a partner node.
-     */
-    private void handleIncomingJsonTransfer(JSONObject input, HttpServletResponse res) throws Exception {
+    private void handleIncomingJsonTransfer(JSONObject input, HttpServletResponse res, HttpServletRequest req) throws Exception {
         String transferId = (String) input.get("transfer_id");
         String contractId = (String) input.get("contract_id");
         String senderNodeId = (String) input.get("sender_node_id");
@@ -200,7 +182,6 @@ public class DXManager implements REST {
             Files.createDirectories(targetFile.getParent());
             Files.write(targetFile, data);
 
-            // UPSERT: Ensure the receiver registers the transfer metadata immediately
             String sql = "INSERT INTO data_transfers (transfer_id, contract_id, sender_node_id, receiver_node_id, " +
                          "file_name, file_size_bytes, file_checksum, sequence_number, message_timestamp, status, start_time, end_time) " +
                          "VALUES (?, ?, ?, ?, ?, ?, 'RECEPTION_VERIFIED', 0, ?, 'Received', NOW(), NOW()) " +
@@ -213,10 +194,15 @@ public class DXManager implements REST {
             pstmt.setString(4, localNodeId);
             pstmt.setString(5, fileName);
             pstmt.setLong(6, (long) data.length);
-            // Protocol Sync: Use sender's timestamp if available
             pstmt.setTimestamp(7, messageTimestamp != null ? Timestamp.valueOf(messageTimestamp) : new Timestamp(System.currentTimeMillis()));
-            
             pstmt.executeUpdate();
+
+            // AUDIT: Successful P2P Reception
+            JSONObject details = new JSONObject();
+            details.put("sender", senderNodeId);
+            details.put("file", fileName);
+            logAudit("TRANSFER", "INFO", "P2P_PROTOCOL", transferId, details, req);
+
             OutputProcessor.send(res, 200, new JSONObject() {{ put("success", true); }});
         } finally { pool.cleanup(rs, pstmt, conn); }
     }
@@ -224,7 +210,6 @@ public class DXManager implements REST {
     private JSONObject listTransfersFromDb(JSONObject input) throws SQLException {
         JSONObject response = new JSONObject(); JSONArray arr = new JSONArray();
         Connection conn = null; PreparedStatement pstmt = null; ResultSet rs = null; PoolDB pool = new PoolDB();
-
         try {
             conn = pool.getConnection();
             String localId = "";
@@ -239,13 +224,11 @@ public class DXManager implements REST {
 
             pstmt = conn.prepareStatement(sql.toString());
             if (status != null && !status.isEmpty()) pstmt.setString(1, status);
-            
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 JSONObject t = new JSONObject();
                 String sender = rs.getString("sender_node_id");
                 boolean isOutgoing = sender != null && sender.equals(localId);
-
                 t.put("transfer_id", rs.getString("transfer_id"));
                 t.put("file_name", rs.getString("file_name"));
                 t.put("status", rs.getString("status"));
@@ -254,10 +237,47 @@ public class DXManager implements REST {
                 t.put("start_time", rs.getTimestamp("start_time").toString());
                 arr.add(t);
             }
-            response.put("success", true);
-            response.put("data", arr);
+            response.put("success", true); response.put("data", arr);
         } finally { pool.cleanup(rs, pstmt, conn); }
         return response;
+    }
+
+    /**
+     * Internal helper to persist audit events.
+     * FIX: Corrects the type mismatch for 'origin_ip' by using an explicit ::inet cast in SQL.
+     */
+    private void logAudit(String type, String severity, String actor, String entityId, JSONObject details, HttpServletRequest req) {
+        Connection conn = null; PreparedStatement pstmt = null; PoolDB pool = null;
+        try {
+            pool = new PoolDB();
+            conn = pool.getConnection();
+            // FIX: Added ?::inet cast to satisfy PostgreSQL strict type requirement for network addresses.
+            String sql = "INSERT INTO audit_logs (log_id, timestamp, event_type, severity, actor_type, actor_id, entity_type, entity_id, details, origin_ip) " +
+                         "VALUES (?, NOW(), ?, ?, ?, ?, 'TRANSFER', ?, ?::jsonb, ?::inet)";
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setObject(1, UUID.randomUUID());
+            pstmt.setString(2, type);
+            pstmt.setString(3, severity);
+            
+            String actorId = (actor == null || actor.isEmpty()) ? "SYSTEM" : actor;
+            pstmt.setString(4, "P2P_PROTOCOL".equals(actorId) ? "SYSTEM" : "USER");
+            pstmt.setString(5, actorId);
+            
+            if (entityId != null && !entityId.trim().isEmpty()) {
+                pstmt.setObject(6, UUID.fromString(entityId.trim()));
+            } else {
+                pstmt.setNull(6, Types.OTHER);
+            }
+            
+            pstmt.setString(7, details != null ? details.toJSONString() : "{}");
+            pstmt.setString(8, req.getRemoteAddr());
+            
+            pstmt.executeUpdate();
+        } catch (Exception e) {
+            System.err.println("[DXManager] CRITICAL: Audit persistence failed for " + type + ". Error: " + e.getMessage());
+        } finally {
+            pool.cleanup(null, pstmt, conn);
+        }
     }
 
     @Override public boolean validate(String m, HttpServletRequest req, HttpServletResponse res) { return true; }
