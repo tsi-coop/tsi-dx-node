@@ -17,12 +17,14 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.time.Duration;
 import java.util.UUID;
 
 /**
  * Service to manage Data Contracts for simplified JSON and CSV exchanges.
  * Implements full P2P lifecycle synchronization and robust status relay logic.
+ * Instrumented with forensic audit logging for compliance and governance monitoring.
  */
 public class DataContract implements REST {
 
@@ -51,38 +53,56 @@ public class DataContract implements REST {
                     break;
 
                 case "create_contract":
-                    OutputProcessor.send(res, 201, createContract(input));
+                    JSONObject created = createContract(input);
+                    // AUDIT: Record local draft creation
+                    JSONObject cDetails = new JSONObject();
+                    cDetails.put("name", getString(input, "name"));
+                    cDetails.put("format", ((JSONObject) input.get("metadata")).get("format"));
+                    logAudit("CONTRACT_CREATED", "INFO", InputProcessor.getEmail(req), (String) created.get("contract_id"), cDetails, req);
+                    OutputProcessor.send(res, 201, created);
                     break;
 
                 case "propose_contract":
                     if (contractId == null) throw new IllegalArgumentException("contract_id required.");
-                    // Ensure the identity handshake with the partner is complete
                     validatePartnerTrust(contractId);
-                    // Push the definition to the partner node
                     syncContractWithPartner(contractId);
-                    // Update local state
                     updateStatusInDb(contractId, "Proposed");
+                    
+                    // AUDIT: Record outbound proposal
+                    JSONObject pDetails = new JSONObject();
+                    pDetails.put("action", "PROPOSED_TO_PARTNER");
+                    logAudit("CONTRACT_PROPOSAL", "INFO", InputProcessor.getEmail(req), contractId.toString(), pDetails, req);
+                    
                     OutputProcessor.send(res, 200, new JSONObject() {{ put("success", true); }});
                     break;
 
                 case "accept_contract":
                     if (contractId == null) throw new IllegalArgumentException("contract_id required.");
                     updateStatusInDb(contractId, "Active");
-                    // Relay the acceptance to the initiator node
                     pushStatusUpdateToPartner(contractId, "Active");
+                    
+                    // AUDIT: Record acceptance
+                    JSONObject aDetails = new JSONObject();
+                    aDetails.put("status", "Active");
+                    logAudit("CONTRACT_ACCEPTED", "INFO", InputProcessor.getEmail(req), contractId.toString(), aDetails, req);
+                    
                     OutputProcessor.send(res, 200, new JSONObject() {{ put("success", true); }});
                     break;
 
                 case "reject_contract":
                     if (contractId == null) throw new IllegalArgumentException("contract_id required.");
                     updateStatusInDb(contractId, "Rejected");
-                    // Relay the rejection to the initiator node
                     pushStatusUpdateToPartner(contractId, "Rejected");
+                    
+                    // AUDIT: Record rejection
+                    JSONObject rDetails = new JSONObject();
+                    rDetails.put("status", "Rejected");
+                    logAudit("CONTRACT_REJECTED", "WARNING", InputProcessor.getEmail(req), contractId.toString(), rDetails, req);
+                    
                     OutputProcessor.send(res, 200, new JSONObject() {{ put("success", true); }});
                     break;
 
                 case "force_sync_status":
-                    // Pull logic: Specifically query the partner for their current state
                     if (contractId == null) throw new IllegalArgumentException("contract_id required.");
                     pullStatusFromPartner(contractId);
                     OutputProcessor.send(res, 200, new JSONObject() {{ put("success", true); }});
@@ -90,18 +110,31 @@ public class DataContract implements REST {
 
                 case "receive_proposed_contract":
                     // Inbound P2P: Triggered by a remote node's proposal
-                    OutputProcessor.send(res, 201, handleInboundProposal(input));
+                    handleInboundProposal(input);
+                    
+                    // AUDIT: Record incoming proposal from peer
+                    JSONObject iDetails = new JSONObject();
+                    iDetails.put("initiator", getString(input, "sender_partner_id"));
+                    logAudit("CONTRACT_INBOUND_PROPOSAL", "INFO", "P2P_PROTOCOL", contractId.toString(), iDetails, req);
+                    
+                    OutputProcessor.send(res, 201, new JSONObject() {{ put("success", true); }});
                     break;
 
                 case "receive_status_update":
                     // Inbound P2P: Receive status change from partner
                     if (contractId == null) throw new IllegalArgumentException("contract_id required.");
-                    updateStatusInDb(contractId, getString(input, "status"));
+                    String newStatus = getString(input, "status");
+                    updateStatusInDb(contractId, newStatus);
+                    
+                    // AUDIT: Record status sync event
+                    JSONObject sDetails = new JSONObject();
+                    sDetails.put("remote_status", newStatus);
+                    logAudit("CONTRACT_STATUS_SYNC", "INFO", "P2P_PROTOCOL", contractId.toString(), sDetails, req);
+                    
                     OutputProcessor.send(res, 200, new JSONObject() {{ put("success", true); }});
                     break;
 
                 case "query_contract_status":
-                    // Responder P2P: Return local status to a peer querying via 'force_sync_status'
                     if (contractId == null) throw new IllegalArgumentException("contract_id required.");
                     JSONObject statusResp = new JSONObject();
                     statusResp.put("status", getStatusFromDb(contractId));
@@ -123,8 +156,41 @@ public class DataContract implements REST {
     }
 
     /**
-     * Reaches out to the peer to query the current status of the contract.
+     * Internal helper to persist audit events for the contract lifecycle.
      */
+    private void logAudit(String type, String severity, String actor, String entityId, JSONObject details, HttpServletRequest req) {
+        Connection conn = null; PreparedStatement pstmt = null; PoolDB pool = null;
+        try {
+            pool = new PoolDB();
+            conn = pool.getConnection();
+            String sql = "INSERT INTO audit_logs (log_id, timestamp, event_type, severity, actor_type, actor_id, entity_type, entity_id, details, origin_ip) " +
+                         "VALUES (?, NOW(), ?, ?, ?, ?, 'CONTRACT', ?, ?::jsonb, ?::inet)";
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setObject(1, UUID.randomUUID());
+            pstmt.setString(2, type);
+            pstmt.setString(3, severity);
+            
+            String actorId = (actor == null || actor.isEmpty()) ? "SYSTEM" : actor;
+            pstmt.setString(4, "P2P_PROTOCOL".equals(actorId) ? "SYSTEM" : "USER");
+            pstmt.setString(5, actorId);
+            
+            if (entityId != null && !entityId.trim().isEmpty()) {
+                pstmt.setObject(6, UUID.fromString(entityId.trim()));
+            } else {
+                pstmt.setNull(6, Types.OTHER);
+            }
+            
+            pstmt.setString(7, details != null ? details.toJSONString() : "{}");
+            pstmt.setString(8, req.getRemoteAddr());
+            
+            pstmt.executeUpdate();
+        } catch (Exception e) {
+            System.err.println("[DataContract] Audit Logging Failure: " + e.getMessage());
+        } finally {
+            pool.cleanup(null, pstmt, conn);
+        }
+    }
+
     private void pullStatusFromPartner(UUID contractId) throws Exception {
         Connection conn = null; PreparedStatement pstmt = null; ResultSet rs = null; PoolDB pool = new PoolDB();
         try {
@@ -157,9 +223,6 @@ public class DataContract implements REST {
         } finally { pool.cleanup(rs, pstmt, conn); }
     }
 
-    /**
-     * Relays a status change (Active/Rejected) to the partner node.
-     */
     private void pushStatusUpdateToPartner(UUID contractId, String status) throws Exception {
         Connection conn = null; PreparedStatement pstmt = null; ResultSet rs = null; PoolDB pool = new PoolDB();
         try {
