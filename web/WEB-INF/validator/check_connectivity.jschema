@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Check Connectivity Request",
+  "description": "Schema for triggering a real-time connectivity probe (mTLS handshake) to a verified partner node.",
+  "type": "object",
+  "required": [
+    "_func",
+    "partner_id"
+  ],
+  "properties": {
+    "_func": {
+      "type": "string",
+      "const": "check_connectivity",
+      "description": "The internal function identifier for the connectivity sync action."
+    },
+    "partner_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "The unique identifier (UUID) of the partner node in the local registry to be probed."
+    }
+  },
+  "additionalProperties": false
+}
