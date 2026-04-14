@@ -11,7 +11,36 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- Set timezone for consistency
 SET TIMEZONE TO 'UTC';
 
--- 1. `partners` Table
+-- 1. `node_config` Table (Added for NodeManagement class)
+-- Stores the single configuration entry for the local DX Node.
+CREATE TABLE node_config (
+    config_id UUID PRIMARY KEY DEFAULT '00000000-0000-0000-0000-000000000001', -- Singleton ID
+    node_id VARCHAR(255) NOT NULL UNIQUE,
+    about TEXT NULL,
+    fqdn VARCHAR(255) NOT NULL UNIQUE,
+    network_port INT NOT NULL,
+    storage_active_path TEXT NOT NULL,
+    storage_archive_path TEXT NOT NULL,
+    logging_level VARCHAR(50) NOT NULL DEFAULT 'INFO', -- e.g., INFO, DEBUG, ERROR
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+-- 2. `node_certificates` Table (Added for NodeManagement class to store PKI assets)
+-- Stores certificates and private keys associated with the local DX Node.
+CREATE TABLE node_certificates (
+    cert_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    node_config_id UUID NOT NULL REFERENCES node_config(config_id) ON DELETE CASCADE,
+    certificate_pem TEXT NULL, -- Can be null if only private key is stored initially (e.g., after CSR generation)
+    private_key_pem TEXT NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT FALSE,
+    issued_at TIMESTAMP WITH TIME ZONE NULL,
+    expires_at TIMESTAMP WITH TIME ZONE NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+-- 3. `partners` Table
 -- Stores information about registered DX Node partners.
 CREATE TABLE partners (
     partner_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -29,7 +58,7 @@ CREATE TABLE partners (
 CREATE INDEX idx_partners_node_id ON partners (node_id);
 CREATE INDEX idx_partners_fqdn ON partners (fqdn);
 
--- 3. `roles` Table
+-- 4. `roles` Table
 -- Defines different roles within the Admin App.
 CREATE TABLE roles (
     role_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -40,7 +69,7 @@ CREATE TABLE roles (
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
--- 2. `users` Table (MODIFIED)
+-- 5. `users` Table
 -- Stores information about local users who can access the Admin App.
 -- Now includes a direct role_id foreign key, ensuring each user has exactly one role.
 CREATE TABLE users (
@@ -59,41 +88,27 @@ CREATE TABLE users (
 CREATE INDEX idx_users_username ON users (username);
 CREATE INDEX idx_users_role_id ON users (role_id); -- New index for the role_id
 
--- 4. `user_roles` Table (REMOVED - This table is no longer needed)
-
--- 5. `role_permissions` Table
--- Stores granular permissions for each role.
-CREATE TABLE role_permissions (
-    permission_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    role_id UUID NOT NULL REFERENCES roles(role_id) ON DELETE CASCADE,
-    resource VARCHAR(100) NOT NULL,
-    action VARCHAR(100) NOT NULL,
-    UNIQUE (role_id, resource, action)
+-- 6. `apps` Table
+CREATE TABLE IF NOT EXISTS apps (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(255) NOT NULL,
+    description TEXT NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'ACTIVE', -- ACTIVE, INACTIVE, REVOKED
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    last_updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
--- 6. `api_keys` Table
+-- 7. `api_keys` Table
 -- Stores API keys and secrets for Client API access.
 CREATE TABLE api_keys (
     key_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     api_key VARCHAR(255) NOT NULL UNIQUE,
     api_secret_hash VARCHAR(255) NOT NULL,
-    user_id UUID NULL REFERENCES users(user_id) ON DELETE SET NULL, -- User who generated/owns this key
-    description TEXT NULL,
+    app_id UUID NULL REFERENCES apps(id) ON DELETE SET NULL,     
     status VARCHAR(50) NOT NULL DEFAULT 'Active', -- 'Active', 'Inactive', 'Revoked'
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     expires_at TIMESTAMP WITH TIME ZONE NULL,
     last_used_at TIMESTAMP WITH TIME ZONE NULL
-);
-
--- 7. `validation_scripts` Table
--- Stores custom data validation scripts.
-CREATE TABLE validation_scripts (
-    script_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name VARCHAR(255) NOT NULL UNIQUE,
-    language VARCHAR(50) NOT NULL, -- 'PYTHON', 'JAVASCRIPT'
-    content TEXT NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
 -- 8. `data_contracts` Table
@@ -108,7 +123,6 @@ CREATE TABLE IF NOT EXISTS data_contracts (
     receiver_partner_id VARCHAR(255) NOT NULL,
     schema_definition JSONB NOT NULL,
     metadata JSONB NULL, 
-    validation_script_id UUID NULL REFERENCES validation_scripts(script_id) ON DELETE SET NULL,
     retention_policy_days INT NULL,
     pii_fields TEXT[] NULL,
     direction VARCHAR(50),
@@ -123,28 +137,12 @@ CREATE TABLE IF NOT EXISTS data_contracts (
 CREATE INDEX idx_data_contracts_sender_partner_id ON data_contracts (sender_partner_id);
 CREATE INDEX idx_data_contracts_receiver_partner_id ON data_contracts (receiver_partner_id);
 
--- 9. `bulk_uploads` Table
--- Tracks the overall status and details of bulk data upload operations.
-CREATE TABLE bulk_uploads (
-    bulk_upload_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    initiated_by_user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE RESTRICT,
-    target_partner_ids UUID[] NOT NULL, -- Array of partner IDs targeted by this bulk upload.
-    contract_id UUID NOT NULL REFERENCES data_contracts(contract_id) ON DELETE RESTRICT,
-    total_files INT NOT NULL,
-    successful_files INT NOT NULL DEFAULT 0,
-    failed_files INT NOT NULL DEFAULT 0,
-    status VARCHAR(50) NOT NULL DEFAULT 'Initiated', -- 'Initiated', 'Processing', 'Completed', 'Failed'
-    start_time TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    end_time TIMESTAMP WITH TIME ZONE NULL,
-    error_summary TEXT NULL
-);
 
--- 10. `data_transfers` Table
+-- 9. `data_transfers` Table
 -- Records details of each data transfer event.
-CREATE TABLE data_transfers (
+CREATE TABLE IF NOT EXISTS data_transfers (
     transfer_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    bulk_upload_id UUID NULL REFERENCES bulk_uploads(bulk_upload_id) ON DELETE SET NULL, -- Optional: Foreign key to bulk upload
-    contract_id UUID NOT NULL REFERENCES data_contracts(contract_id) ON DELETE RESTRICT,
+    contract_id UUID NOT NULL REFERENCES data_contracts(contract_id) ON DELETE RESTRICT,    
     sender_node_id VARCHAR(255) NOT NULL,
     receiver_node_id VARCHAR(255) NOT NULL,
     file_name VARCHAR(255) NOT NULL,
@@ -154,21 +152,29 @@ CREATE TABLE data_transfers (
     message_timestamp TIMESTAMP WITH TIME ZONE NOT NULL,
     status VARCHAR(50) NOT NULL DEFAULT 'Pending', -- 'Pending', 'Processing', 'Sent', 'Received', 'Failed', 'Delivered'
     error_message TEXT NULL,
-    local_file_path TEXT NULL, -- Local path to the stored data file (for received/archived)
-    initiated_by_user_id UUID NULL REFERENCES users(user_id) ON DELETE SET NULL, -- Optional: User who initiated the transfer
+    local_file_path TEXT NULL, 
+    initiated_by_user_id UUID NULL REFERENCES users(user_id) ON DELETE SET NULL,
     start_time TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    end_time TIMESTAMP WITH TIME ZONE NULL
+    end_time TIMESTAMP WITH TIME ZONE NULL,
+    retention_status VARCHAR(50) NOT NULL DEFAULT 'Active', -- 'Active', 'Archived', 'Purged'
+    archived_at TIMESTAMP WITH TIME ZONE NULL,
+    purged_at TIMESTAMP WITH TIME ZONE NULL
 );
 
--- Indexes for data_transfers table
-CREATE INDEX idx_data_transfers_contract_id ON data_transfers (contract_id);
-CREATE INDEX idx_data_transfers_sender_node_id ON data_transfers (sender_node_id);
-CREATE INDEX idx_data_transfers_receiver_node_id ON data_transfers (receiver_node_id);
-CREATE INDEX idx_data_transfers_status ON data_transfers (status);
-CREATE INDEX idx_data_transfers_bulk_upload_id ON data_transfers (bulk_upload_id);
+-- Essential Performance Indexes
+-- Index for background RetentionEngine polling 
+CREATE INDEX idx_transfers_retention_lookup ON data_transfers (retention_status, end_time) WHERE (status = 'Delivered' OR status = 'Received');
+-- Index for Dashboard 'Recent Transfers' and 'Transfers (24h)' metrics
+CREATE INDEX idx_transfers_dashboard_recent ON data_transfers (start_time DESC);
+-- Index for filtering by Partner Node ID in the Transfer Monitoring UI
+CREATE INDEX idx_transfers_partner_lookup ON data_transfers (sender_node_id, receiver_node_id);
+-- Foreign key index for Data Contract correlation
+CREATE INDEX idx_transfers_contract_id ON data_transfers (contract_id);
+-- Index for status-based UI filtering (All/Pending/Completed/Failed tabs)
+CREATE INDEX idx_transfers_status ON data_transfers (status);
 
 
--- 11. `audit_logs` Table
+-- 10. `audit_logs` Table
 -- Records all significant events within the DX Node for auditing purposes.
 CREATE TABLE audit_logs (
     log_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -188,23 +194,8 @@ CREATE INDEX idx_audit_logs_timestamp ON audit_logs (timestamp DESC);
 CREATE INDEX idx_audit_logs_event_type ON audit_logs (event_type);
 CREATE INDEX idx_audit_logs_actor_id ON audit_logs (actor_id);
 
--- 12. `received_sequence_tracker` Table
--- Tracks the last successfully processed sequence number from each sender for replay protection.
-CREATE TABLE received_sequence_tracker (
-    tracker_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    sender_node_id VARCHAR(255) NOT NULL,
-    receiver_node_id VARCHAR(255) NOT NULL,
-    contract_id UUID NOT NULL REFERENCES data_contracts(contract_id) ON DELETE RESTRICT,
-    last_received_sequence_number BIGINT NOT NULL DEFAULT 0,
-    last_received_timestamp TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT '1970-01-01 00:00:00Z',
-    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    UNIQUE (sender_node_id, receiver_node_id, contract_id)
-);
 
--- Index for received_sequence_tracker table
-CREATE INDEX idx_received_sequence_tracker_sender_node_id ON received_sequence_tracker (sender_node_id);
-
--- 13. `pii_rules` Table
+-- 11. `pii_rules` Table
 -- Stores rules for Personally Identifiable Information (PII) anonymization.
 CREATE TABLE pii_rules (
     rule_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -216,33 +207,6 @@ CREATE TABLE pii_rules (
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
--- 14. `node_config` Table (Added for NodeManagement class)
--- Stores the single configuration entry for the local DX Node.
-CREATE TABLE node_config (
-    config_id UUID PRIMARY KEY DEFAULT '00000000-0000-0000-0000-000000000001', -- Singleton ID
-    node_id VARCHAR(255) NOT NULL UNIQUE,
-    fqdn VARCHAR(255) NOT NULL UNIQUE,
-    network_port INT NOT NULL,
-    storage_active_path TEXT NOT NULL,
-    storage_archive_path TEXT NOT NULL,
-    logging_level VARCHAR(50) NOT NULL DEFAULT 'INFO', -- e.g., INFO, DEBUG, ERROR
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
-);
-
--- 15. `node_certificates` Table (Added for NodeManagement class to store PKI assets)
--- Stores certificates and private keys associated with the local DX Node.
-CREATE TABLE node_certificates (
-    cert_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    node_config_id UUID NOT NULL REFERENCES node_config(config_id) ON DELETE CASCADE,
-    certificate_pem TEXT NULL, -- Can be null if only private key is stored initially (e.g., after CSR generation)
-    private_key_pem TEXT NOT NULL,
-    is_active BOOLEAN NOT NULL DEFAULT FALSE,
-    issued_at TIMESTAMP WITH TIME ZONE NULL,
-    expires_at TIMESTAMP WITH TIME ZONE NULL,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
-);
 
 -- Add triggers to automatically update `updated_at` columns
 -- Function to update updated_at column
@@ -271,16 +235,8 @@ CREATE TRIGGER update_api_keys_updated_at
 BEFORE UPDATE ON api_keys
 FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_validation_scripts_updated_at
-BEFORE UPDATE ON validation_scripts
-FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
 CREATE TRIGGER update_data_contracts_updated_at
 BEFORE UPDATE ON data_contracts
-FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_received_sequence_tracker_updated_at
-BEFORE UPDATE ON received_sequence_tracker
 FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_pii_rules_updated_at
@@ -295,7 +251,7 @@ CREATE TRIGGER update_node_certificates_updated_at
 BEFORE UPDATE ON node_certificates
 FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- Note: data_transfers and bulk_uploads tables typically do not have an updated_at trigger
+-- Note: data_transfers do not have an updated_at trigger
 -- as their status changes are often captured by specific status updates or end_time.
 -- If a generic updated_at is needed, a trigger can be added.
 
@@ -309,62 +265,13 @@ VALUES (
 )
 ON CONFLICT (role_id) DO NOTHING; -- Prevents errors if script is run multiple times
 
--- Insert permissions for the 'Administrator' role
-INSERT INTO role_permissions (role_id, resource, action) VALUES
-('a0000000-0000-0000-0000-000000000001', 'node', 'view_status'),
-('a0000000-0000-0000-0000-000000000001', 'node', 'view_config'),
-('a0000000-0000-0000-0000-000000000001', 'node', 'update_config'),
-('a0000000-0000-0000-0000-000000000001', 'node', 'generate_csr'),
-('a0000000-0000-0000-0000-000000000001', 'node', 'import_certificate'),
+-- Insert the default 'Administrator' role
+INSERT INTO roles (role_id, name, description, is_system_role)
+VALUES (
+    'a0000000-0000-0000-0000-000000000002', -- A well-known UUID for the Administrator role
+    'Operator',
+    'Ability to define data contracts & initiate transfers.',
+    TRUE -- This is a system-defined role
+)
+ON CONFLICT (role_id) DO NOTHING; -- Prevents errors if script is run multiple times
 
-('a0000000-0000-0000-0000-000000000001', 'partner', 'list'),
-('a0000000-0000-0000-0000-000000000001', 'partner', 'get'),
-('a0000000-0000-0000-0000-000000000001', 'partner', 'create'),
-('a0000000-0000-0000-0000-000000000001', 'partner', 'update'),
-('a0000000-0000-0000-0000-000000000001', 'partner', 'delete'),
-
-('a0000000-0000-0000-0000-000000000001', 'contract', 'list'),
-('a0000000-0000-0000-0000-000000000001', 'contract', 'get'),
-('a0000000-0000-0000-0000-000000000001', 'contract', 'create'),
-('a0000000-0000-0000-0000-000000000001', 'contract', 'update'),
-('a0000000-0000-0000-0000-000000000001', 'contract', 'propose'),
-('a0000000-0000-0000-0000-000000000001', 'contract', 'accept'),
-('a0000000-0000-0000-0000-000000000001', 'contract', 'reject'),
-('a0000000-0000-0000-0000-000000000001', 'contract', 'terminate'),
-
-('a0000000-0000-0000-0000-000000000001', 'user', 'list'),
-('a0000000-0000-0000-0000-000000000001', 'user', 'get'),
-('a0000000-0000-0000-0000-000000000001', 'user', 'create'),
-('a0000000-0000-0000-0000-000000000001', 'user', 'update'),
-('a0000000-0000-0000-0000-000000000001', 'user', 'delete'),
-
-('a0000000-0000-0000-0000-000000000001', 'role', 'list'),
-('a0000000-0000-0000-0000-000000000001', 'role', 'get'),
-('a0000000-0000-0000-0000-000000000001', 'role', 'create'),
-('a0000000-0000-0000-0000-000000000001', 'role', 'update'),
-('a0000000-0000-0000-0000-000000000001', 'role', 'delete'),
-
-('a0000000-0000-0000-0000-000000000001', 'transfer', 'list'),
-('a0000000-0000-0000-0000-000000000001', 'transfer', 'get'),
-('a0000000-0000-0000-0000-000000000001', 'transfer', 'resend'),
-('a0000000-0000-0000-0000-000000000001', 'transfer', 'list_bulk'),
-('a0000000-0000-0000-0000-000000000001', 'transfer', 'get_bulk'),
-('a0000000-0000-0000-0000-000000000001', 'transfer', 'initiate_bulk'),
-
-('a0000000-0000-0000-0000-000000000001', 'audit', 'list'),
-('a0000000-0000-0000-0000-000000000001', 'audit', 'get'),
-
-('a0000000-0000-0000-0000-000000000001', 'governance', 'list_pii_rules'),
-('a0000000-0000-0000-0000-000000000001', 'governance', 'create_pii_rule'),
-('a0000000-0000-0000-0000-000000000001', 'governance', 'update_pii_rule'),
-('a0000000-0000-0000-0000-000000000001', 'governance', 'delete_pii_rule'),
-
-('a0000000-0000-0000-0000-000000000001', 'governance', 'list_validation_scripts'),
-('a0000000-0000-0000-0000-000000000001', 'governance', 'get_validation_script'),
-('a0000000-0000-0000-0000-000000000001', 'governance', 'create_validation_script'),
-('a0000000-0000-0000-0000-000000000001', 'governance', 'update_validation_script'),
-('a0000000-0000-0000-0000-000000000001', 'governance', 'delete_validation_script'),
-
-('a0000000-0000-0000-0000-000000000001', 'governance', 'get_archiving_purging_config'),
-('a0000000-0000-0000-0000-000000000001', 'governance', 'update_archiving_purging_config')
-ON CONFLICT (role_id, resource, action) DO NOTHING; -- Prevents errors on re-run

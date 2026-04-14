@@ -15,13 +15,12 @@ import java.util.regex.Pattern;
 
 /**
  * Service to handle the initial bootstrapping of the DX Node.
- * Sets the immutable Node Identity and creates the Master Administrator.
+ * Sets the immutable Node Identity (including port) and creates the Master Administrator.
+ * Aligned with the latest init.html and init.sql requirements.
  */
 public class RegisterAdmin implements REST {
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
     private final PasswordHasher passwordHasher = new PasswordHasher();
-
     private static final UUID NODE_CONFIG_SINGLETON_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
 
     private static final Pattern PASSWORD_PATTERN =
@@ -48,24 +47,24 @@ public class RegisterAdmin implements REST {
 
             input = InputProcessor.getInput(req);
 
-            // Extract Node Identity
+            // Extract Node Identity parameters
             String nodeId = (String) input.get("node_id");
             String fqdn = (String) input.get("fqdn");
             
-            // Extract Network Port (Optional during bootstrap, defaults to 8443)
+            // Extract Network Port from payload (matching init.html script)
             int networkPort = 8443;
             if (input.get("network_port") != null) {
                 networkPort = (int)(long) input.get("network_port");
             }
 
             // Extract Admin Details
-            String username = (String) input.get("username");
+            String username = (String) input.get("username"); // Labeled "Admin User Name" in UI
             String email = (String) input.get("email");
             String password = (String) input.get("password");
             String confirmPassword = (String) input.get("confirm");
           
             // 2. Input Validation
-            String validationError = validateRegistrationInput(nodeId, fqdn, username, email, password, confirmPassword);
+            String validationError = validateRegistrationInput(nodeId, fqdn, networkPort, username, email, password, confirmPassword);
             if (validationError != null) {
                 OutputProcessor.errorResponse(res, HttpServletResponse.SC_BAD_REQUEST, "Bad Request", validationError, req.getRequestURI());
                 return;
@@ -77,7 +76,7 @@ public class RegisterAdmin implements REST {
             // 4. Get the 'Administrator' role ID
             UUID adminRoleId = getRoleId("Administrator");
             if (adminRoleId == null) {
-                OutputProcessor.errorResponse(res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Internal Error", "Administrator role missing from registry.", req.getRequestURI());
+                OutputProcessor.errorResponse(res, 500, "Internal Error", "Administrator role missing from registry.", req.getRequestURI());
                 return;
             }
 
@@ -89,10 +88,10 @@ public class RegisterAdmin implements REST {
 
         } catch (SQLException e) {
             e.printStackTrace();
-            OutputProcessor.errorResponse(res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Database Error", e.getMessage(), req.getRequestURI());
+            OutputProcessor.errorResponse(res, 500, "Database Error", e.getMessage(), req.getRequestURI());
         } catch (Exception e) {
             e.printStackTrace();
-            OutputProcessor.errorResponse(res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Internal Server Error", e.getMessage(), req.getRequestURI());
+            OutputProcessor.errorResponse(res, 500, "Internal Server Error", e.getMessage(), req.getRequestURI());
         }
     }
 
@@ -111,10 +110,11 @@ public class RegisterAdmin implements REST {
         return true;
     }
 
-    private String validateRegistrationInput(String nodeId, String fqdn, String username, String email, String password, String confirmPassword) {
+    private String validateRegistrationInput(String nodeId, String fqdn, int port, String username, String email, String password, String confirmPassword) {
         if (nodeId == null || nodeId.trim().isEmpty()) return "Node ID is required.";
         if (fqdn == null || fqdn.trim().isEmpty()) return "Public FQDN is required.";
-        if (username == null || username.trim().isEmpty()) return "Display name is required.";
+        if (port < 1 || port > 65535) return "Invalid network port (1-65535).";
+        if (username == null || username.trim().isEmpty()) return "Admin user name is required.";
         if (email == null || !EMAIL_PATTERN.matcher(email).matches()) return "Valid email is required.";
         if (!password.equals(confirmPassword)) return "Passwords do not match.";
         if (!PASSWORD_PATTERN.matcher(password).matches()) {
@@ -128,10 +128,9 @@ public class RegisterAdmin implements REST {
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         PoolDB pool = new PoolDB();
-        String sql = "SELECT COUNT(*) FROM users";
         try {
             conn = pool.getConnection();
-            pstmt = conn.prepareStatement(sql);
+            pstmt = conn.prepareStatement("SELECT COUNT(*) FROM users");
             rs = pstmt.executeQuery();
             if (rs.next() && rs.getInt(1) > 0) return true;
         } finally {
@@ -145,10 +144,9 @@ public class RegisterAdmin implements REST {
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         PoolDB pool = new PoolDB();
-        String sql = "SELECT role_id FROM roles WHERE name = ?";
         try {
             conn = pool.getConnection();
-            pstmt = conn.prepareStatement(sql);
+            pstmt = conn.prepareStatement("SELECT role_id FROM roles WHERE name = ?");
             pstmt.setString(1, roleName);
             rs = pstmt.executeQuery();
             if (rs.next()) return UUID.fromString(rs.getString("role_id"));
@@ -160,6 +158,8 @@ public class RegisterAdmin implements REST {
 
     /**
      * Executes the bootstrap transaction: Configures the node and creates the first user.
+     * REVISED: Removed 'name' column from node_config SQL to resolve DB error.
+     * The Admin User Name is correctly persisted in the 'users' table.
      */
     private JSONObject bootstrapNode(String nodeId, String fqdn, int networkPort, String username, String email, String hashedPassword, UUID adminRoleId) throws SQLException {
         JSONObject output = new JSONObject();
@@ -169,7 +169,7 @@ public class RegisterAdmin implements REST {
         ResultSet rs = null;
         PoolDB pool = new PoolDB();
 
-        // SQL for node configuration (using dynamic port and defaults for storage paths)
+        // SQL corrected: removed 'name' from node_config as per DB schema error
         String configSql = "INSERT INTO node_config (config_id, node_id, fqdn, network_port, storage_active_path, storage_archive_path, logging_level) " +
                           "VALUES (?, ?, ?, ?, '/opt/dxnode/data/active', '/opt/dxnode/data/archive', 'INFO')";
 
@@ -187,7 +187,7 @@ public class RegisterAdmin implements REST {
             pstmtConfig.setInt(4, networkPort);
             pstmtConfig.executeUpdate();
 
-            // 2. Create Master Administrator
+            // 2. Create Master Administrator (Sets the name/username in User table)
             pstmtUser = conn.prepareStatement(userSql);
             pstmtUser.setString(1, username);
             pstmtUser.setString(2, email);
@@ -200,6 +200,7 @@ public class RegisterAdmin implements REST {
                 if (rs.next()) {
                     output.put("user_id", rs.getString("user_id"));
                     output.put("node_id", nodeId);
+                    output.put("username", username);
                     output.put("fqdn", fqdn);
                     output.put("network_port", networkPort);
                 } else {

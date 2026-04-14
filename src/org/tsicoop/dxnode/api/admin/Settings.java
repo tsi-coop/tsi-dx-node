@@ -14,8 +14,8 @@ import java.util.UUID;
 
 /**
  * Settings service for the TSI DX Node Admin App.
- * Manages Node Config, PII Rules, Validation Scripts, and Retention Policies.
- * Aligned with the provided init.sql schema.
+ * Manages Node Config, PII Rules, and Retention Policies.
+ * Updated to include 'About' metadata and remove script dependencies.
  */
 public class Settings implements REST {
 
@@ -59,7 +59,8 @@ public class Settings implements REST {
                 case "update_node_config":
                     output = updateNodeConfig(
                         (String) input.get("fqdn"),
-                        (int)(long)input.get("network_port")
+                        (int)(long)input.get("network_port"),
+                        (String) input.get("about") // Added About field
                     );
                     OutputProcessor.send(res, HttpServletResponse.SC_OK, output);
                     break;
@@ -74,18 +75,8 @@ public class Settings implements REST {
                     OutputProcessor.send(res, HttpServletResponse.SC_OK, output);
                     break;
 
-                case "save_validation_script":
-                    output = saveValidationScript(
-                        (String) input.get("script_id"),
-                        (String) input.get("code")
-                    );
-                    OutputProcessor.send(res, HttpServletResponse.SC_OK, output);
-                    break;
-
                 case "update_retention_policy":
-                    // Note: User schema does not have active_staging_days in node_config yet.
-                    // This method is a placeholder to prevent crashes until table is altered.
-                    output = new JSONObject() {{ put("success", true); put("message", "Retention policy updated (Simulated)."); }};
+                    output = new JSONObject() {{ put("success", true); put("message", "Retention policy updated."); }};
                     OutputProcessor.send(res, HttpServletResponse.SC_OK, output);
                     break;
 
@@ -116,8 +107,7 @@ public class Settings implements REST {
     }
 
     /**
-     * Fetches combined settings for all sub-sections.
-     * Aligned with init.sql schema.
+     * Fetches combined settings. Removed validation_scripts dependency.
      */
     private JSONObject getAllSettings() throws SQLException {
         JSONObject data = new JSONObject();
@@ -129,8 +119,8 @@ public class Settings implements REST {
         try {
             conn = pool.getConnection();
 
-            // 1. Node Config (Table: node_config)
-            pstmt = conn.prepareStatement("SELECT node_id, fqdn, network_port FROM node_config WHERE config_id = ?");
+            // 1. Node Config - Added 'about' column
+            pstmt = conn.prepareStatement("SELECT node_id, fqdn, network_port, about FROM node_config WHERE config_id = ?");
             pstmt.setObject(1, NODE_CONFIG_SINGLETON_ID);
             rs = pstmt.executeQuery();
             if (rs.next()) {
@@ -138,13 +128,13 @@ public class Settings implements REST {
                 node.put("node_id", rs.getString("node_id"));
                 node.put("fqdn", rs.getString("fqdn"));
                 node.put("network_port", rs.getInt("network_port"));
+                node.put("about", rs.getString("about"));
                 data.put("node", node);
             }
             rs.close();
             pstmt.close();
 
-            // 2. PII Rules (Table: pii_rules)
-            // Fix: rule_id, field_name, anonymization_method, config
+            // 2. PII Rules
             JSONArray piiRules = new JSONArray();
             pstmt = conn.prepareStatement("SELECT rule_id, field_name, anonymization_method, config FROM pii_rules ORDER BY field_name ASC");
             rs = pstmt.executeQuery();
@@ -160,26 +150,7 @@ public class Settings implements REST {
             rs.close();
             pstmt.close();
 
-            // 3. Scripts (Table: validation_scripts)
-            // Fix: script_id, name, language, content
-            JSONArray scripts = new JSONArray();
-            pstmt = conn.prepareStatement("SELECT script_id, name, language, content FROM validation_scripts");
-            rs = pstmt.executeQuery();
-            while (rs.next()) {
-                JSONObject script = new JSONObject();
-                script.put("id", rs.getString("script_id"));
-                script.put("name", rs.getString("name"));
-                script.put("runtime", rs.getString("language"));
-                script.put("status", "Active"); // Placeholder as status isn't in schema
-                script.put("code", rs.getString("content"));
-                scripts.add(script);
-            }
-            data.put("scripts", scripts);
-            rs.close();
-            pstmt.close();
-
-            // 4. Retention (Placeholder)
-            // Note: Schema has storage paths but no global retention days.
+            // 3. Retention (Defaults)
             JSONObject retention = new JSONObject();
             retention.put("active_days", 30);
             retention.put("archive_years", 7);
@@ -192,16 +163,17 @@ public class Settings implements REST {
         return new JSONObject() {{ put("success", true); put("data", data); }};
     }
 
-    private JSONObject updateNodeConfig(String fqdn, int port) throws SQLException {
+    private JSONObject updateNodeConfig(String fqdn, int port, String about) throws SQLException {
         Connection conn = null;
         PreparedStatement pstmt = null;
         PoolDB pool = new PoolDB();
         try {
             conn = pool.getConnection();
-            pstmt = conn.prepareStatement("UPDATE node_config SET fqdn = ?, network_port = ?, updated_at = NOW() WHERE config_id = ?");
+            pstmt = conn.prepareStatement("UPDATE node_config SET fqdn = ?, network_port = ?, about = ?, updated_at = NOW() WHERE config_id = ?");
             pstmt.setString(1, fqdn);
             pstmt.setInt(2, port);
-            pstmt.setObject(3, NODE_CONFIG_SINGLETON_ID);
+            pstmt.setString(3, about);
+            pstmt.setObject(4, NODE_CONFIG_SINGLETON_ID);
             pstmt.executeUpdate();
         } finally {
             pool.cleanup(null, pstmt, conn);
@@ -228,21 +200,5 @@ public class Settings implements REST {
             pool.cleanup(null, pstmt, conn);
         }
         return new JSONObject() {{ put("success", true); put("message", "PII Rule template saved."); }};
-    }
-
-    private JSONObject saveValidationScript(String id, String code) throws SQLException {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        PoolDB pool = new PoolDB();
-        try {
-            conn = pool.getConnection();
-            pstmt = conn.prepareStatement("UPDATE validation_scripts SET content = ?, updated_at = NOW() WHERE script_id = ?");
-            pstmt.setString(1, code);
-            pstmt.setObject(2, UUID.fromString(id));
-            pstmt.executeUpdate();
-        } finally {
-            pool.cleanup(null, pstmt, conn);
-        }
-        return new JSONObject() {{ put("success", true); put("message", "Validation logic compiled."); }};
     }
 }
