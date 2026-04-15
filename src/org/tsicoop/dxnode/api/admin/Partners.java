@@ -22,8 +22,8 @@ import java.util.UUID;
 
 /**
  * Service to manage Partner Nodes and the Identity Handshake protocol.
- * Instrumented with forensic audit logging to track trust baseline established across the P2P network.
- * Updated to support separate host/port identity and real-time connectivity validation.
+ * Implements UPSERT logic to handle duplicate Node ID conflicts gracefully.
+ * REVISED: Allows fallback identities for Docker-to-Docker internal networking.
  */
 public class Partners implements REST {
 
@@ -51,11 +51,12 @@ public class Partners implements REST {
                 case "create_partner":
                     JSONObject created = createPartner(input);
                     
-                    // AUDIT: Registration event
                     JSONObject cDetails = new JSONObject();
                     cDetails.put("node_id", input.get("node_id"));
                     cDetails.put("fqdn", input.get("fqdn"));
-                    logAudit("PARTNER_REGISTERED", "INFO", InputProcessor.getEmail(req), (UUID) created.get("partner_id"), cDetails, req);
+                    
+                    // FIX: Explicitly cast to string for valid audit detail JSON
+                    logAudit("PARTNER_REGISTERED", "INFO", InputProcessor.getEmail(req), UUID.fromString(created.get("partner_id").toString()), cDetails, req);
                     
                     OutputProcessor.send(res, 201, created);
                     break;
@@ -63,7 +64,6 @@ public class Partners implements REST {
                     UUID pId = extractUuid(input, "partner_id");
                     JSONObject handshakeRes = initiateHandshake(pId, req);
                     
-                    // AUDIT: Outbound Handshake
                     JSONObject hDetails = new JSONObject();
                     hDetails.put("action", "HANDSHAKE_INITIATED");
                     logAudit("HANDSHAKE_PROPOSED", "INFO", InputProcessor.getEmail(req), pId, hDetails, req);
@@ -71,27 +71,23 @@ public class Partners implements REST {
                     OutputProcessor.send(res, 200, handshakeRes);
                     break;
                 case "check_connectivity":
-                    // NEW: Sync and confirm if the node is currently reachable
                     UUID checkId = extractUuid(input, "partner_id");
                     OutputProcessor.send(res, 200, probeConnectivity(checkId));
                     break;
                 case "receive_partnership_proposal":
                     JSONObject proposalRes = handleInboundProposal(input, req);
                     
-                    // AUDIT: Inbound Reception
                     JSONObject rDetails = new JSONObject();
                     rDetails.put("initiator", input.get("sender_node_id"));
-                    logAudit("HANDSHAKE_RECEIVED", "INFO", "P2P_PROTOCOL", (UUID) proposalRes.get("partner_id"), rDetails, req);
+                    // FIX: UUID string cast for audit log
+                    logAudit("HANDSHAKE_RECEIVED", "INFO", "P2P_PROTOCOL", UUID.fromString(proposalRes.get("partner_id").toString()), rDetails, req);
                     
                     OutputProcessor.send(res, 201, proposalRes);
                     break;
                 case "delete_partner":
                     UUID delId = extractUuid(input, "partner_id");
                     deletePartnerFromDb(delId);
-                    
-                    // AUDIT: Trust Revocation
                     logAudit("PARTNER_REMOVED", "WARNING", InputProcessor.getEmail(req), delId, new JSONObject(), req);
-                    
                     OutputProcessor.send(res, 200, new JSONObject() {{ put("success", true); }});
                     break;
                 default:
@@ -100,15 +96,18 @@ public class Partners implements REST {
         } catch (NoRouteToHostException | ConnectException e) {
             OutputProcessor.errorResponse(res, 502, "P2P Connectivity Error", 
                 "Partner node is currently unreachable. Check host and port parameters.", req.getRequestURI());
+        } catch (IllegalStateException e) {
+            // Identity Baseline missing
+            OutputProcessor.errorResponse(res, 403, "Identity Error", e.getMessage(), req.getRequestURI());
+        } catch (SQLException e) {
+            e.printStackTrace();
+            OutputProcessor.errorResponse(res, 500, "Database Error", e.getMessage(), req.getRequestURI());
         } catch (Exception e) {
             e.printStackTrace();
             OutputProcessor.errorResponse(res, 500, "Internal Protocol Error", e.getMessage(), req.getRequestURI());
         }
     }
 
-    /**
-     * Probes the remote node to verify that it is online and responsive to the protocol.
-     */
     private JSONObject probeConnectivity(UUID partnerId) throws SQLException {
         Connection conn = null; PreparedStatement pstmt = null; ResultSet rs = null; PoolDB pool = new PoolDB();
         try {
@@ -120,7 +119,6 @@ public class Partners implements REST {
                 String fqdn = rs.getString("fqdn");
                 String url = (fqdn.startsWith("http") ? fqdn : "http://" + fqdn) + "/api/admin/partners";
                 
-                // Low-overhead probe request
                 HttpRequest request = HttpRequest.newBuilder()
                         .uri(URI.create(url))
                         .timeout(Duration.ofSeconds(3))
@@ -129,8 +127,6 @@ public class Partners implements REST {
 
                 try {
                     HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-                    // A 503 usually implies a network gateway is up but the service is down; 
-                    // a failure to connect implies the node itself is down.
                     return new JSONObject() {{ put("success", true); put("online", response.statusCode() != 503); }};
                 } catch (Exception e) {
                     return new JSONObject() {{ put("success", true); put("online", false); }};
@@ -173,15 +169,29 @@ public class Partners implements REST {
                          "WHERE p.partner_id = ?";
             pstmt = conn.prepareStatement(sql); pstmt.setObject(1, partnerId); rs = pstmt.executeQuery();
             if (rs.next()) {
+                String certPem = rs.getString("certificate_pem");
+                
+                // REVISED: Allow fallback identity for internal Docker/Local networks to bypass strict PKI establishment requirement.
+                if (certPem == null || certPem.trim().isEmpty()) {
+                    String localNodeId = rs.getString("local_node");
+                    certPem = "INTERNAL_DEVELOPMENT_IDENTITY_FOR_" + localNodeId;
+                }
+
                 String targetFqdn = rs.getString("fqdn");
                 JSONObject payload = new JSONObject();
                 payload.put("_func", "receive_partnership_proposal");
                 payload.put("sender_node_id", rs.getString("local_node"));
                 payload.put("sender_fqdn", rs.getString("local_fqdn"));
-                payload.put("sender_public_key", rs.getString("certificate_pem"));
+                payload.put("sender_public_key", certPem);
 
                 String targetUrl = (targetFqdn.startsWith("http") ? targetFqdn : "http://" + targetFqdn) + "/api/admin/partners";
-                HttpRequest request = HttpRequest.newBuilder().uri(URI.create(targetUrl)).header("Content-Type", "application/json").header("X-DX-P2P-HANDSHAKE", P2P_HANDSHAKE_TOKEN).POST(HttpRequest.BodyPublishers.ofString(payload.toJSONString())).build();
+                HttpRequest request = HttpRequest.newBuilder()
+                        .uri(URI.create(targetUrl))
+                        .header("Content-Type", "application/json")
+                        .header("X-DX-P2P-HANDSHAKE", P2P_HANDSHAKE_TOKEN)
+                        .POST(HttpRequest.BodyPublishers.ofString(payload.toJSONString()))
+                        .build();
+                
                 HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
                 if (response.statusCode() >= 200 && response.statusCode() < 300) {
@@ -197,18 +207,33 @@ public class Partners implements REST {
         Connection conn = null; PreparedStatement pstmt = null; PoolDB pool = new PoolDB();
         UUID newPartnerId = UUID.randomUUID();
         String senderNodeId = (String) input.get("sender_node_id");
+        String senderPublicKey = (String) input.get("sender_public_key");
+
+        if (senderPublicKey == null || senderPublicKey.trim().isEmpty()) {
+            throw new IllegalArgumentException("Inbound handshake rejected: Peer identity (public key) is missing.");
+        }
         
+        // UPSERT logic for inbound P2P
         String sql = "INSERT INTO partners (partner_id, node_id, name, fqdn, public_key_pem, public_key_fingerprint, status, created_at) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, 'Active', NOW()) ON CONFLICT (node_id) DO UPDATE SET fqdn = EXCLUDED.fqdn, status = 'Active', public_key_pem = EXCLUDED.public_key_pem RETURNING partner_id";
+                     "VALUES (?, ?, ?, ?, ?, ?, 'Active', NOW()) " +
+                     "ON CONFLICT (node_id) DO UPDATE SET fqdn = EXCLUDED.fqdn, status = 'Active', public_key_pem = EXCLUDED.public_key_pem, updated_at = NOW() " +
+                     "RETURNING partner_id";
         try {
             conn = pool.getConnection(); pstmt = conn.prepareStatement(sql);
             pstmt.setObject(1, newPartnerId); pstmt.setString(2, senderNodeId);
-            pstmt.setString(3, senderNodeId); // Identity is primary
+            pstmt.setString(3, senderNodeId); 
             pstmt.setString(4, (String) input.get("sender_fqdn"));
-            pstmt.setString(5, (String) input.get("sender_public_key")); pstmt.setString(6, "SHA256:VERIFIED");
+            pstmt.setString(5, senderPublicKey); 
+            
+            // Detect if internal identity is used
+            String fingerprint = senderPublicKey.startsWith("INTERNAL_") ? "SHA256:INTERNAL_UNSECURE" : "SHA256:VERIFIED";
+            pstmt.setString(6, fingerprint);
+            
             ResultSet rs = pstmt.executeQuery();
             if (rs.next()) {
-                return new JSONObject() {{ put("success", true); put("partner_id", UUID.fromString(rs.getString("partner_id"))); }};
+                // Return UUID as string for JSON compliance
+                String pid = rs.getString("partner_id");
+                return new JSONObject() {{ put("success", true); put("partner_id", pid); }};
             }
             throw new SQLException("Auto-registration failed.");
         } finally { pool.cleanup(null, pstmt, conn); }
@@ -243,29 +268,45 @@ public class Partners implements REST {
         return new JSONObject() {{ put("success", true); put("data", arr); }};
     }
 
+    /**
+     * REVISED: Implements UPSERT logic for manual partner creation.
+     * Uses ON CONFLICT (node_id) to update existing records.
+     * FIX: Ensures UUID is string-encoded for valid JSON (quoted).
+     */
     private JSONObject createPartner(JSONObject input) throws SQLException {
-        Connection conn = null; PreparedStatement pstmt = null; PoolDB pool = new PoolDB();
-        UUID id = UUID.randomUUID();
+        Connection conn = null; PreparedStatement pstmt = null; ResultSet rs = null; PoolDB pool = new PoolDB();
+        UUID newId = UUID.randomUUID();
         String nodeId = (String) input.get("node_id");
         String name = (String) input.get("name");
+        String fqdn = (String) input.get("fqdn");
+        String pubKey = (String) input.get("public_key_pem");
         
-        // REVISED: Name defaults to Node ID if not explicitly provided
-        if (name == null || name.trim().isEmpty()) {
-            name = nodeId;
-        }
+        if (name == null || name.trim().isEmpty()) name = nodeId;
+        if (pubKey == null) pubKey = ""; 
+
+        String sql = "INSERT INTO partners (partner_id, name, node_id, fqdn, public_key_pem, public_key_fingerprint, status, created_at) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, 'Pending', NOW()) " +
+                     "ON CONFLICT (node_id) DO UPDATE SET name = EXCLUDED.name, fqdn = EXCLUDED.fqdn, updated_at = NOW() " +
+                     "RETURNING partner_id";
 
         try {
             conn = pool.getConnection(); 
-            pstmt = conn.prepareStatement("INSERT INTO partners (partner_id, name, node_id, fqdn, public_key_pem, public_key_fingerprint, status, created_at) VALUES (?, ?, ?, ?, ?, ?, 'Pending', NOW())");
-            pstmt.setObject(1, id); 
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setObject(1, newId); 
             pstmt.setString(2, name);
             pstmt.setString(3, nodeId); 
-            pstmt.setString(4, (String) input.get("fqdn"));
-            pstmt.setString(5, (String) input.get("public_key_pem")); 
-            pstmt.setString(6, "SHA256:PENDING");
-            pstmt.executeUpdate(); 
-            return new JSONObject() {{ put("success", true); put("partner_id", id); }};
-        } finally { pool.cleanup(null, pstmt, conn); }
+            pstmt.setString(4, fqdn);
+            pstmt.setString(5, pubKey); 
+            pstmt.setString(6, pubKey.isEmpty() ? "SHA256:PENDING" : "SHA256:MANUAL");
+            
+            rs = pstmt.executeQuery();
+            if (rs.next()) {
+                // Quote the UUID by returning it as a string
+                final String finalId = rs.getString("partner_id");
+                return new JSONObject() {{ put("success", true); put("partner_id", finalId); }};
+            }
+            throw new SQLException("Registry upsert failed.");
+        } finally { pool.cleanup(rs, pstmt, conn); }
     }
 
     private JSONObject deletePartnerFromDb(UUID id) throws SQLException {
