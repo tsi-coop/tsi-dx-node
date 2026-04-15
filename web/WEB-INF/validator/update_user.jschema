@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Update User Request",
+  "description": "Schema for modifying an existing administrative user's display name and role assignment. Email and Password updates are restricted to separate security flows.",
+  "type": "object",
+  "required": [
+    "_func",
+    "user_id",
+    "username",
+    "role_id"
+  ],
+  "properties": {
+    "_func": {
+      "type": "string",
+      "const": "update_user",
+      "description": "The internal function identifier for user updates."
+    },
+    "user_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "The unique UUID of the user account being modified."
+    },
+    "username": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 50,
+      "description": "The updated display name (Admin User Name) for the account."
+    },
+    "role_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "The UUID of the new role assignment (e.g., Administrator or Operator)."
+    }
+  },
+  "additionalProperties": false
+}
