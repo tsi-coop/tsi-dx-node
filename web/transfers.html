@@ -35,7 +35,7 @@
                     </svg>
                 </div>
                 <div class="brand-full flex flex-col overflow-hidden">
-                    <span class="font-black text-white tracking-tighter text-xl leading-none">TSI DX NODE</span>
+                    <span class="font-black text-white tracking-tighter text-xl leading-none uppercase">TSI DX NODE</span>
                     <span class="text-[9px] text-blue-400 font-bold uppercase tracking-[0.2em] mt-1">Direct Exchange</span>
                 </div>
             </div>
@@ -221,22 +221,41 @@
             
             const dataArr = Array.isArray(res) ? res : (res && res.data ? res.data : []);
             
-            dataArr.forEach(t => {
+            if (dataArr.length > 0) {
+                dataArr.forEach(t => {
+                    const row = document.createElement('tr');
+                    row.className = "hover:bg-slate-50 transition-colors";
+                    row.innerHTML = `
+                        <td class="px-6 py-4 font-mono text-[10px] text-slate-500">${t.transfer_id.substring(0,8)}...</td>
+                        <td class="px-6 py-4 text-[10px] font-bold text-slate-600">${formatTimestamp(t.start_time)}</td>
+                        <td class="px-6 py-4 font-bold text-slate-900 uppercase text-xs">${t.peer_node_id}</td>
+                        <td class="px-6 py-4 font-medium text-slate-600 text-xs">${t.file_name}</td>
+                        <td class="px-6 py-4"><span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${t.direction === 'Outgoing' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}">${t.direction}</span></td>
+                        <td class="px-6 py-4"><span class="text-[10px] font-bold ${t.status === 'Delivered' || t.status === 'Received' ? 'text-green-600' : 'text-orange-500'}">${t.status}</span></td>
+                        <td class="px-6 py-4 text-right">
+                            <button onclick="viewPayload('${t.transfer_id}', '${t.file_name}')" class="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-[9px] font-black uppercase hover:bg-slate-200 transition-all">View File</button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } else {
+                // Empty State View
                 const row = document.createElement('tr');
-                row.className = "hover:bg-slate-50 transition-colors";
                 row.innerHTML = `
-                    <td class="px-6 py-4 font-mono text-[10px] text-slate-500">${t.transfer_id.substring(0,8)}...</td>
-                    <td class="px-6 py-4 text-[10px] font-bold text-slate-600">${formatTimestamp(t.start_time)}</td>
-                    <td class="px-6 py-4 font-bold text-slate-900 uppercase text-xs">${t.peer_node_id}</td>
-                    <td class="px-6 py-4 font-medium text-slate-600 text-xs">${t.file_name}</td>
-                    <td class="px-6 py-4"><span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${t.direction === 'Outgoing' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}">${t.direction}</span></td>
-                    <td class="px-6 py-4"><span class="text-[10px] font-bold ${t.status === 'Delivered' || t.status === 'Received' ? 'text-green-600' : 'text-orange-500'}">${t.status}</span></td>
-                    <td class="px-6 py-4 text-right">
-                        <button onclick="viewPayload('${t.transfer_id}', '${t.file_name}')" class="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-[9px] font-black uppercase hover:bg-slate-200 transition-all">View File</button>
+                    <td colspan="7" class="px-6 py-24 text-center">
+                        <div class="flex flex-col items-center justify-center">
+                            <div class="bg-slate-50 p-5 rounded-2xl mb-4">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                                </svg>
+                            </div>
+                            <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">No transfers logged</h3>
+                            <p class="text-[10px] text-slate-400 max-w-[280px] leading-relaxed mx-auto italic">Start an outbound exchange or wait for an incoming payload from a partner node to populate this ledger. Records are automatically moved to archive per retention policy.</p>
+                        </div>
                     </td>
                 `;
                 tbody.appendChild(row);
-            });
+            }
         }
 
         async function viewPayload(id, filename) {

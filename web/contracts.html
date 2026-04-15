@@ -71,7 +71,7 @@
                 <span class="nav-text">Configuration</span>
             </a>
         </nav>
-        <div class="p-4 border-t border-slate-800"><button onclick="logout()" class="nav-item w-full text-left hover:text-red-400">Sign Out</button></div>
+        <div class="p-4 border-t border-slate-800"><button onclick="logout()" class="nav-item w-full text-left hover:bg-red-400">Sign Out</button></div>
     </aside>
 
     <main class="flex-1 flex flex-col min-w-0 overflow-hidden">
@@ -97,7 +97,7 @@
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                 <div><h1 class="text-2xl font-black text-slate-900 uppercase tracking-tight">Contract Registry</h1><p class="text-xs text-slate-500 font-medium">Govern JSON and CSV exchanges. Statuses sync automatically across nodes.</p></div>
                 <div class="flex gap-3">
-                    <button onclick="fetchContracts()" class="p-2.5 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 shadow-sm" title="Refresh Registry"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg></button>
+                    <button onclick="fetchContracts()" class="p-2.5 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 shadow-sm" title="Refresh Registry"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15\" /></svg></button>
                     <button onclick="openContractWizard()" class="px-4 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-black uppercase shadow-lg hover:bg-blue-700 transition-all">New Contract</button>
                 </div>
             </div>
@@ -215,7 +215,6 @@
 
         document.addEventListener('DOMContentLoaded', async () => {
             initIdentity();
-            // OPTIMIZATION: Load data in parallel to reduce perceived lag
             try {
                 await Promise.all([loadPartners(), fetchContracts()]);
             } catch (err) {
@@ -255,37 +254,56 @@
                 const syncEl = document.getElementById('last-sync-time');
                 if (syncEl) syncEl.innerText = `Last sync: ${new Date().toLocaleTimeString()}`;
             }
-            if (!res || !Array.isArray(res)) return;
 
             tbody.innerHTML = '';
-            res.forEach(c => {
-                const isInitiator = c.sender_partner_id === localNodeId;
-                const isReceiver = c.receiver_partner_id === localNodeId;
-                const partnerId = isInitiator ? c.receiver_partner_id : c.sender_partner_id;
+            
+            if (res && Array.isArray(res) && res.length > 0) {
+                res.forEach(c => {
+                    const isInitiator = c.sender_partner_id === localNodeId;
+                    const isReceiver = c.receiver_partner_id === localNodeId;
+                    const partnerId = isInitiator ? c.receiver_partner_id : c.sender_partner_id;
+                    const row = document.createElement('tr');
+                    row.className = "hover:bg-slate-50 transition-all";
+                    
+                    row.innerHTML = `
+                        <td class="px-6 py-4 font-black text-slate-900 uppercase text-xs">${partnersMap[partnerId] || partnerId}</td>
+                        <td class="px-6 py-4 font-bold text-slate-600">${c.name}</td>
+                        <td class="px-6 py-4 text-center"><span class="px-2 py-0.5 bg-slate-100 text-slate-500 rounded text-[9px] font-black uppercase">${c.metadata?.format?.toUpperCase() || 'JSON'}</span></td>
+                        <td class="px-6 py-4"><span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${getStatusColor(c.status)}">${c.status}</span></td>
+                        <td class="px-6 py-4 text-right">
+                            <div class="flex items-center justify-end gap-2">
+                                ${isInitiator && c.status === 'Proposed' ? `
+                                    <button onclick="handleForceSync('${c.contract_id}')" class="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-[9px] font-black uppercase hover:bg-blue-100" title="Query peer for status update">Verify Sync</button>
+                                ` : ''}
+                                ${isReceiver && c.status === 'Proposed' ? `
+                                    <button onclick="handleAccept('${c.contract_id}')" class="px-3 py-1.5 bg-green-600 text-white rounded-lg text-[9px] font-black uppercase hover:bg-green-700 shadow-sm">Accept</button>
+                                    <button onclick="handleReject('${c.contract_id}')" class="px-3 py-1.5 bg-red-600 text-white rounded-lg text-[9px] font-black uppercase hover:bg-red-700 shadow-sm">Reject</button>
+                                ` : ''}
+                                <button onclick="handleViewDetails('${c.contract_id}')" class="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-[9px] font-black uppercase hover:bg-slate-200">Inspect</button>
+                                ${c.status === 'Draft' ? `<button onclick="handlePropose('${c.contract_id}')" class="px-3 py-1.5 bg-slate-900 text-white rounded-lg text-[9px] font-black uppercase hover:bg-slate-800 shadow-sm">Propose</button>` : ''}
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } else {
+                // Empty State Handler
                 const row = document.createElement('tr');
-                row.className = "hover:bg-slate-50 transition-all";
-                
                 row.innerHTML = `
-                    <td class="px-6 py-4 font-black text-slate-900 uppercase text-xs">${partnersMap[partnerId] || partnerId}</td>
-                    <td class="px-6 py-4 font-bold text-slate-600">${c.name}</td>
-                    <td class="px-6 py-4 text-center"><span class="px-2 py-0.5 bg-slate-100 text-slate-500 rounded text-[9px] font-black uppercase">${c.metadata?.format?.toUpperCase() || 'JSON'}</span></td>
-                    <td class="px-6 py-4"><span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${getStatusColor(c.status)}">${c.status}</span></td>
-                    <td class="px-6 py-4 text-right">
-                        <div class="flex items-center justify-end gap-2">
-                            ${isInitiator && c.status === 'Proposed' ? `
-                                <button onclick="handleForceSync('${c.contract_id}')" class="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-[9px] font-black uppercase hover:bg-blue-100" title="Query peer for status update">Verify Sync</button>
-                            ` : ''}
-                            ${isReceiver && c.status === 'Proposed' ? `
-                                <button onclick="handleAccept('${c.contract_id}')" class="px-3 py-1.5 bg-green-600 text-white rounded-lg text-[9px] font-black uppercase hover:bg-green-700 shadow-sm">Accept</button>
-                                <button onclick="handleReject('${c.contract_id}')" class="px-3 py-1.5 bg-red-600 text-white rounded-lg text-[9px] font-black uppercase hover:bg-red-700 shadow-sm">Reject</button>
-                            ` : ''}
-                            <button onclick="handleViewDetails('${c.contract_id}')" class="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-[9px] font-black uppercase hover:bg-slate-200">Inspect</button>
-                            ${c.status === 'Draft' ? `<button onclick="handlePropose('${c.contract_id}')" class="px-3 py-1.5 bg-slate-900 text-white rounded-lg text-[9px] font-black uppercase hover:bg-slate-800 shadow-sm">Propose</button>` : ''}
+                    <td colspan="5" class="px-6 py-20 text-center">
+                        <div class="flex flex-col items-center justify-center">
+                            <div class="bg-slate-50 p-4 rounded-2xl mb-4">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                            </div>
+                            <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">No Contracts Found</h3>
+                            <p class="text-[10px] text-slate-400 max-w-[240px] leading-relaxed mx-auto italic">Data contracts govern the rules of exchange between nodes. Define a new contract to begin secure P2P transfers.</p>
                         </div>
                     </td>
                 `;
                 tbody.appendChild(row);
-            });
+            }
         }
 
         async function handleViewDetails(id) {
