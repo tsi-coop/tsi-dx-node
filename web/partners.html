@@ -169,10 +169,21 @@
                     row.className = "hover:bg-slate-50 transition-colors";
                     const isAdmin = currentUserRole === 'Administrator';
                     
-                    // REVISED: Governance actions (Accept/Reject for Pending, Revoke for Active)
+                    // REVISED: Governance actions (Handshake for Invited, Accept/Reject for Pending, Sync only for Active)
                     let actionHtml = '';
                     if (isAdmin) {
-                        if (p.status === 'Pending') {
+                        if (p.status === 'Invited') {
+                            // SENDER VIEW: They initiated, now waiting for recipient.
+                            actionHtml = `
+                                <div class="flex items-center justify-end gap-4">
+                                    <button onclick="initiateHandshake('${p.partner_id}')" class="text-blue-600 text-[10px] font-black uppercase hover:underline">Verify Identity</button>
+                                    <button onclick="handleDelete('${p.partner_id}', 'remove')" class="text-slate-300 hover:text-red-600 transition-colors">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                    </button>
+                                </div>
+                            `;
+                        } else if (p.status === 'Pending') {
+                            // RECIPIENT VIEW: They received an invitation, now they click "Accept".
                             actionHtml = `
                                 <div class="flex items-center justify-end gap-4">
                                     <button onclick="initiateHandshake('${p.partner_id}')" class="text-green-600 text-[10px] font-black uppercase hover:underline">Accept</button>
@@ -180,9 +191,11 @@
                                 </div>
                             `;
                         } else if (p.status === 'Active') {
+                            // BOTH SIDES: Sync allowed only after mutual trust.
                             actionHtml = `
                                 <div class="flex items-center justify-end gap-3">
                                     <span class="text-green-500 text-[9px] font-black uppercase tracking-widest">Verified</span>
+                                    <button onclick=\"syncConnectivity('${p.partner_id}')\" title=\"Check Link Availability\" class=\"text-slate-400 hover:text-blue-600 transition-all\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"h-3.5 w-3.5\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15\" /></svg></button>
                                     <button onclick="handleDelete('${p.partner_id}', 'revoke')" class="text-slate-300 hover:text-red-600 transition-colors" title="Revoke Trust">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                                     </button>
@@ -202,7 +215,6 @@
                         <td class="px-6 py-4">
                             <div class="flex items-center gap-2">
                                 <span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${p.status === 'Active' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}">${p.status}</span>
-                                ${p.status === 'Active' ? `<button onclick=\"syncConnectivity('${p.partner_id}')\" title=\"Check Link Availability\" class=\"text-slate-400 hover:text-blue-600 transition-all\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"h-3.5 w-3.5\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15\" /></svg></button>` : ''}
                             </div>
                         </td>
                         <td class="px-6 py-4 text-right">${actionHtml}</td>
@@ -236,12 +248,12 @@
         async function initiateHandshake(id) {
             const alert = document.getElementById('handshake-alert');
             alert.className = "mb-6 p-4 bg-blue-50 border-blue-200 text-blue-600 rounded-xl flex items-center gap-4";
-            alert.innerText = "Executing reciprocal identity handshake...";
+            alert.innerText = "Executing identity protocol exchange...";
             alert.classList.remove('hidden');
 
             const res = await callApi("propose_partnership", { partner_id: id });
             if (res && !res._error) {
-                alert.innerText = "Mutual trust established. Identity verified.";
+                alert.innerText = res.message || "Identity proposal dispatched. Awaiting reciprocal verification.";
                 alert.className = "mb-6 p-4 bg-green-50 border-green-200 text-green-700 rounded-xl flex items-center gap-4 shadow-lg";
                 fetchPartners();
             } else {
@@ -293,8 +305,6 @@
                 });
                 
                 let text = await r.text();
-                
-                // REVISED: Handle unquoted UUIDs in technically invalid JSON from backend
                 if (text && text.includes('-')) {
                     text = text.replace(/:\s*([a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12})(?=\s*[,}])/gi, ': "$1"');
                 }
@@ -324,7 +334,7 @@
             const promptMap = {
                 'reject': "Decline this inbound identity proposal?",
                 'revoke': "Permanently revoke trust and remove node from registry?",
-                'remove': "Remove this partner from the registry?"
+                'remove': "Remove this invitation from the registry?"
             };
             
             if (confirm(promptMap[actionType] || promptMap.remove)) {
