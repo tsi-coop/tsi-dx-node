@@ -25,7 +25,6 @@ public class DXManager implements REST {
     @Override
     public void post(HttpServletRequest req, HttpServletResponse res) {
         try {
-            // FIX: Changed getRawInput to getInput to match the InputProcessor framework utility
             JSONObject input = InputProcessor.getInput(req); 
             
             String func = req.getHeader("X-DX-FUNCTION");
@@ -95,7 +94,6 @@ public class DXManager implements REST {
                     JSONObject details = new JSONObject();
                     details.put("file_name", fileName);
                     details.put("action", "UI_INSPECTION");
-                    // AUDIT: Record admin access
                     logAudit("SECURITY", "WARNING", InputProcessor.getEmail(req), tid, details, req);
 
                     JSONObject out = new JSONObject();
@@ -147,7 +145,6 @@ public class DXManager implements REST {
             pstmt.setLong(6, (long) fileBytes.length);
             pstmt.executeUpdate();
 
-            // AUDIT: Successful Staging
             JSONObject details = new JSONObject();
             details.put("receiver", receiverNodeId);
             details.put("file", fileName);
@@ -197,7 +194,6 @@ public class DXManager implements REST {
             pstmt.setTimestamp(7, messageTimestamp != null ? Timestamp.valueOf(messageTimestamp) : new Timestamp(System.currentTimeMillis()));
             pstmt.executeUpdate();
 
-            // AUDIT: Successful P2P Reception
             JSONObject details = new JSONObject();
             details.put("sender", senderNodeId);
             details.put("file", fileName);
@@ -232,6 +228,8 @@ public class DXManager implements REST {
                 t.put("transfer_id", rs.getString("transfer_id"));
                 t.put("file_name", rs.getString("file_name"));
                 t.put("status", rs.getString("status"));
+                // REVISED: Include error_message in the listing for UI visibility
+                t.put("error_message", rs.getString("error_message"));
                 t.put("direction", isOutgoing ? "Outgoing" : "Incoming");
                 t.put("peer_node_id", isOutgoing ? rs.getString("receiver_node_id") : sender);
                 t.put("start_time", rs.getTimestamp("start_time").toString());
@@ -242,39 +240,30 @@ public class DXManager implements REST {
         return response;
     }
 
-    /**
-     * Internal helper to persist audit events.
-     * FIX: Corrects the type mismatch for 'origin_ip' by using an explicit ::inet cast in SQL.
-     */
     private void logAudit(String type, String severity, String actor, String entityId, JSONObject details, HttpServletRequest req) {
         Connection conn = null; PreparedStatement pstmt = null; PoolDB pool = null;
         try {
             pool = new PoolDB();
             conn = pool.getConnection();
-            // FIX: Added ?::inet cast to satisfy PostgreSQL strict type requirement for network addresses.
             String sql = "INSERT INTO audit_logs (log_id, timestamp, event_type, severity, actor_type, actor_id, entity_type, entity_id, details, origin_ip) " +
                          "VALUES (?, NOW(), ?, ?, ?, ?, 'TRANSFER', ?, ?::jsonb, ?::inet)";
             pstmt = conn.prepareStatement(sql);
             pstmt.setObject(1, UUID.randomUUID());
             pstmt.setString(2, type);
             pstmt.setString(3, severity);
-            
             String actorId = (actor == null || actor.isEmpty()) ? "SYSTEM" : actor;
             pstmt.setString(4, "P2P_PROTOCOL".equals(actorId) ? "SYSTEM" : "USER");
             pstmt.setString(5, actorId);
-            
             if (entityId != null && !entityId.trim().isEmpty()) {
                 pstmt.setObject(6, UUID.fromString(entityId.trim()));
             } else {
                 pstmt.setNull(6, Types.OTHER);
             }
-            
             pstmt.setString(7, details != null ? details.toJSONString() : "{}");
             pstmt.setString(8, req.getRemoteAddr());
-            
             pstmt.executeUpdate();
         } catch (Exception e) {
-            System.err.println("[DXManager] CRITICAL: Audit persistence failed for " + type + ". Error: " + e.getMessage());
+            System.err.println("[DXManager] Audit persistence failed: " + e.getMessage());
         } finally {
             pool.cleanup(null, pstmt, conn);
         }
