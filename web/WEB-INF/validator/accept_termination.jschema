@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Accept Termination Request",
+  "description": "Schema for the administrative action to accept a peer's request to terminate the partnership, resulting in the physical deletion of the record on both nodes.",
+  "type": "object",
+  "required": [
+    "_func",
+    "partner_id"
+  ],
+  "properties": {
+    "_func": {
+      "type": "string",
+      "const": "accept_termination",
+      "description": "The internal function identifier for the termination acceptance protocol."
+    },
+    "partner_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "The unique identifier (UUID) of the partner record to be purged from the registry.",
+      "examples": [
+        "f7e7b62f-90c0-4103-8471-3bcfd5adac3b"
+      ]
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,29 +1,42 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Generated schema for Root",
+  "title": "Create Partner Request",
+  "description": "Schema for validating the administrative request to register a new partner node in the registry.",
   "type": "object",
-  "properties": {
-    "_func": {
-      "type": "string"
-    },
-    "name": {
-      "type": "string"
-    },
-    "node_id": {
-      "type": "string"
-    },
-    "fqdn": {
-      "type": "string"
-    },
-    "public_key_pem": {
-      "type": "string"
-    }
-  },
   "required": [
     "_func",
     "name",
-    "node_id",
     "fqdn",
-    "public_key_pem"
-  ]
+    "node_id"
+  ],
+  "properties": {
+    "_func": {
+      "type": "string",
+      "const": "create_partner",
+      "description": "The internal function identifier for the creation sequence."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The display name or organization designation for the partner."
+    },
+    "fqdn": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9.-]+:[0-9]+$",
+      "description": "The network endpoint of the partner node, required in host:port format.",
+      "examples": [
+        "192.168.1.41:8083"
+      ]
+    },
+    "node_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The unique sovereign identifier of the partner node."
+    },
+    "public_key_pem": {
+      "type": "string",
+      "description": "The PEM-encoded public certificate or key for the partner node."
+    }
+  },
+  "additionalProperties": false
 }

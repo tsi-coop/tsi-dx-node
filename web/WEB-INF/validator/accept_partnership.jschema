@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Accept Partnership Request",
+  "description": "Schema for the administrative action to accept an inbound partnership invitation, triggering the reciprocal identity handshake.",
+  "type": "object",
+  "required": [
+    "_func",
+    "partner_id"
+  ],
+  "properties": {
+    "_func": {
+      "type": "string",
+      "const": "accept_partnership",
+      "description": "The internal function identifier for the partnership acceptance protocol."
+    },
+    "partner_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "The unique identifier (UUID) of the partner record in the local registry to be promoted to Active status.",
+      "examples": [
+        "8be5f720-8a84-4f0d-80b1-94fc6f101479"
+      ]
+    }
+  },
+  "additionalProperties": false
+}
