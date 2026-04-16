@@ -67,11 +67,11 @@
                 <span class="nav-text">Users & Roles</span>
             </a>
             <a href="settings.html" class="nav-item">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                 <span class="nav-text">Configuration</span>
             </a>
         </nav>
-        <div class="p-4 border-t border-slate-800"><button onclick="logout()" class="nav-item w-full text-left hover:bg-red-400">Sign Out</button></div>
+        <div class="p-4 border-t border-slate-800"><button onclick="logout()" class="nav-item w-full text-left hover:bg-red-500/10 hover:text-red-400">Sign Out</button></div>
     </aside>
 
     <main class="flex-1 flex flex-col min-w-0 overflow-hidden">
@@ -129,9 +129,11 @@
                 <button onclick="closeContractWizard()" class="text-slate-400 hover:text-white transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
             </div>
             <div class="px-8 py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-center gap-12">
-                <div class="flex items-center gap-2"><span id="step1-indicator" class="step-pill active w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black">1</span><span class="text-[10px] font-bold uppercase text-slate-900">Identity & Format</span></div>
+                <div class="flex items-center gap-2"><span id="step1-indicator" class="step-pill active w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black">1</span><span class="text-[10px] font-bold uppercase text-slate-900">Identity</span></div>
                 <div class="h-px w-8 bg-slate-200"></div>
-                <div class="flex items-center gap-2"><span id="step2-indicator" class="step-pill w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-black text-slate-500">2</span><span class="text-[10px] font-bold uppercase text-slate-400">Payload Governance</span></div>
+                <div class="flex items-center gap-2"><span id="step2-indicator" class="step-pill w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-black text-slate-500">2</span><span class="text-[10px] font-bold uppercase text-slate-400">Payload</span></div>
+                <div class="h-px w-8 bg-slate-200"></div>
+                <div class="flex items-center gap-2"><span id="step3-indicator" class="step-pill w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-black text-slate-500">3</span><span class="text-[10px] font-bold uppercase text-slate-400">Anonymization</span></div>
             </div>
             <div class="p-8 overflow-y-auto flex-1">
                 <div id="step1-content" class="space-y-6">
@@ -158,6 +160,27 @@
                             </table>
                             <button onclick="addCsvField()" class="w-full py-3 bg-slate-50 text-blue-600 text-[10px] font-black uppercase hover:bg-slate-100">+ Add Column</button>
                         </div>
+                    </div>
+                </div>
+                <!-- STEP 3: PII ANONYMIZATION -->
+                <div id="step3-content" class="hidden space-y-6">
+                    <div>
+                        <h4 class="text-xs font-black text-slate-900 uppercase tracking-tight mb-2">PII Anonymization Rules</h4>
+                        <p class="text-[10px] text-slate-500">Configure how specific sensitive fields should be handled before transmission.</p>
+                    </div>
+                    <div class="border border-slate-200 rounded-xl overflow-hidden bg-white">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-50 border-b">
+                                <tr>
+                                    <th class="p-3 font-black text-slate-500 uppercase tracking-widest">Field Name</th>
+                                    <th class="p-3 font-black text-slate-500 uppercase tracking-widest">Anonymization Method</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pii-anonymization-body" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                    <div id="no-pii-notice" class="hidden p-8 text-center bg-slate-50 rounded-xl border-2 border-dashed border-slate-200">
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">No PII fields detected in governance phase.</p>
                     </div>
                 </div>
             </div>
@@ -190,7 +213,7 @@
                 </div>
                 <h4 class="text-xs font-black text-slate-900 uppercase tracking-widest mb-4 border-b pb-2">Governance Definition</h4>
                 <div class="overflow-x-auto"><table class="w-full text-left text-xs"><thead class="bg-slate-50"><tr><th class="p-3 font-black text-slate-500 border-b tracking-widest uppercase">Field Path / Column</th><th class="p-3 font-black text-slate-500 border-b text-center tracking-widest uppercase">Type</th><th class="p-3 font-black text-slate-500 border-b text-center tracking-widest uppercase">PII Tag</th><th class="p-3 font-black text-slate-500 border-b tracking-widest uppercase">Governance Rule</th></tr></thead><tbody id="ins-field-body" class="divide-y divide-slate-100"></tbody></table></div>
-                <div class="mt-12 pt-6 border-t text-[10px] text-slate-400 font-bold uppercase flex justify-between"><span>Generated by TSI DX Engine v1.2.0</span><span id="ins-timestamp">---</span></div>
+                <div class="mt-12 pt-6 border-t text-[10px] text-slate-400 font-bold uppercase flex justify-between"><span>Generated by TSI DX Node</span><span id="ins-timestamp">---</span></div>
             </div>
         </div>
     </div>
@@ -212,6 +235,7 @@
         const PARTNER_API = '/api/admin/partners';
         let partnersMap = {};
         const localNodeId = localStorage.getItem('dx_node_id') || 'DX-DEFAULT-NODE';
+        let currentWizStep = 1;
 
         document.addEventListener('DOMContentLoaded', async () => {
             initIdentity();
@@ -287,7 +311,6 @@
                     tbody.appendChild(row);
                 });
             } else {
-                // Empty State Handler
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td colspan="5" class="px-6 py-20 text-center">
@@ -318,6 +341,7 @@
                 statusEl.className = `px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest border ${getStatusColor(res.status)}`;
                 
                 const format = res.metadata?.format || 'json';
+                const piiAnonymization = res.metadata?.governance_rules?.pii_anonymization || {};
                 document.getElementById('ins-format-label').innerText = `Governance Format: ${format.toUpperCase()}`;
                 document.getElementById('ins-timestamp').innerText = `Issued: ${res.created_at}`;
 
@@ -326,7 +350,8 @@
                 if (format === 'csv') {
                     if (res.schema_definition && res.schema_definition.fields) {
                         res.schema_definition.fields.forEach(f => {
-                            tbody.innerHTML += `<tr><td class="p-3 font-bold text-slate-900">${f.name}</td><td class="p-3 text-center uppercase font-black text-slate-400">${f.type}</td><td class="p-3 text-center"><span class="${f.pii ? 'text-red-600 font-black' : 'text-slate-200'}">${f.pii ? 'YES' : 'NO'}</span></td><td class="p-3 text-slate-500 italic">${f.pii ? 'Sensitive Data - Masking required' : 'Standard Field'}</td></tr>`;
+                            const method = piiAnonymization[f.name] || 'NONE';
+                            tbody.innerHTML += `<tr><td class="p-3 font-bold text-slate-900">${f.name}</td><td class="p-3 text-center uppercase font-black text-slate-400">${f.type}</td><td class="p-3 text-center"><span class="${f.pii ? 'text-red-600 font-black' : 'text-slate-200'}">${f.pii ? 'YES' : 'NO'}</span></td><td class="p-3 text-slate-500 italic">${f.pii ? (method !== 'NONE' ? `Rule: ${method}` : 'No Action') : '---'}</td></tr>`;
                         });
                     }
                 } else {
@@ -334,7 +359,8 @@
                     const piiFields = res.pii_fields || [];
                     Object.entries(props).forEach(([key, val]) => {
                         const isPii = piiFields.includes(key);
-                        tbody.innerHTML += `<tr><td class="p-3 font-bold text-slate-900">${key}</td><td class="p-3 text-center uppercase font-black text-slate-400">${val.type}</td><td class="p-3 text-center"><span class="${isPii ? 'text-red-600 font-black' : 'text-slate-200'}">${isPii ? 'YES' : 'NO'}</span></td><td class="p-3 text-slate-500 italic">${val.description || (isPii ? 'Identity Field' : 'Governance field')}</td></tr>`;
+                        const method = piiAnonymization[key] || 'NONE';
+                        tbody.innerHTML += `<tr><td class="p-3 font-bold text-slate-900">${key}</td><td class="p-3 text-center uppercase font-black text-slate-400">${val.type}</td><td class="p-3 text-center"><span class="${isPii ? 'text-red-600 font-black' : 'text-slate-200'}">${isPii ? 'YES' : 'NO'}</span></td><td class="p-3 text-slate-500 italic">${isPii ? (method !== 'NONE' ? `Rule: ${method}` : 'No Action') : '---'}</td></tr>`;
                     });
                 }
                 document.getElementById('contractInspector').classList.remove('hidden');
@@ -372,6 +398,8 @@
             if (!name || !partner) { showToast("Validation Error", "Name and Partner are required.", "error"); return; }
 
             let schema; let pii = [];
+            let piiGovernance = {};
+
             if (format === 'csv') {
                 const fields = [];
                 document.querySelectorAll('#csv-field-body tr').forEach(tr => {
@@ -380,18 +408,81 @@
                     const pi = tr.querySelector('.c-pii').checked;
                     if (fn) { fields.push({ name: fn, type: ty, pii: pi }); if (pi) pii.push(fn); }
                 });
-                if (fields.length === 0) { showToast("Validation Error", "Define at least one column.", "error"); return; }
                 schema = { fields };
             } else {
                 const raw = document.getElementById('wiz-json-schema').value;
                 try { 
                     schema = JSON.parse(raw); 
-                    if (schema.properties) Object.entries(schema.properties).forEach(([k, v]) => { if (v['x-pii'] === true) pii.push(k); });
+                    if (schema.properties) {
+                        Object.entries(schema.properties).forEach(([k, v]) => { if (v['x-pii'] === true) pii.push(k); });
+                    }
                 } catch(e) { showToast("Validation Error", "Invalid JSON syntax.", "error"); return; }
             }
 
-            const res = await callApi(API, { _func: "create_contract", name, sender_partner_id: direction === 'Outgoing' ? localNodeId : partner, receiver_partner_id: direction === 'Incoming' ? localNodeId : partner, direction, schema_definition: schema, pii_fields: pii, metadata: { format } });
+            // Collect Step 3 Anonymization methods
+            document.querySelectorAll('.pii-method-select').forEach(sel => {
+                piiGovernance[sel.dataset.field] = sel.value;
+            });
+
+            const res = await callApi(API, { 
+                _func: "create_contract", 
+                name, 
+                sender_partner_id: direction === 'Outgoing' ? localNodeId : partner, 
+                receiver_partner_id: direction === 'Incoming' ? localNodeId : partner, 
+                direction, 
+                schema_definition: schema, 
+                pii_fields: pii, 
+                metadata: { format, governance_rules: { pii_anonymization: piiGovernance } } 
+            });
+            
             if (res) { showToast("Success", "Draft registered.", "success"); closeContractWizard(); fetchContracts(); }
+        }
+
+        function populatePiiStep() {
+            const format = document.getElementById('wiz-format').value;
+            const body = document.getElementById('pii-anonymization-body');
+            const notice = document.getElementById('no-pii-notice');
+            body.innerHTML = '';
+            let piiFields = [];
+
+            if (format === 'csv') {
+                document.querySelectorAll('#csv-field-body tr').forEach(tr => {
+                    if (tr.querySelector('.c-pii').checked) {
+                        const name = tr.querySelector('.c-name').value;
+                        if (name) piiFields.push(name);
+                    }
+                });
+            } else {
+                try {
+                    const schema = JSON.parse(document.getElementById('wiz-json-schema').value);
+                    if (schema.properties) {
+                        Object.entries(schema.properties).forEach(([k, v]) => {
+                            if (v['x-pii'] === true) piiFields.push(k);
+                        });
+                    }
+                } catch(e) {}
+            }
+
+            if (piiFields.length > 0) {
+                notice.classList.add('hidden');
+                piiFields.forEach(field => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="p-3 font-bold text-slate-700 uppercase tracking-tight">${field}</td>
+                        <td class="p-3">
+                            <select data-field="${field}" class="pii-method-select w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-600 outline-none focus:ring-2 focus:ring-blue-500/10">
+                                <option value="NONE" selected>NONE (No Anonymization)</option>
+                                <option value="MASK">MASK (Partial visibility)</option>
+                                <option value="HASH">HASH (SHA-256 One-way)</option>
+                                <option value="TOKENIZE">TOKENIZE (Sovereign Vault)</option>
+                            </select>
+                        </td>
+                    `;
+                    body.appendChild(row);
+                });
+            } else {
+                notice.classList.remove('hidden');
+            }
         }
 
         async function callApi(url, data) {
@@ -414,21 +505,35 @@
         }
 
         function hideToast() { document.getElementById('toast').classList.add('hidden'); }
+        
         function goToStep(s) {
+            currentWizStep = s;
             document.getElementById('step1-content').classList.toggle('hidden', s !== 1);
             document.getElementById('step2-content').classList.toggle('hidden', s !== 2);
+            document.getElementById('step3-content').classList.toggle('hidden', s !== 3);
+            
             document.getElementById('prevBtn').classList.toggle('hidden', s === 1);
-            document.getElementById('nextBtn').classList.toggle('hidden', s === 2);
-            document.getElementById('saveBtn').classList.toggle('hidden', s !== 2);
+            document.getElementById('nextBtn').classList.toggle('hidden', s === 3);
+            document.getElementById('saveBtn').classList.toggle('hidden', s !== 3);
+            
             document.getElementById('step1-indicator').className = `step-pill w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black ${s === 1 ? 'active' : 'completed'}`;
-            document.getElementById('step2-indicator').className = `step-pill w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black ${s === 2 ? 'active' : 'bg-slate-200 text-slate-500'}`;
+            document.getElementById('step2-indicator').className = `step-pill w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black ${s === 2 ? 'active' : (s > 2 ? 'completed' : 'bg-slate-200 text-slate-500')}`;
+            document.getElementById('step3-indicator').className = `step-pill w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black ${s === 3 ? 'active' : 'bg-slate-200 text-slate-500'}`;
+
             if (s === 2) {
                 const format = document.getElementById('wiz-format').value;
                 document.getElementById('json-schema-area').classList.toggle('hidden', format !== 'json');
                 document.getElementById('csv-template-area').classList.toggle('hidden', format !== 'csv');
-                if (format === 'json' && !document.getElementById('wiz-json-schema').value) document.getElementById('wiz-json-schema').value = '{\n  "type": "object",\n  "properties": {\n    "field_1": { "type": "string" }\n  }\n}';
+                if (format === 'json' && !document.getElementById('wiz-json-schema').value) {
+                    document.getElementById('wiz-json-schema').value = '{\n  "type": "object",\n  "properties": {\n    "field_1": { "type": "string" }\n  }\n}';
+                }
+            }
+
+            if (s === 3) {
+                populatePiiStep();
             }
         }
+
         function getStatusColor(s) {
             switch(s) {
                 case 'Active': return 'bg-green-100 text-green-700';
@@ -437,15 +542,25 @@
                 default: return 'bg-slate-100 text-slate-600';
             }
         }
+
         function addCsvField() {
             const body = document.getElementById('csv-field-body');
             const row = document.createElement('tr');
             row.innerHTML = `<td class="p-2"><input type="text" class="c-name w-full p-2 border border-slate-200 rounded-lg text-xs" placeholder="e.g. lead_id"></td><td class="p-2"><select class="c-type w-full p-2 border border-slate-200 rounded-lg text-xs font-bold"><option value="string">STRING</option><option value="number">NUMBER</option><option value="date">DATE</option></select></td><td class="p-2 text-center"><input type="checkbox" class="c-pii w-4 h-4 rounded"></td><td class="p-2 text-right"><button onclick="this.parentElement.parentElement.remove()" class="text-red-300 hover:text-red-600">×</button></td>`;
             body.appendChild(row);
         }
-        function nextStep() { goToStep(2); }
-        function prevStep() { goToStep(1); }
-        function openContractWizard() { document.getElementById('wiz-name').value = ''; document.getElementById('wiz-json-schema').value = ''; document.getElementById('csv-field-body').innerHTML = ''; document.getElementById('contractWizard').classList.remove('hidden'); goToStep(1); }
+
+        function nextStep() { goToStep(currentWizStep + 1); }
+        function prevStep() { goToStep(currentWizStep - 1); }
+        
+        function openContractWizard() { 
+            document.getElementById('wiz-name').value = ''; 
+            document.getElementById('wiz-json-schema').value = ''; 
+            document.getElementById('csv-field-body').innerHTML = ''; 
+            document.getElementById('contractWizard').classList.remove('hidden'); 
+            goToStep(1); 
+        }
+
         function closeContractWizard() { document.getElementById('contractWizard').classList.add('hidden'); }
         function closeInspector() { document.getElementById('contractInspector').classList.add('hidden'); }
         function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
