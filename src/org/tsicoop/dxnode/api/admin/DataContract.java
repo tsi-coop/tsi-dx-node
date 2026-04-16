@@ -206,7 +206,10 @@ public class DataContract implements REST {
                 payload.put("_func", "query_contract_status");
                 payload.put("contract_id", contractId.toString());
 
-                String targetUrl = (fqdn.startsWith("http") ? fqdn : "http://" + fqdn) + "/api/admin/contracts";
+                // REVISED: Automatic protocol detection based on port
+                String protocol = (fqdn.contains(":443") || fqdn.contains(":8443")) ? "https://" : "http://";
+                String targetUrl = (fqdn.startsWith("http") ? fqdn : protocol + fqdn) + "/api/admin/contracts";
+
                 HttpRequest request = HttpRequest.newBuilder().uri(URI.create(targetUrl))
                         .header("Content-Type", "application/json").header("X-DX-P2P-HANDSHAKE", P2P_HANDSHAKE_TOKEN)
                         .POST(HttpRequest.BodyPublishers.ofString(payload.toJSONString())).build();
@@ -239,7 +242,10 @@ public class DataContract implements REST {
                 payload.put("contract_id", contractId.toString());
                 payload.put("status", status);
                 
-                String targetUrl = (fqdn.startsWith("http") ? fqdn : "http://" + fqdn) + "/api/admin/contracts";
+                // REVISED: Automatic protocol detection based on port
+                String protocol = (fqdn.contains(":443") || fqdn.contains(":8443")) ? "https://" : "http://";
+                String targetUrl = (fqdn.startsWith("http") ? fqdn : protocol + fqdn) + "/api/admin/contracts";
+
                 HttpRequest request = HttpRequest.newBuilder().uri(URI.create(targetUrl))
                         .header("Content-Type", "application/json")
                         .header("X-DX-P2P-HANDSHAKE", P2P_HANDSHAKE_TOKEN)
@@ -372,7 +378,10 @@ public class DataContract implements REST {
                     payload.put("pii_fields", piiArr);
                 }
 
-                String targetUrl = (fqdn.startsWith("http") ? fqdn : "http://" + fqdn) + "/api/admin/contracts";
+                // REVISED: Automatic protocol detection based on port
+                String protocol = (fqdn.contains(":443") || fqdn.contains(":8443")) ? "https://" : "http://";
+                String targetUrl = (fqdn.startsWith("http") ? fqdn : protocol + fqdn) + "/api/admin/contracts";
+
                 HttpRequest request = HttpRequest.newBuilder().uri(URI.create(targetUrl))
                         .header("Content-Type", "application/json").header("X-DX-P2P-HANDSHAKE", P2P_HANDSHAKE_TOKEN)
                         .POST(HttpRequest.BodyPublishers.ofString(payload.toJSONString())).build();

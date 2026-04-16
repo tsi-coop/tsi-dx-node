@@ -156,7 +156,10 @@ public class TransferEngine implements ServletContextListener {
             payload.put("file_name", fileName);
             payload.put("file_data", base64Payload);
 
-            String targetUrl = (targetFqdn.startsWith("http") ? targetFqdn : "http://" + targetFqdn) + "/api/admin/transfers";
+            // REVISED: Automatic protocol detection based on port
+            String protocol = (targetFqdn.contains(":443") || targetFqdn.contains(":8443")) ? "https://" : "http://";
+            String targetUrl = (targetFqdn.startsWith("http") ? targetFqdn : protocol + targetFqdn) + "/api/admin/transfers";
+            
             HttpRequest request = HttpRequest.newBuilder().uri(URI.create(targetUrl))
                     .header(P2P_HEADER, P2P_TOKEN)
                     .header("Content-Type", "application/json")
