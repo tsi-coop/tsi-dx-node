@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Create App Request",
-  "description": "Schema for validating the registration of a new application to enable Client API access within the TSI DX Node.",
+  "description": "Validation schema for registering a new application within the TSI DX Node. Aligned with the AppManager.java implementation.",
   "type": "object",
   "required": [
     "_func",
@@ -15,15 +15,19 @@
     },
     "name": {
       "type": "string",
-      "minLength": 3,
+      "minLength": 1,
       "maxLength": 255,
-      "description": "The unique administrative name of the application.",
-      "examples": ["aaa"]
+      "description": "The administrative name of the application.",
+      "examples": [
+        "t3"
+      ]
     },
     "description": {
       "type": "string",
-      "description": "A summary of the application's intended role or scope.",
-      "examples": ["aaaa"]
+      "description": "An optional summary or description of the application's scope.",
+      "examples": [
+        "t3"
+      ]
     }
   },
   "additionalProperties": false

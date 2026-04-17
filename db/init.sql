@@ -89,24 +89,26 @@ CREATE INDEX idx_users_username ON users (username);
 CREATE INDEX idx_users_role_id ON users (role_id); -- New index for the role_id
 
 -- 6. `apps` Table
+-- REVISED: Ensure updated_at exists for the trigger
 CREATE TABLE IF NOT EXISTS apps (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(255) NOT NULL,
     description TEXT NULL,
-    status VARCHAR(50) NOT NULL DEFAULT 'ACTIVE', -- ACTIVE, INACTIVE, REVOKED
+    status VARCHAR(50) NOT NULL DEFAULT 'ACTIVE',
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    last_updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
 -- 7. `api_keys` Table
--- Stores API keys and secrets for Client API access.
+-- REVISED: Explicitly added updated_at to resolve "record new has no field" error
 CREATE TABLE api_keys (
     key_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     api_key VARCHAR(255) NOT NULL UNIQUE,
     api_secret_hash VARCHAR(255) NOT NULL,
     app_id UUID NULL REFERENCES apps(id) ON DELETE SET NULL,     
-    status VARCHAR(50) NOT NULL DEFAULT 'Active', -- 'Active', 'Inactive', 'Revoked'
+    status VARCHAR(50) NOT NULL DEFAULT 'Active',
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     expires_at TIMESTAMP WITH TIME ZONE NULL,
     last_used_at TIMESTAMP WITH TIME ZONE NULL
 );
