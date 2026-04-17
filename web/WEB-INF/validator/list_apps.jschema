@@ -1,0 +1,44 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "List Apps Request",
+  "description": "Schema for validating the request to retrieve the registry of applications authorized for Client API access.",
+  "type": "object",
+  "required": [
+    "_func"
+  ],
+  "properties": {
+    "_func": {
+      "type": "string",
+      "const": "list_apps",
+      "description": "The internal function identifier for the list applications action."
+    },
+    "search": {
+      "type": "string",
+      "description": "Optional search term to filter applications by name or description."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "ACTIVE",
+        "INACTIVE",
+        "REVOKED",
+        ""
+      ],
+      "description": "Optional filter to list applications with a specific lifecycle status."
+    },
+    "page": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 1,
+      "description": "The page number for pagination."
+    },
+    "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100,
+      "default": 50,
+      "description": "The maximum number of records to return per page."
+    }
+  },
+  "additionalProperties": false
+}

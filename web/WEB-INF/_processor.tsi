@@ -12,4 +12,6 @@
 /api/admin/contracts=org.tsicoop.dxnode.api.admin.DataContract
 /api/admin/transfers=org.tsicoop.dxnode.api.admin.DXManager
 /api/admin/audit=org.tsicoop.dxnode.api.admin.Audit
+/api/admin/apps=org.tsicoop.dxnode.api.admin.AppManager
+
 

@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Delete App Request",
+  "description": "Schema for validating the administrative request to delete an application and permanently revoke its Client API access.",
+  "type": "object",
+  "required": [
+    "_func",
+    "id"
+  ],
+  "properties": {
+    "_func": {
+      "type": "string",
+      "const": "delete_app",
+      "description": "The internal function identifier for the delete application action."
+    },
+    "id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "The unique identifier (UUID) of the application to be removed from the registry.",
+      "examples": [
+        "155dc8f7-504a-4346-8315-885ad85972c3"
+      ]
+    }
+  },
+  "additionalProperties": false
+}

@@ -231,6 +231,10 @@ CREATE TRIGGER update_roles_updated_at
 BEFORE UPDATE ON roles
 FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+CREATE TRIGGER update_apps_updated_at 
+BEFORE UPDATE ON apps
+FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
 CREATE TRIGGER update_api_keys_updated_at
 BEFORE UPDATE ON api_keys
 FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Generate API Key Request",
+  "description": "Schema for validating the administrative request to generate a new pair of Client API credentials (API Key and Secret) for a registered application.",
+  "type": "object",
+  "required": [
+    "_func",
+    "app_id"
+  ],
+  "properties": {
+    "_func": {
+      "type": "string",
+      "const": "generate_api_key",
+      "description": "The internal function identifier for API credential generation."
+    },
+    "app_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "The unique identifier (UUID) of the application for which credentials are being generated.",
+      "examples": [
+        "b72e9525-c6b2-4dd1-ac0f-cf93403a8e88"
+      ]
+    }
+  },
+  "additionalProperties": false
+}

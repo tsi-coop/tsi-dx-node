@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Create App Request",
+  "description": "Schema for validating the registration of a new application to enable Client API access within the TSI DX Node.",
+  "type": "object",
+  "required": [
+    "_func",
+    "name"
+  ],
+  "properties": {
+    "_func": {
+      "type": "string",
+      "const": "create_app",
+      "description": "The internal function identifier for application registration."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 255,
+      "description": "The unique administrative name of the application.",
+      "examples": ["aaa"]
+    },
+    "description": {
+      "type": "string",
+      "description": "A summary of the application's intended role or scope.",
+      "examples": ["aaaa"]
+    }
+  },
+  "additionalProperties": false
+}
