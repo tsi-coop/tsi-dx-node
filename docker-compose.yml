@@ -49,6 +49,7 @@ services:
       POSTGRES_USER: "${POSTGRES_USER:-tsi_admin}"
       POSTGRES_PASSWD: "${POSTGRES_PASSWD:-secure_dev_password}"
       TSI_DX_NODE_ENV: "${TSI_DX_NODE_ENV:-production}"
+      TSI_DX_NODE_JWT_SECRET: "${TSI_PRIVACY_VAULT_JWT_SECRET:-your_32_character_long_secure_secret_here}"
       TSI_EXPORT_PATH: "${TSI_EXPORT_PATH:-/var/lib/tsi/exports/}"
     
     volumes:
