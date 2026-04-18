@@ -88,32 +88,7 @@ CREATE TABLE users (
 CREATE INDEX idx_users_username ON users (username);
 CREATE INDEX idx_users_role_id ON users (role_id); -- New index for the role_id
 
--- 6. `apps` Table
--- REVISED: Ensure updated_at exists for the trigger
-CREATE TABLE IF NOT EXISTS apps (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name VARCHAR(255) NOT NULL,
-    description TEXT NULL,
-    status VARCHAR(50) NOT NULL DEFAULT 'ACTIVE',
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
-);
-
--- 7. `api_keys` Table
--- REVISED: Explicitly added updated_at to resolve "record new has no field" error
-CREATE TABLE api_keys (
-    key_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    api_key VARCHAR(255) NOT NULL UNIQUE,
-    api_secret_hash VARCHAR(255) NOT NULL,
-    app_id UUID NULL REFERENCES apps(id) ON DELETE SET NULL,     
-    status VARCHAR(50) NOT NULL DEFAULT 'Active',
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    expires_at TIMESTAMP WITH TIME ZONE NULL,
-    last_used_at TIMESTAMP WITH TIME ZONE NULL
-);
-
--- 8. `data_contracts` Table
+-- 6. `data_contracts` Table
 -- Defines the agreements for data exchange between partners.
 CREATE TABLE IF NOT EXISTS data_contracts (
     contract_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -139,8 +114,44 @@ CREATE TABLE IF NOT EXISTS data_contracts (
 CREATE INDEX idx_data_contracts_sender_partner_id ON data_contracts (sender_partner_id);
 CREATE INDEX idx_data_contracts_receiver_partner_id ON data_contracts (receiver_partner_id);
 
+-- 7. `apps` Table
+-- REVISED: Ensure updated_at exists for the trigger
+CREATE TABLE IF NOT EXISTS apps (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(255) NOT NULL,
+    description TEXT NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'ACTIVE',
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
 
--- 9. `data_transfers` Table
+-- 8. `api_keys` Table
+-- REVISED: Explicitly added updated_at to resolve "record new has no field" error
+CREATE TABLE api_keys (
+    key_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    api_key VARCHAR(255) NOT NULL UNIQUE,
+    api_secret_hash VARCHAR(255) NOT NULL,
+    app_id UUID NULL REFERENCES apps(id) ON DELETE SET NULL,     
+    status VARCHAR(50) NOT NULL DEFAULT 'Active',
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    expires_at TIMESTAMP WITH TIME ZONE NULL,
+    last_used_at TIMESTAMP WITH TIME ZONE NULL
+);
+
+-- 9. `app_contracts` Table
+-- Intersect table to define which apps have access to which data contracts.
+CREATE TABLE IF NOT EXISTS app_contracts (
+    app_id UUID NOT NULL REFERENCES apps(id) ON DELETE CASCADE,
+    contract_id UUID NOT NULL REFERENCES data_contracts(contract_id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (app_id, contract_id)
+);
+
+-- Index for checking API authorization during transfer
+CREATE INDEX idx_app_contracts_lookup ON app_contracts(app_id, contract_id);
+
+-- 10. `data_transfers` Table
 -- Records details of each data transfer event.
 CREATE TABLE IF NOT EXISTS data_transfers (
     transfer_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -175,8 +186,7 @@ CREATE INDEX idx_transfers_contract_id ON data_transfers (contract_id);
 -- Index for status-based UI filtering (All/Pending/Completed/Failed tabs)
 CREATE INDEX idx_transfers_status ON data_transfers (status);
 
-
--- 10. `audit_logs` Table
+-- 11. `audit_logs` Table
 -- Records all significant events within the DX Node for auditing purposes.
 CREATE TABLE audit_logs (
     log_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -196,8 +206,7 @@ CREATE INDEX idx_audit_logs_timestamp ON audit_logs (timestamp DESC);
 CREATE INDEX idx_audit_logs_event_type ON audit_logs (event_type);
 CREATE INDEX idx_audit_logs_actor_id ON audit_logs (actor_id);
 
-
--- 11. `pii_rules` Table
+-- 12. `pii_rules` Table
 -- Stores rules for Personally Identifiable Information (PII) anonymization.
 CREATE TABLE pii_rules (
     rule_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

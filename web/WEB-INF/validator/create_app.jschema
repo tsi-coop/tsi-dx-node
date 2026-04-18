@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Create App Request",
-  "description": "Validation schema for registering a new application within the TSI DX Node. Aligned with the AppManager.java implementation.",
+  "title": "Create Application Request",
+  "description": "Schema for validating the registration of a new application and its associated Data Contract authorizations (RBAC).",
   "type": "object",
   "required": [
     "_func",
@@ -17,16 +17,27 @@
       "type": "string",
       "minLength": 1,
       "maxLength": 255,
-      "description": "The administrative name of the application.",
+      "description": "The unique administrative name of the application.",
       "examples": [
-        "t3"
+        "App1"
       ]
     },
     "description": {
       "type": "string",
-      "description": "An optional summary or description of the application's scope.",
+      "description": "An optional summary of the application's intended role or scope.",
       "examples": [
-        "t3"
+        "asdad"
+      ]
+    },
+    "authorized_contract_ids": {
+      "type": "array",
+      "description": "A list of UUIDs representing the Data Contracts this application is authorized to access via the Client API.",
+      "items": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "examples": [
+        ["852020e1-2901-4e4d-8015-6df2d0b48f7f"]
       ]
     }
   },
