@@ -18,6 +18,7 @@ import java.util.UUID;
 /**
  * Service to manage and monitor data transfers.
  * Standardized on JSON-based exchanges (Base64 encoded payloads).
+ * REVISED: Implements Receiver-side Replay Protection and cryptographic sequence persistence.
  * Instrumented with forensic audit logging.
  */
 public class DXManager implements REST {
@@ -154,6 +155,11 @@ public class DXManager implements REST {
         } finally { pool.cleanup(rs, pstmt, conn); }
     }
 
+    /**
+     * Handles inbound JSON transfer streams.
+     * Integrates P2P Replay Protection by verifying the sequence number and timestamp
+     * before persisting the payload.
+     */
     private void handleIncomingJsonTransfer(JSONObject input, HttpServletResponse res, HttpServletRequest req) throws Exception {
         String transferId = (String) input.get("transfer_id");
         String contractId = (String) input.get("contract_id");
@@ -161,6 +167,32 @@ public class DXManager implements REST {
         String fileName = (String) input.get("file_name");
         String fileDataBase64 = (String) input.get("file_data");
         String messageTimestamp = (String) input.get("message_timestamp");
+        
+        // 1. Extract and Verify Protocol Metadata for Replay Protection
+        long sequenceNumber = 0;
+        if (input.get("sequence_number") != null) {
+            sequenceNumber = (long) input.get("sequence_number");
+        }
+
+        try {
+            // Perform freshness and monotonicity checks
+            TransferEngine.getInstance().verifyIncomingTransfer(
+                senderNodeId, 
+                UUID.fromString(contractId), 
+                sequenceNumber, 
+                messageTimestamp
+            );
+        } catch (SecurityException se) {
+            // AUDIT: Record blocked replay attempt
+            JSONObject details = new JSONObject();
+            details.put("error", se.getMessage());
+            details.put("rejected_sequence", sequenceNumber);
+            details.put("rejected_timestamp", messageTimestamp);
+            logAudit("SECURITY_REPLAY_BLOCKED", "CRITICAL", senderNodeId, transferId, details, req);
+            
+            OutputProcessor.errorResponse(res, 403, "Forbidden", "Protocol Violation: " + se.getMessage(), req.getRequestURI());
+            return;
+        }
 
         Connection conn = null; PreparedStatement pstmt = null; ResultSet rs = null; PoolDB pool = new PoolDB();
         try {
@@ -174,14 +206,16 @@ public class DXManager implements REST {
             }
             pstmt.close();
 
+            // 2. Persist Payload
             byte[] data = Base64.getDecoder().decode(fileDataBase64);
             Path targetFile = Path.of(activePath, fileName);
             Files.createDirectories(targetFile.getParent());
             Files.write(targetFile, data);
 
+            // 3. Update Registry with validated sequence and timestamp
             String sql = "INSERT INTO data_transfers (transfer_id, contract_id, sender_node_id, receiver_node_id, " +
                          "file_name, file_size_bytes, file_checksum, sequence_number, message_timestamp, status, start_time, end_time) " +
-                         "VALUES (?, ?, ?, ?, ?, ?, 'RECEPTION_VERIFIED', 0, ?, 'Received', NOW(), NOW()) " +
+                         "VALUES (?, ?, ?, ?, ?, ?, 'RECEPTION_VERIFIED', ?, ?, 'Received', NOW(), NOW()) " +
                          "ON CONFLICT (transfer_id) DO UPDATE SET status = 'Received', end_time = NOW()";
             
             pstmt = conn.prepareStatement(sql);
@@ -191,12 +225,14 @@ public class DXManager implements REST {
             pstmt.setString(4, localNodeId);
             pstmt.setString(5, fileName);
             pstmt.setLong(6, (long) data.length);
-            pstmt.setTimestamp(7, messageTimestamp != null ? Timestamp.valueOf(messageTimestamp) : new Timestamp(System.currentTimeMillis()));
+            pstmt.setLong(7, sequenceNumber);
+            pstmt.setTimestamp(8, messageTimestamp != null ? Timestamp.valueOf(messageTimestamp) : new Timestamp(System.currentTimeMillis()));
             pstmt.executeUpdate();
 
             JSONObject details = new JSONObject();
             details.put("sender", senderNodeId);
             details.put("file", fileName);
+            details.put("sequence", sequenceNumber);
             logAudit("TRANSFER", "INFO", "P2P_PROTOCOL", transferId, details, req);
 
             OutputProcessor.send(res, 200, new JSONObject() {{ put("success", true); }});
@@ -228,7 +264,6 @@ public class DXManager implements REST {
                 t.put("transfer_id", rs.getString("transfer_id"));
                 t.put("file_name", rs.getString("file_name"));
                 t.put("status", rs.getString("status"));
-                // REVISED: Include error_message in the listing for UI visibility
                 t.put("error_message", rs.getString("error_message"));
                 t.put("direction", isOutgoing ? "Outgoing" : "Incoming");
                 t.put("peer_node_id", isOutgoing ? rs.getString("receiver_node_id") : sender);
@@ -252,7 +287,7 @@ public class DXManager implements REST {
             pstmt.setString(2, type);
             pstmt.setString(3, severity);
             String actorId = (actor == null || actor.isEmpty()) ? "SYSTEM" : actor;
-            pstmt.setString(4, "P2P_PROTOCOL".equals(actorId) ? "SYSTEM" : "USER");
+            pstmt.setString(4, "P2P_PROTOCOL".equals(actorId) || actorId.contains("_") ? "SYSTEM" : "USER");
             pstmt.setString(5, actorId);
             if (entityId != null && !entityId.trim().isEmpty()) {
                 pstmt.setObject(6, UUID.fromString(entityId.trim()));

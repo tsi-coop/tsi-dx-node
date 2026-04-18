@@ -23,7 +23,7 @@ import java.util.UUID;
 /**
  * Service to manage Partner Nodes and the Identity Handshake protocol.
  * Implements a mutual-consent governance model: Invited -> Pending -> Active -> Terminating -> [Purged].
- * REVISED: Captures Public Key PEM on creation, auto-detects HTTPS for secure ports, and enforces mutual deletion.
+ * REVISED: Implements active P2P notification for cancelled or rejected invitations.
  */
 public class Partners implements REST {
 
@@ -228,8 +228,18 @@ public class Partners implements REST {
                 String fqdn = rs.getString("fqdn");
                 
                 if ("Active".equalsIgnoreCase(status)) {
+                    // Standard two-phase termination for active links
                     updatePartnerStatus(conn, partnerId, "Terminating");
                     notifyPeerOfAction(fqdn, "receive_termination_request");
+                } else if ("Invited".equalsIgnoreCase(status) || "Pending".equalsIgnoreCase(status)) {
+                    // REVISED: If cancelling an invite (sender) or rejecting one (recipient), 
+                    // notify the peer to purge their side immediately.
+                    try {
+                        dispatchTerminationFinalization(fqdn, true);
+                    } catch (Exception e) {
+                        System.err.println("[Partners] Direct peer notification failed: " + e.getMessage());
+                    }
+                    deletePartnerFromDb(partnerId);
                 } else {
                     deletePartnerFromDb(partnerId);
                 }
@@ -257,19 +267,7 @@ public class Partners implements REST {
             rs = pstmt.executeQuery();
             if (rs.next()) {
                 String fqdn = rs.getString("fqdn");
-                JSONObject payload = new JSONObject();
-                payload.put("_func", "receive_termination_finalization");
-                payload.put("accepted", accepted);
-                payload.put("sender_node_id", getLocalNodeId());
-
-                String targetUrl = normalizeUrl(fqdn);
-                HttpRequest request = HttpRequest.newBuilder().uri(URI.create(targetUrl))
-                        .header("Content-Type", "application/json")
-                        .header("X-DX-P2P-HANDSHAKE", P2P_HANDSHAKE_TOKEN)
-                        .header("X-DX-FUNCTION", "receive_termination_finalization")
-                        .POST(HttpRequest.BodyPublishers.ofString(payload.toJSONString())).build();
-
-                httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString());
+                dispatchTerminationFinalization(fqdn, accepted);
 
                 if (accepted) {
                     deletePartnerFromDb(partnerId);
@@ -279,6 +277,25 @@ public class Partners implements REST {
                 }
             }
         } finally { pool.cleanup(rs, pstmt, conn); }
+    }
+
+    /**
+     * Protocol helper to inform peer of a final record disposal decision (Accept/Reject/Cancel).
+     */
+    private void dispatchTerminationFinalization(String peerFqdn, boolean accepted) throws Exception {
+        JSONObject payload = new JSONObject();
+        payload.put("_func", "receive_termination_finalization");
+        payload.put("accepted", accepted);
+        payload.put("sender_node_id", getLocalNodeId());
+
+        String targetUrl = normalizeUrl(peerFqdn);
+        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(targetUrl))
+                .header("Content-Type", "application/json")
+                .header("X-DX-P2P-HANDSHAKE", P2P_HANDSHAKE_TOKEN)
+                .header("X-DX-FUNCTION", "receive_termination_finalization")
+                .POST(HttpRequest.BodyPublishers.ofString(payload.toJSONString())).build();
+
+        httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString());
     }
 
     private void handleInboundFinalization(JSONObject input) throws SQLException {
@@ -326,7 +343,6 @@ public class Partners implements REST {
 
     private String normalizeUrl(String fqdn) {
         String url = fqdn.trim();
-        // REVISED: HTTPS auto-detection for secure ports 443 and 8443
         String protocol = (url.contains(":443") || url.contains(":8443")) ? "https" : "http";
         if (!url.startsWith("http")) url = protocol + "://" + url;
         if (!url.endsWith("/api/admin/partners")) url = url.endsWith("/") ? url + "api/admin/partners" : url + "/api/admin/partners";

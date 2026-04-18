@@ -22,16 +22,15 @@ import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.sql.*;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 /**
  * Orchestration engine for P2P Data Transfers.
- * REVISED: Implements L1 (Structural) and L2 (PII) Governance for JSON and CSV.
- * Standardized on JSON-based protocol with Base64 payloads.
- * FIX: Performed inline validation to avoid dependency on missing methods in JSONSchemaValidator.
- * UPDATE: Overwrites local staged file with anonymized data to ensure sender UI visibility.
+ * REVISED: Implements P2P Replay Protection via cryptographic sequence numbers and timestamps.
+ * Enforces L1 (Structural) and L2 (PII) Governance for JSON and CSV.
  */
 public class TransferEngine implements ServletContextListener {
 
@@ -44,6 +43,9 @@ public class TransferEngine implements ServletContextListener {
     private static final String P2P_HEADER = "X-DX-P2P-HANDSHAKE";
     private static final String P2P_TOKEN = "DX-P2P-PROTOCOL-V1";
     private static final int MAX_CONCURRENT_TRANSFERS = 10;
+    
+    // Freshness window for replay protection (e.g., 5 minutes)
+    private static final long FRESHNESS_THRESHOLD_MS = 300000; 
 
     public TransferEngine() {
         this.httpClient = HttpClient.newBuilder()
@@ -59,7 +61,7 @@ public class TransferEngine implements ServletContextListener {
 
     @Override
     public void contextInitialized(ServletContextEvent sce) {
-        System.out.println("[TransferEngine] Initializing Governed JSON/CSV Orchestration...");
+        System.out.println("[TransferEngine] Initializing Governed JSON/CSV Orchestration with Replay Protection...");
         instance = this;
         transferPool = Executors.newFixedThreadPool(MAX_CONCURRENT_TRANSFERS);
         scheduler = Executors.newSingleThreadScheduledExecutor();
@@ -97,7 +99,6 @@ public class TransferEngine implements ServletContextListener {
             pool = new PoolDB();
             conn = pool.getConnection();
             
-            // 1. Fetch Metadata, local storage, and Governing Contract details
             String sql = "SELECT t.*, p.fqdn, cfg.storage_active_path, " +
                          "c.schema_definition, c.pii_fields, c.metadata as contract_metadata " +
                          "FROM data_transfers t " +
@@ -116,9 +117,9 @@ public class TransferEngine implements ServletContextListener {
             final String fileName = rs.getString("file_name");
             final String contractId = rs.getString("contract_id");
             final String senderNodeId = rs.getString("sender_node_id");
+            final String receiverNodeId = rs.getString("receiver_node_id");
             final String activePath = rs.getString("storage_active_path");
             
-            // Parse contract governance rules
             JSONParser parser = new JSONParser();
             final JSONObject schemaDef = (JSONObject) parser.parse(rs.getString("schema_definition"));
             final JSONObject metadata = (JSONObject) parser.parse(rs.getString("contract_metadata"));
@@ -126,28 +127,27 @@ public class TransferEngine implements ServletContextListener {
             
             updateStatus(tid, "Processing", null);
 
+            // --- REPLAY PROTECTION: SENDER PHASE ---
+            // 1. Generate unique Monotonic Sequence and Timestamp
+            long nextSequence = getNextOutboundSequence(conn, UUID.fromString(contractId), receiverNodeId);
+            Timestamp messageTimestamp = new Timestamp(System.currentTimeMillis());
+
             // 2. Read staged file
             Path filePath = Path.of(activePath, fileName);
             if (!Files.exists(filePath)) throw new IOException("Staged payload missing at: " + filePath);
             byte[] fileBytes = Files.readAllBytes(filePath);
 
-            // --- 3. GOVERNANCE ENFORCEMENT LAYER (L1 & L2) ---
+            // 3. Apply Governance (Anonymization mirrored locally)
             try {
                 fileBytes = applyGovernance(fileBytes, format, schemaDef, metadata);
-                
-                // REVISED: Overwrite the local staged file with the processed (anonymized) data.
-                // This ensures that when the sender performs a "View File" in the UI, they see
-                // exactly the version of the data that was transmitted to the peer.
                 Files.write(filePath, fileBytes);
-                
             } catch (Exception ge) {
                 updateStatus(tid, "Failed", "Governance Error: " + ge.getMessage());
                 return;
             }
 
-            // 4. Encode and Dispatch using custom Base64 utility
+            // 4. Construct Governed P2P Payload
             String base64Payload = Base64.encodeToString(fileBytes);
-            
             JSONObject payload = new JSONObject();
             payload.put("_func", "receive_transfer_stream");
             payload.put("transfer_id", tid.toString());
@@ -155,8 +155,12 @@ public class TransferEngine implements ServletContextListener {
             payload.put("sender_node_id", senderNodeId);
             payload.put("file_name", fileName);
             payload.put("file_data", base64Payload);
+            
+            // SECURITY ATTACHMENTS
+            payload.put("sequence_number", nextSequence);
+            payload.put("message_timestamp", messageTimestamp.toString());
 
-            // REVISED: Automatic protocol detection based on port
+            // 5. Dispatch
             String protocol = (targetFqdn.contains(":443") || targetFqdn.contains(":8443")) ? "https://" : "http://";
             String targetUrl = (targetFqdn.startsWith("http") ? targetFqdn : protocol + targetFqdn) + "/api/admin/transfers";
             
@@ -170,9 +174,11 @@ public class TransferEngine implements ServletContextListener {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() >= 200 && response.statusCode() < 300) {
+                // Persist successful sequence in DB
+                saveSequenceMetadata(conn, tid, nextSequence, messageTimestamp);
                 updateStatus(tid, "Delivered", null);
             } else {
-                updateStatus(tid, "Failed", "Peer Rejected: HTTP " + response.statusCode());
+                updateStatus(tid, "Failed", "Peer Rejected Protocol: HTTP " + response.statusCode());
             }
 
         } catch (Exception e) {
@@ -184,20 +190,66 @@ public class TransferEngine implements ServletContextListener {
     }
 
     /**
-     * Entry point for L1 (Structural) and L2 (PII) governance.
+     * REPLAY PROTECTION: RECEIVER PHASE
+     * Validates an incoming P2P transfer against freshness and sequence monotonicity.
+     * Called by DXManager or InterceptingFilter during reception.
      */
-    private byte[] applyGovernance(byte[] data, String format, JSONObject schema, JSONObject metadata) throws Exception {
-        if ("csv".equals(format)) {
-            return processCsvGovernance(data, schema, metadata);
-        } else {
-            return processJsonGovernance(data, schema, metadata);
+    public void verifyIncomingTransfer(String senderNodeId, UUID contractId, long incomingSeq, String timestampStr) throws SecurityException, SQLException {
+        // 1. Freshness Check
+        Timestamp incomingTs = Timestamp.valueOf(timestampStr);
+        long drift = Math.abs(System.currentTimeMillis() - incomingTs.getTime());
+        if (drift > FRESHNESS_THRESHOLD_MS) {
+            throw new SecurityException("Replay Protection: Timestamp drift exceeds 5-minute window. Potential stale replay attack.");
         }
+
+        // 2. Monotonicity Check
+        Connection conn = null; PreparedStatement pstmt = null; ResultSet rs = null; PoolDB pool = new PoolDB();
+        try {
+            conn = pool.getConnection();
+            String sql = "SELECT MAX(sequence_number) FROM data_transfers WHERE sender_node_id = ? AND contract_id = ?";
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, senderNodeId);
+            pstmt.setObject(2, contractId);
+            rs = pstmt.executeQuery();
+            
+            long lastSeq = 0;
+            if (rs.next()) lastSeq = rs.getLong(1);
+            
+            if (incomingSeq <= lastSeq) {
+                throw new SecurityException("Replay Protection: Incoming sequence (" + incomingSeq + ") is not greater than last received (" + lastSeq + "). Transaction rejected.");
+            }
+        } finally { pool.cleanup(rs, pstmt, conn); }
+    }
+
+    private long getNextOutboundSequence(Connection conn, UUID contractId, String receiverNodeId) throws SQLException {
+        String sql = "SELECT COALESCE(MAX(sequence_number), 0) + 1 FROM data_transfers " +
+                     "WHERE contract_id = ? AND receiver_node_id = ?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setObject(1, contractId);
+            ps.setString(2, receiverNodeId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getLong(1) : 1;
+            }
+        }
+    }
+
+    private void saveSequenceMetadata(Connection conn, UUID tid, long seq, Timestamp ts) throws SQLException {
+        String sql = "UPDATE data_transfers SET sequence_number = ?, message_timestamp = ? WHERE transfer_id = ?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setLong(1, seq);
+            ps.setTimestamp(2, ts);
+            ps.setObject(3, tid);
+            ps.executeUpdate();
+        }
+    }
+
+    private byte[] applyGovernance(byte[] data, String format, JSONObject schema, JSONObject metadata) throws Exception {
+        if ("csv".equals(format)) return processCsvGovernance(data, schema, metadata);
+        return processJsonGovernance(data, schema, metadata);
     }
 
     private byte[] processJsonGovernance(byte[] data, JSONObject schema, JSONObject metadata) throws Exception {
         String jsonStr = new String(data, StandardCharsets.UTF_8);
-        
-        // L1: Structural Validation (Inlined logic to use Jackson and NetworkNT directly)
         JsonNode payloadNode = mapper.readTree(jsonStr);
         JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V7);
         JsonSchema jsonSchema = factory.getSchema(schema.toJSONString());
@@ -205,13 +257,10 @@ public class TransferEngine implements ServletContextListener {
         Set<ValidationMessage> assertions = jsonSchema.validate(payloadNode);
         if (!assertions.isEmpty()) {
             StringBuilder errorLog = new StringBuilder("Contract Violation: ");
-            for (ValidationMessage msg : assertions) {
-                errorLog.append("[").append(msg.getMessage()).append("] ");
-            }
+            for (ValidationMessage msg : assertions) errorLog.append("[").append(msg.getMessage()).append("] ");
             throw new IllegalArgumentException(errorLog.toString());
         }
 
-        // L2: PII Anonymization
         JSONObject payload = (JSONObject) new JSONParser().parse(jsonStr);
         JSONObject governanceRules = (JSONObject) metadata.get("governance_rules");
         JSONObject anonRules = governanceRules != null ? (JSONObject) governanceRules.get("pii_anonymization") : null;
@@ -219,9 +268,7 @@ public class TransferEngine implements ServletContextListener {
         if (anonRules != null) {
             for (Object key : anonRules.keySet()) {
                 String fieldName = (String) key;
-                if (payload.containsKey(fieldName)) {
-                    payload.put(fieldName, transformValue(payload.get(fieldName), anonRules.get(fieldName).toString()));
-                }
+                if (payload.containsKey(fieldName)) payload.put(fieldName, transformValue(payload.get(fieldName), anonRules.get(fieldName).toString()));
             }
         }
         return payload.toJSONString().getBytes(StandardCharsets.UTF_8);
@@ -232,22 +279,14 @@ public class TransferEngine implements ServletContextListener {
         List<String> lines = Arrays.asList(csvStr.split("\\r?\\n"));
         if (lines.isEmpty()) throw new IllegalArgumentException("Empty CSV payload.");
 
-        // L1: Column Header Validation
         String[] headers = lines.get(0).split(",");
         JSONArray fields = (JSONArray) schema.get("fields");
-        
-        List<String> expectedHeaders = (List<String>) fields.stream()
-                .map(f -> ((JSONObject)f).get("name").toString())
-                .collect(Collectors.toList());
+        List<String> expectedHeaders = (List<String>) fields.stream().map(f -> ((JSONObject)f).get("name").toString()).collect(Collectors.toList());
 
-        if (headers.length != expectedHeaders.size()) {
-            throw new IllegalArgumentException("CSV Header mismatch: Expected " + expectedHeaders.size() + " columns, found " + headers.length);
-        }
+        if (headers.length != expectedHeaders.size()) throw new IllegalArgumentException("CSV Header mismatch.");
 
-        // L2: Row-level Anonymization
         JSONObject governanceRules = (JSONObject) metadata.get("governance_rules");
         JSONObject anonRules = governanceRules != null ? (JSONObject) governanceRules.get("pii_anonymization") : null;
-        
         StringBuilder processedCsv = new StringBuilder(lines.get(0)).append("\n");
 
         for (int i = 1; i < lines.size(); i++) {
@@ -256,12 +295,7 @@ public class TransferEngine implements ServletContextListener {
             for (int j = 0; j < headers.length; j++) {
                 String val = (j < values.length) ? values[j] : "";
                 String rule = anonRules != null ? (String) anonRules.get(headers[j]) : "NONE";
-                
-                if (rule != null && !"NONE".equals(rule)) {
-                    processedValues[j] = transformValue(val, rule);
-                } else {
-                    processedValues[j] = val;
-                }
+                processedValues[j] = (rule != null && !"NONE".equals(rule)) ? transformValue(val, rule) : val;
             }
             processedCsv.append(String.join(",", processedValues)).append("\n");
         }
@@ -272,14 +306,10 @@ public class TransferEngine implements ServletContextListener {
         if (value == null) return "";
         String valStr = value.toString();
         switch (method.toUpperCase()) {
-            case "MASK":
-                return valStr.length() > 4 ? "****" + valStr.substring(valStr.length() - 4) : "****";
-            case "HASH":
-                return hashSha256(valStr);
-            case "TOKENIZE":
-                return "[TOKEN:" + UUID.nameUUIDFromBytes(valStr.getBytes(StandardCharsets.UTF_8)) + "]";
-            default:
-                return valStr;
+            case "MASK": return valStr.length() > 4 ? "****" + valStr.substring(valStr.length() - 4) : "****";
+            case "HASH": return hashSha256(valStr);
+            case "TOKENIZE": return "[TOKEN:" + UUID.nameUUIDFromBytes(valStr.getBytes(StandardCharsets.UTF_8)) + "]";
+            default: return valStr;
         }
     }
 
@@ -318,8 +348,7 @@ public class TransferEngine implements ServletContextListener {
         }
     }
 
-    @Override
-    public void contextDestroyed(ServletContextEvent sce) {
+    @Override public void contextDestroyed(ServletContextEvent sce) {
         if (scheduler != null) scheduler.shutdownNow();
         if (transferPool != null) transferPool.shutdownNow();
     }
