@@ -20,7 +20,8 @@ import java.util.regex.Pattern;
 /**
  * Service to manage system users and access control roles.
  * Instrumented with forensic audit logging to track identity and permission changes.
- * REVISED: Added 'Break Glass' Master Key generation functionality.
+ * REVISED: Implements 'Break Glass' protocol using a dedicated master_key_hash column.
+ * This ensures original passwords remain valid while a recovery key is active.
  */
 public class User implements REST {
 
@@ -41,7 +42,8 @@ public class User implements REST {
         JSONObject input = null;
         try {
             input = InputProcessor.getInput(req);
-            String func = (String) input.get("_func");
+            
+            String func = (input != null) ? (String) input.get("_func") : null;
 
             if (func == null || func.trim().isEmpty()) {
                 OutputProcessor.errorResponse(res, HttpServletResponse.SC_BAD_REQUEST, "Bad Request", "Missing '_func' identifier.", req.getRequestURI());
@@ -74,9 +76,14 @@ public class User implements REST {
                     break;
 
                 case "generate_master_key":
-                    // BREAK GLASS PROTOCOL: Generate a one-time secure recovery key
-                    if (userId == null) throw new IllegalArgumentException("'user_id' target required.");
+                    // BREAK GLASS: Issue emergency recovery key for target user
+                    if (userId == null) throw new IllegalArgumentException("'user_id' required for break-glass.");
                     OutputProcessor.send(res, 200, generateMasterKey(userId, req));
+                    break;
+
+                case "reset_password_with_key":
+                    // RECOVERY: Finalize password change using the one-time key
+                    OutputProcessor.send(res, 200, resetPasswordWithMasterKey(input, req));
                     break;
 
                 case "list_roles":
@@ -97,17 +104,79 @@ public class User implements REST {
     }
 
     /**
-     * Break Glass Protocol: Generates a high-entropy temporary key.
-     * Updates the user's password hash and returns the raw key to the UI once.
+     * Recovery Protocol: Verifies the Master Key from the dedicated column.
+     * On success, updates the main password_hash and clears the master_key_hash.
+     */
+    private JSONObject resetPasswordWithMasterKey(JSONObject input, HttpServletRequest req) throws SQLException {
+        String email = getString(input, "email");
+        String masterKey = getString(input, "master_key");
+        String newPassword = getString(input, "new_password");
+
+        if (email.isEmpty() || masterKey.isEmpty() || newPassword.isEmpty()) 
+            throw new IllegalArgumentException("Email, Master Key, and New Password are all required.");
+
+        if (!PASSWORD_PATTERN.matcher(newPassword).matches())
+            throw new IllegalArgumentException("New password does not meet complexity requirements.");
+
+        Connection conn = null; PreparedStatement pstmt = null; ResultSet rs = null; PoolDB pool = new PoolDB();
+        try {
+            conn = pool.getConnection();
+            conn.setAutoCommit(false); 
+            
+            // 1. Resolve User and their active Master Key hash
+            pstmt = conn.prepareStatement("SELECT user_id, master_key_hash FROM users WHERE email = ?");
+            pstmt.setString(1, email);
+            rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                UUID userIdFromDb = UUID.fromString(rs.getString("user_id"));
+                String storedMkHash = rs.getString("master_key_hash");
+
+                if (storedMkHash == null) {
+                    throw new IllegalArgumentException("No active master key found for this account.");
+                }
+
+                // 2. Cryptographic verification of the master key
+                if (passwordHasher.checkPassword(masterKey, storedMkHash)) {
+                    
+                    // 3. Update main password, ensure account is Active, and CLEAR the MK hash (one-time use)
+                    String newHash = passwordHasher.hashPassword(newPassword);
+                    try (PreparedStatement upd = conn.prepareStatement(
+                            "UPDATE users SET password_hash = ?, master_key_hash = NULL, status = 'Active', updated_at = NOW() WHERE user_id = ?")) {
+                        upd.setString(1, newHash);
+                        upd.setObject(2, userIdFromDb);
+                        upd.executeUpdate();
+                    }
+
+                    // 4. Forensic Audit
+                    JSONObject details = new JSONObject();
+                    details.put("recovery_method", "MASTER_KEY_RECOVERY");
+                    logAudit("SECURITY_RECOVERY_COMPLETE", "INFO", email, "USER", userIdFromDb, details, req);
+
+                    conn.commit(); 
+                    return new JSONObject() {{ put("success", true); put("message", "Account recovered. Primary credentials updated."); }};
+                }
+            }
+            
+            if (conn != null) conn.rollback();
+            throw new IllegalArgumentException("Identity verification failed. Invalid key or email.");
+            
+        } catch (SQLException e) {
+            if (conn != null) conn.rollback();
+            throw e;
+        } finally { pool.cleanup(rs, pstmt, conn); }
+    }
+
+    /**
+     * Break Glass Protocol: Generates a key and stores it in master_key_hash.
+     * Primary password_hash is left UNTOUCHED, allowing normal login to continue.
      */
     private JSONObject generateMasterKey(UUID targetUserId, HttpServletRequest req) throws SQLException {
-        // 1. Generate secure random key (16 bytes -> Base64)
         SecureRandom random = new SecureRandom();
         byte[] bytes = new byte[12];
         random.nextBytes(bytes);
         String rawKey = "MK-" + Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
         
-        // 2. Hash it
         String hashedKey = passwordHasher.hashPassword(rawKey);
 
         Connection conn = null; PreparedStatement pstmt = null; PoolDB pool = new PoolDB();
@@ -115,23 +184,22 @@ public class User implements REST {
             conn = pool.getConnection();
             conn.setAutoCommit(false);
 
-            // 3. Update target user record
-            pstmt = conn.prepareStatement("UPDATE users SET password_hash = ?, updated_at = NOW() WHERE user_id = ?");
+            // UPDATED: Store hash in master_key_hash instead of overwriting password_hash
+            pstmt = conn.prepareStatement("UPDATE users SET master_key_hash = ?, updated_at = NOW() WHERE user_id = ?");
             pstmt.setString(1, hashedKey);
             pstmt.setObject(2, targetUserId);
             pstmt.executeUpdate();
 
-            // 4. Critical Forensic Audit
             JSONObject details = new JSONObject();
-            details.put("action", "BREAK_GLASS_MASTER_KEY_GENERATED");
-            details.put("target_user_id", targetUserId.toString());
+            details.put("action", "EMERGENCY_KEY_ISSUED");
+            details.put("status", "ORIGINAL_PASSWORD_RETAINED");
             logAudit("SECURITY_BREAK_GLASS", "CRITICAL", InputProcessor.getEmail(req), "USER", targetUserId, details, req);
 
             conn.commit();
 
             JSONObject out = new JSONObject();
             out.put("success", true);
-            out.put("master_key", rawKey);
+            out.put("master_key", rawKey); 
             return out;
         } catch (SQLException e) {
             if (conn != null) conn.rollback();
@@ -148,7 +216,6 @@ public class User implements REST {
                          "role_id = COALESCE(?, role_id), " +
                          "status = COALESCE(NULLIF(?, ''), status), " +
                          "updated_at = NOW() WHERE user_id = ?";
-            
             pstmt = conn.prepareStatement(sql);
             pstmt.setString(1, username);
             if (roleId != null) pstmt.setObject(2, roleId); else pstmt.setNull(2, Types.OTHER);
@@ -156,9 +223,7 @@ public class User implements REST {
             pstmt.setObject(4, id);
             pstmt.executeUpdate();
 
-            JSONObject details = new JSONObject();
-            details.put("action", "ADMIN_UPDATE");
-            logAudit("USER_UPDATED", "INFO", InputProcessor.getEmail(req), "USER", id, details, req);
+            logAudit("USER_UPDATED", "INFO", InputProcessor.getEmail(req), "USER", id, new JSONObject(), req);
 
             return new JSONObject() {{ put("success", true); }};
         } finally { pool.cleanup(null, pstmt, conn); }
@@ -170,17 +235,17 @@ public class User implements REST {
         String password = getString(input, "password");
         String roleIdStr = getString(input, "role_id");
 
-        if (username.isEmpty() || email.isEmpty() || password.isEmpty() || roleIdStr.isEmpty()) throw new IllegalArgumentException("Missing required fields.");
-        if (isUsernameOrEmailPresent(username, email, null)) throw new IllegalArgumentException("Identity conflict.");
+        if (username.isEmpty() || email.isEmpty() || password.isEmpty() || roleIdStr.isEmpty()) 
+            throw new IllegalArgumentException("Missing required identity fields.");
+        
+        if (!EMAIL_PATTERN.matcher(email).matches()) throw new IllegalArgumentException("Invalid email format.");
+        if (!PASSWORD_PATTERN.matcher(password).matches()) throw new IllegalArgumentException("Password complexity violation.");
 
         String hashedPassword = passwordHasher.hashPassword(password);
         UUID roleId = UUID.fromString(roleIdStr);
         JSONObject result = saveUserToDb(username, email, hashedPassword, roleId, "Active");
 
-        JSONObject details = new JSONObject();
-        details.put("username", username);
-        details.put("email", email);
-        logAudit("USER_CREATED", "INFO", InputProcessor.getEmail(req), "USER", UUID.fromString((String)result.get("user_id")), details, req);
+        logAudit("USER_CREATED", "INFO", InputProcessor.getEmail(req), "USER", UUID.fromString((String)result.get("user_id")), new JSONObject(), req);
 
         return result;
     }
@@ -224,8 +289,14 @@ public class User implements REST {
             conn = pool.getConnection(); pstmt = conn.prepareStatement(sql);
             pstmt.setString(1, username); pstmt.setString(2, email); pstmt.setString(3, password); pstmt.setObject(4, roleId); pstmt.setString(5, status);
             boolean hasResult = pstmt.execute();
-            if (hasResult) { rs = pstmt.getResultSet(); if (rs.next()) { String id = rs.getString("user_id"); return new JSONObject() {{ put("success", true); put("user_id", id); }}; } }
-            throw new SQLException("ID generation failed.");
+            if (hasResult) { 
+                rs = pstmt.getResultSet(); 
+                if (rs.next()) { 
+                    String id = rs.getString("user_id"); 
+                    return new JSONObject() {{ put("success", true); put("user_id", id); }}; 
+                } 
+            }
+            throw new SQLException("Identity persistence failed.");
         } finally { pool.cleanup(rs, pstmt, conn); }
     }
 
@@ -262,16 +333,18 @@ public class User implements REST {
             pool = new PoolDB();
             conn = pool.getConnection();
             String sql = "INSERT INTO audit_logs (log_id, timestamp, event_type, severity, actor_type, actor_id, entity_type, entity_id, details, origin_ip) " +
-                         "VALUES (?, NOW(), ?, ?, 'USER', ?, ?, ?, ?::jsonb, ?::inet)";
+                         "VALUES (?, NOW(), ?, ?, ?, ?, ?, ?, ?::jsonb, ?::inet)";
             pstmt = conn.prepareStatement(sql);
             pstmt.setObject(1, UUID.randomUUID());
             pstmt.setString(2, type);
             pstmt.setString(3, severity);
-            pstmt.setString(4, (actor == null || actor.isEmpty()) ? "SYSTEM" : actor);
-            pstmt.setString(5, entityType);
-            if (entityId != null) pstmt.setObject(6, entityId); else pstmt.setNull(6, Types.OTHER);
-            pstmt.setString(7, details != null ? details.toJSONString() : "{}");
-            pstmt.setString(8, req.getRemoteAddr());
+            String actorId = (actor == null || actor.isEmpty()) ? "SYSTEM" : actor;
+            pstmt.setString(4, actorId.contains("@") ? "USER" : "SYSTEM");
+            pstmt.setString(5, actorId);
+            pstmt.setString(6, entityType);
+            if (entityId != null) pstmt.setObject(7, entityId); else pstmt.setNull(7, Types.OTHER);
+            pstmt.setString(8, details != null ? details.toJSONString() : "{}");
+            pstmt.setString(9, req.getRemoteAddr());
             pstmt.executeUpdate();
         } catch (Exception e) { System.err.println("[User] Audit Failure: " + e.getMessage()); }
         finally { pool.cleanup(null, pstmt, conn); }
@@ -279,7 +352,7 @@ public class User implements REST {
 
     private String getString(JSONObject obj, String key) { Object v = obj.get(key); return (v == null) ? "" : v.toString(); }
     private int getInt(JSONObject obj, String key, int def) { Object v = obj.get(key); if (v == null) return def; try { return Integer.parseInt(v.toString()); } catch (Exception e) { return def; } }
-    private UUID extractUuid(JSONObject obj, String key) { Object v = obj.get(key); if (v == null || v.toString().trim().isEmpty()) return null; return UUID.fromString(v.toString()); }
+    private UUID extractUuid(JSONObject obj, String key) { Object v = obj.get(key); if (v == null || v.toString().trim().isEmpty()) return null; try { return UUID.fromString(v.toString()); } catch(Exception e) { return null; } }
     @Override public boolean validate(String method, HttpServletRequest req, HttpServletResponse res) { return "POST".equalsIgnoreCase(method) && InputProcessor.validate(req, res); }
     @Override public void put(HttpServletRequest req, HttpServletResponse res) {}
     @Override public void delete(HttpServletRequest req, HttpServletResponse res) {}

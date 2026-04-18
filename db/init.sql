@@ -77,6 +77,7 @@ CREATE TABLE users (
     username VARCHAR(100) NOT NULL UNIQUE,
     email VARCHAR(255) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
+    master_key_hash VARCHAR(255),
     role_id UUID NOT NULL REFERENCES roles(role_id) ON DELETE RESTRICT, -- Foreign key to the roles table
     status VARCHAR(50) NOT NULL DEFAULT 'Active', -- 'Active', 'Inactive', 'Locked'
     last_login_at TIMESTAMP WITH TIME ZONE NULL,

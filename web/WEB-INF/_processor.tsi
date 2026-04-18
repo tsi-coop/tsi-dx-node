@@ -13,5 +13,6 @@
 /api/admin/transfers=org.tsicoop.dxnode.api.admin.DXManager
 /api/admin/audit=org.tsicoop.dxnode.api.admin.Audit
 /api/admin/apps=org.tsicoop.dxnode.api.admin.AppManager
+/api/admin/passwordreset=org.tsicoop.dxnode.api.admin.User
 
 

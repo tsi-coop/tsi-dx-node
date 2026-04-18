@@ -55,6 +55,7 @@ public class InterceptingFilter implements Filter {
                  // AUTHENTICATION GATEKEEPER
                  if(servletPath.contains("api/admin")
                          && !servletPath.contains("api/admin/login")
+                         && !servletPath.contains("api/admin/passwordreset")
                          && !servletPath.contains("api/admin/register")) {
                      
                      // 1. P2P PROTOCOL BYPASS
