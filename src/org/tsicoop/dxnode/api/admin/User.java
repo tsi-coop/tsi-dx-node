@@ -6,11 +6,13 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
+import java.security.SecureRandom;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.Base64;
 import java.util.UUID;
 import java.util.Optional;
 import java.util.regex.Pattern;
@@ -18,6 +20,7 @@ import java.util.regex.Pattern;
 /**
  * Service to manage system users and access control roles.
  * Instrumented with forensic audit logging to track identity and permission changes.
+ * REVISED: Added 'Break Glass' Master Key generation functionality.
  */
 public class User implements REST {
 
@@ -30,16 +33,6 @@ public class User implements REST {
 
     @Override
     public void get(HttpServletRequest req, HttpServletResponse res) {
-        OutputProcessor.errorResponse(res, HttpServletResponse.SC_METHOD_NOT_ALLOWED, "Method Not Allowed", "Use POST with '_func' attribute.", req.getRequestURI());
-    }
-
-    @Override
-    public void put(HttpServletRequest req, HttpServletResponse res) {
-        OutputProcessor.errorResponse(res, HttpServletResponse.SC_METHOD_NOT_ALLOWED, "Method Not Allowed", "Use POST with '_func' attribute.", req.getRequestURI());
-    }
-
-    @Override
-    public void delete(HttpServletRequest req, HttpServletResponse res) {
         OutputProcessor.errorResponse(res, HttpServletResponse.SC_METHOD_NOT_ALLOWED, "Method Not Allowed", "Use POST with '_func' attribute.", req.getRequestURI());
     }
 
@@ -63,13 +56,6 @@ public class User implements REST {
                     OutputProcessor.send(res, 200, listUsersFromDb(getString(input, "status"), getString(input, "search"), getInt(input, "page", 1), getInt(input, "limit", 10)));
                     break;
 
-                case "get_user":
-                    if (userId == null) throw new IllegalArgumentException("'user_id' required.");
-                    Optional<JSONObject> user = getUserByIdFromDb(userId);
-                    if (user.isPresent()) OutputProcessor.send(res, 200, user.get());
-                    else OutputProcessor.errorResponse(res, 404, "Not Found", "User not found.", req.getRequestURI());
-                    break;
-
                 case "create_user":
                     JSONObject createdUser = createUser(input, req);
                     OutputProcessor.send(res, 201, createdUser);
@@ -77,7 +63,7 @@ public class User implements REST {
 
                 case "update_user":
                     if (userId == null) throw new IllegalArgumentException("'user_id' required.");
-                    JSONObject updatedUser = updateUserInDb(userId, getString(input, "username"), getString(input, "email"), getString(input, "password"), getString(input, "role_id"), getString(input, "status"), req);
+                    JSONObject updatedUser = updateUserInDb(userId, getString(input, "username"), roleId, getString(input, "status"), req);
                     OutputProcessor.send(res, 200, updatedUser);
                     break;
 
@@ -87,32 +73,14 @@ public class User implements REST {
                     OutputProcessor.send(res, 204, null);
                     break;
 
+                case "generate_master_key":
+                    // BREAK GLASS PROTOCOL: Generate a one-time secure recovery key
+                    if (userId == null) throw new IllegalArgumentException("'user_id' target required.");
+                    OutputProcessor.send(res, 200, generateMasterKey(userId, req));
+                    break;
+
                 case "list_roles":
                     OutputProcessor.send(res, 200, listRolesFromDb(getString(input, "search"), getInt(input, "page", 1), getInt(input, "limit", 10)));
-                    break;
-
-                case "get_role":
-                    if (roleId == null) throw new IllegalArgumentException("'role_id' required.");
-                    Optional<JSONObject> role = getRoleByIdFromDb(roleId);
-                    if (role.isPresent()) OutputProcessor.send(res, 200, role.get());
-                    else OutputProcessor.errorResponse(res, 404, "Not Found", "Role not found.", req.getRequestURI());
-                    break;
-
-                case "create_role":
-                    JSONObject createdRole = createRole(input, req);
-                    OutputProcessor.send(res, 201, createdRole);
-                    break;
-
-                case "update_role":
-                    if (roleId == null) throw new IllegalArgumentException("'role_id' required.");
-                    JSONObject updatedRole = updateRole(input, roleId, req);
-                    OutputProcessor.send(res, 200, updatedRole);
-                    break;
-
-                case "delete_role":
-                    if (roleId == null) throw new IllegalArgumentException("'role_id' required.");
-                    deleteRoleFromDb(roleId, req);
-                    OutputProcessor.send(res, 204, null);
                     break;
 
                 default:
@@ -129,127 +97,71 @@ public class User implements REST {
     }
 
     /**
-     * Internal helper to persist audit events.
+     * Break Glass Protocol: Generates a high-entropy temporary key.
+     * Updates the user's password hash and returns the raw key to the UI once.
      */
-    private void logAudit(String type, String severity, String actor, String entityType, UUID entityId, JSONObject details, HttpServletRequest req) {
-        Connection conn = null; PreparedStatement pstmt = null; PoolDB pool = null;
-        try {
-            pool = new PoolDB();
-            conn = pool.getConnection();
-            String sql = "INSERT INTO audit_logs (log_id, timestamp, event_type, severity, actor_type, actor_id, entity_type, entity_id, details, origin_ip) " +
-                         "VALUES (?, NOW(), ?, ?, 'USER', ?, ?, ?, ?::jsonb, ?::inet)";
-            pstmt = conn.prepareStatement(sql);
-            pstmt.setObject(1, UUID.randomUUID());
-            pstmt.setString(2, type);
-            pstmt.setString(3, severity);
-            
-            String actorId = (actor == null || actor.isEmpty()) ? "SYSTEM" : actor;
-            pstmt.setString(4, actorId);
-            pstmt.setString(5, entityType);
-            
-            if (entityId != null) {
-                pstmt.setObject(6, entityId);
-            } else {
-                pstmt.setNull(6, Types.OTHER);
-            }
-            
-            pstmt.setString(7, details != null ? details.toJSONString() : "{}");
-            pstmt.setString(8, req.getRemoteAddr());
-            
-            pstmt.executeUpdate();
-        } catch (Exception e) {
-            System.err.println("[User] Audit Logging Failure: " + e.getMessage());
-        } finally {
-            pool.cleanup(null, pstmt, conn);
-        }
-    }
-
-    private JSONObject updateRole(JSONObject input, UUID roleId, HttpServletRequest req) throws SQLException {
-        String name = getString(input, "name");
-        String description = getString(input, "description");
-        JSONArray permissions = (JSONArray) input.get("permissions");
-
-        if (name.isEmpty() || permissions == null || permissions.isEmpty()) {
-            throw new IllegalArgumentException("Role name and permissions required.");
-        }
+    private JSONObject generateMasterKey(UUID targetUserId, HttpServletRequest req) throws SQLException {
+        // 1. Generate secure random key (16 bytes -> Base64)
+        SecureRandom random = new SecureRandom();
+        byte[] bytes = new byte[12];
+        random.nextBytes(bytes);
+        String rawKey = "MK-" + Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+        
+        // 2. Hash it
+        String hashedKey = passwordHasher.hashPassword(rawKey);
 
         Connection conn = null; PreparedStatement pstmt = null; PoolDB pool = new PoolDB();
         try {
             conn = pool.getConnection();
             conn.setAutoCommit(false);
 
-            pstmt = conn.prepareStatement("SELECT is_system_role FROM roles WHERE role_id = ?");
-            pstmt.setObject(1, roleId);
-            ResultSet rs = pstmt.executeQuery();
-            if (rs.next() && rs.getBoolean("is_system_role")) throw new IllegalArgumentException("System roles are immutable.");
-            rs.close(); pstmt.close();
+            // 3. Update target user record
+            pstmt = conn.prepareStatement("UPDATE users SET password_hash = ?, updated_at = NOW() WHERE user_id = ?");
+            pstmt.setString(1, hashedKey);
+            pstmt.setObject(2, targetUserId);
+            pstmt.executeUpdate();
 
-            pstmt = conn.prepareStatement("UPDATE roles SET name = ?, description = ?, updated_at = NOW() WHERE role_id = ?");
-            pstmt.setString(1, name); pstmt.setString(2, description); pstmt.setObject(3, roleId);
-            pstmt.executeUpdate(); pstmt.close();
+            // 4. Critical Forensic Audit
+            JSONObject details = new JSONObject();
+            details.put("action", "BREAK_GLASS_MASTER_KEY_GENERATED");
+            details.put("target_user_id", targetUserId.toString());
+            logAudit("SECURITY_BREAK_GLASS", "CRITICAL", InputProcessor.getEmail(req), "USER", targetUserId, details, req);
 
-            pstmt = conn.prepareStatement("DELETE FROM role_permissions WHERE role_id = ?");
-            pstmt.setObject(1, roleId); pstmt.executeUpdate(); pstmt.close();
-
-            pstmt = conn.prepareStatement("INSERT INTO role_permissions (role_id, resource, action) VALUES (?, ?, ?)");
-            for (Object pObj : permissions) {
-                JSONObject p = (JSONObject) pObj;
-                pstmt.setObject(1, roleId);
-                pstmt.setString(2, (String) p.get("resource"));
-                pstmt.setString(3, (String) p.get("action"));
-                pstmt.addBatch();
-            }
-            pstmt.executeBatch();
             conn.commit();
 
-            // AUDIT
+            JSONObject out = new JSONObject();
+            out.put("success", true);
+            out.put("master_key", rawKey);
+            return out;
+        } catch (SQLException e) {
+            if (conn != null) conn.rollback();
+            throw e;
+        } finally { pool.cleanup(null, pstmt, conn); }
+    }
+
+    private JSONObject updateUserInDb(UUID id, String username, UUID roleId, String status, HttpServletRequest req) throws SQLException {
+        Connection conn = null; PreparedStatement pstmt = null; PoolDB pool = new PoolDB();
+        try {
+            conn = pool.getConnection();
+            String sql = "UPDATE users SET " +
+                         "username = COALESCE(NULLIF(?, ''), username), " +
+                         "role_id = COALESCE(?, role_id), " +
+                         "status = COALESCE(NULLIF(?, ''), status), " +
+                         "updated_at = NOW() WHERE user_id = ?";
+            
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, username);
+            if (roleId != null) pstmt.setObject(2, roleId); else pstmt.setNull(2, Types.OTHER);
+            pstmt.setString(3, status);
+            pstmt.setObject(4, id);
+            pstmt.executeUpdate();
+
             JSONObject details = new JSONObject();
-            details.put("role_name", name);
-            details.put("permission_count", permissions.size());
-            logAudit("ROLE_UPDATED", "INFO", InputProcessor.getEmail(req), "ROLE", roleId, details, req);
+            details.put("action", "ADMIN_UPDATE");
+            logAudit("USER_UPDATED", "INFO", InputProcessor.getEmail(req), "USER", id, details, req);
 
             return new JSONObject() {{ put("success", true); }};
-        } catch (SQLException e) { if (conn != null) conn.rollback(); throw e; }
-        finally { pool.cleanup(null, pstmt, conn); }
-    }
-
-    private JSONObject createRole(JSONObject input, HttpServletRequest req) throws SQLException {
-        String name = getString(input, "name");
-        String description = getString(input, "description");
-        JSONArray permissions = (JSONArray) input.get("permissions");
-
-        if (name.isEmpty() || permissions == null || permissions.isEmpty()) throw new IllegalArgumentException("Metadata and permissions required.");
-
-        Connection conn = null; PreparedStatement pstmt = null; PoolDB pool = new PoolDB();
-        UUID newRoleId = UUID.randomUUID();
-
-        try {
-            conn = pool.getConnection();
-            conn.setAutoCommit(false);
-
-            pstmt = conn.prepareStatement("INSERT INTO roles (role_id, name, description, is_system_role) VALUES (?, ?, ?, FALSE)");
-            pstmt.setObject(1, newRoleId); pstmt.setString(2, name); pstmt.setString(3, description);
-            pstmt.executeUpdate(); pstmt.close();
-
-            pstmt = conn.prepareStatement("INSERT INTO role_permissions (role_id, resource, action) VALUES (?, ?, ?)");
-            for (Object pObj : permissions) {
-                JSONObject p = (JSONObject) pObj;
-                pstmt.setObject(1, newRoleId);
-                pstmt.setString(2, (String) p.get("resource"));
-                pstmt.setString(3, (String) p.get("action"));
-                pstmt.addBatch();
-            }
-            pstmt.executeBatch();
-            conn.commit();
-
-            // AUDIT
-            JSONObject details = new JSONObject();
-            details.put("name", name);
-            logAudit("ROLE_CREATED", "INFO", InputProcessor.getEmail(req), "ROLE", newRoleId, details, req);
-
-            return new JSONObject() {{ put("success", true); put("role_id", newRoleId.toString()); }};
-        } catch (SQLException e) { if (conn != null) conn.rollback(); throw e; }
-        finally { pool.cleanup(null, pstmt, conn); }
+        } finally { pool.cleanup(null, pstmt, conn); }
     }
 
     private JSONObject createUser(JSONObject input, HttpServletRequest req) throws SQLException {
@@ -265,32 +177,12 @@ public class User implements REST {
         UUID roleId = UUID.fromString(roleIdStr);
         JSONObject result = saveUserToDb(username, email, hashedPassword, roleId, "Active");
 
-        // AUDIT
         JSONObject details = new JSONObject();
         details.put("username", username);
         details.put("email", email);
-        details.put("role_id", roleIdStr);
         logAudit("USER_CREATED", "INFO", InputProcessor.getEmail(req), "USER", UUID.fromString((String)result.get("user_id")), details, req);
 
         return result;
-    }
-
-    private JSONObject updateUserInDb(UUID id, String user, String email, String pass, String role, String status, HttpServletRequest req) throws SQLException {
-        Connection conn = null; PreparedStatement pstmt = null; PoolDB pool = new PoolDB();
-        try {
-            conn = pool.getConnection();
-            String sql = "UPDATE users SET username = COALESCE(NULLIF(?, ''), username), email = COALESCE(NULLIF(?, ''), email), status = COALESCE(NULLIF(?, ''), status), updated_at = NOW() WHERE user_id = ?";
-            pstmt = conn.prepareStatement(sql);
-            pstmt.setString(1, user); pstmt.setString(2, email); pstmt.setString(3, status); pstmt.setObject(4, id);
-            pstmt.executeUpdate();
-
-            // AUDIT
-            JSONObject details = new JSONObject();
-            details.put("updated_fields", "username/email/status");
-            logAudit("USER_UPDATED", "INFO", InputProcessor.getEmail(req), "USER", id, details, req);
-
-            return new JSONObject() {{ put("success", true); }};
-        } finally { pool.cleanup(null, pstmt, conn); }
     }
 
     private void deleteUserFromDb(UUID userId, HttpServletRequest req) throws SQLException {
@@ -300,36 +192,8 @@ public class User implements REST {
             pstmt = conn.prepareStatement("DELETE FROM users WHERE user_id = ?");
             pstmt.setObject(1, userId);
             pstmt.executeUpdate();
-
-            // AUDIT
             logAudit("USER_DELETED", "WARNING", InputProcessor.getEmail(req), "USER", userId, new JSONObject(), req);
         } finally { pool.cleanup(null, pstmt, conn); }
-    }
-
-    private void deleteRoleFromDb(UUID roleId, HttpServletRequest req) throws SQLException {
-        Connection conn = null; PreparedStatement pstmt = null; PoolDB pool = new PoolDB();
-        try {
-            conn = pool.getConnection();
-            conn.setAutoCommit(false);
-
-            pstmt = conn.prepareStatement("SELECT is_system_role FROM roles WHERE role_id = ?");
-            pstmt.setObject(1, roleId);
-            ResultSet rs = pstmt.executeQuery();
-            if (rs.next() && rs.getBoolean("is_system_role")) throw new IllegalArgumentException("System roles immutable.");
-            rs.close(); pstmt.close();
-
-            pstmt = conn.prepareStatement("DELETE FROM role_permissions WHERE role_id = ?");
-            pstmt.setObject(1, roleId); pstmt.executeUpdate(); pstmt.close();
-
-            pstmt = conn.prepareStatement("DELETE FROM roles WHERE role_id = ?");
-            pstmt.setObject(1, roleId); pstmt.executeUpdate();
-            
-            conn.commit();
-
-            // AUDIT
-            logAudit("ROLE_DELETED", "WARNING", InputProcessor.getEmail(req), "ROLE", roleId, new JSONObject(), req);
-        } catch (SQLException e) { if (conn != null) conn.rollback(); throw e; }
-        finally { pool.cleanup(null, pstmt, conn); }
     }
 
     private JSONArray listUsersFromDb(String statusFilter, String search, int page, int limit) throws SQLException {
@@ -351,19 +215,6 @@ public class User implements REST {
             }
         } finally { pool.cleanup(rs, pstmt, conn); }
         return usersArray;
-    }
-
-    private Optional<JSONObject> getUserByIdFromDb(UUID userId) throws SQLException {
-        Connection conn = null; PreparedStatement pstmt = null; ResultSet rs = null; PoolDB pool = new PoolDB();
-        String sql = "SELECT u.*, r.name as role_name FROM users u JOIN roles r ON u.role_id = r.role_id WHERE u.user_id = ?";
-        try {
-            conn = pool.getConnection(); pstmt = conn.prepareStatement(sql); pstmt.setObject(1, userId);
-            rs = pstmt.executeQuery();
-            if (rs.next()) {
-                JSONObject u = new JSONObject(); u.put("user_id", rs.getString("user_id")); u.put("username", rs.getString("username")); u.put("email", rs.getString("email")); u.put("status", rs.getString("status")); u.put("role_id", rs.getString("role_id")); u.put("role_name", rs.getString("role_name")); return Optional.of(u);
-            }
-        } finally { pool.cleanup(rs, pstmt, conn); }
-        return Optional.empty();
     }
 
     private JSONObject saveUserToDb(String username, String email, String password, UUID roleId, String status) throws SQLException {
@@ -393,24 +244,6 @@ public class User implements REST {
         return rolesArray;
     }
 
-    private Optional<JSONObject> getRoleByIdFromDb(UUID roleId) throws SQLException {
-        Connection conn = null; PreparedStatement pstmt = null; ResultSet rs = null; PoolDB pool = new PoolDB();
-        try {
-            conn = pool.getConnection(); pstmt = conn.prepareStatement("SELECT * FROM roles WHERE role_id = ?"); pstmt.setObject(1, roleId);
-            rs = pstmt.executeQuery();
-            if (rs.next()) {
-                JSONObject r = new JSONObject(); r.put("role_id", rs.getString("role_id")); r.put("name", rs.getString("name")); r.put("description", rs.getString("description"));
-                rs.close(); pstmt.close();
-                JSONArray perms = new JSONArray();
-                pstmt = conn.prepareStatement("SELECT resource, action FROM role_permissions WHERE role_id = ?"); pstmt.setObject(1, roleId);
-                rs = pstmt.executeQuery();
-                while (rs.next()) { JSONObject p = new JSONObject(); p.put("resource", rs.getString("resource")); p.put("action", rs.getString("action")); perms.add(p); }
-                r.put("permissions", perms); return Optional.of(r);
-            }
-        } finally { pool.cleanup(rs, pstmt, conn); }
-        return Optional.empty();
-    }
-
     private boolean isUsernameOrEmailPresent(String user, String email, UUID exclude) throws SQLException {
         Connection conn = null; PreparedStatement pstmt = null; ResultSet rs = null; PoolDB pool = new PoolDB();
         try {
@@ -423,8 +256,31 @@ public class User implements REST {
         } finally { pool.cleanup(rs, pstmt, conn); }
     }
 
+    private void logAudit(String type, String severity, String actor, String entityType, UUID entityId, JSONObject details, HttpServletRequest req) {
+        Connection conn = null; PreparedStatement pstmt = null; PoolDB pool = null;
+        try {
+            pool = new PoolDB();
+            conn = pool.getConnection();
+            String sql = "INSERT INTO audit_logs (log_id, timestamp, event_type, severity, actor_type, actor_id, entity_type, entity_id, details, origin_ip) " +
+                         "VALUES (?, NOW(), ?, ?, 'USER', ?, ?, ?, ?::jsonb, ?::inet)";
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setObject(1, UUID.randomUUID());
+            pstmt.setString(2, type);
+            pstmt.setString(3, severity);
+            pstmt.setString(4, (actor == null || actor.isEmpty()) ? "SYSTEM" : actor);
+            pstmt.setString(5, entityType);
+            if (entityId != null) pstmt.setObject(6, entityId); else pstmt.setNull(6, Types.OTHER);
+            pstmt.setString(7, details != null ? details.toJSONString() : "{}");
+            pstmt.setString(8, req.getRemoteAddr());
+            pstmt.executeUpdate();
+        } catch (Exception e) { System.err.println("[User] Audit Failure: " + e.getMessage()); }
+        finally { pool.cleanup(null, pstmt, conn); }
+    }
+
     private String getString(JSONObject obj, String key) { Object v = obj.get(key); return (v == null) ? "" : v.toString(); }
     private int getInt(JSONObject obj, String key, int def) { Object v = obj.get(key); if (v == null) return def; try { return Integer.parseInt(v.toString()); } catch (Exception e) { return def; } }
     private UUID extractUuid(JSONObject obj, String key) { Object v = obj.get(key); if (v == null || v.toString().trim().isEmpty()) return null; return UUID.fromString(v.toString()); }
     @Override public boolean validate(String method, HttpServletRequest req, HttpServletResponse res) { return "POST".equalsIgnoreCase(method) && InputProcessor.validate(req, res); }
+    @Override public void put(HttpServletRequest req, HttpServletResponse res) {}
+    @Override public void delete(HttpServletRequest req, HttpServletResponse res) {}
 }

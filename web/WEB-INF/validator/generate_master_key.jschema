@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Generate Master Key Request",
+  "description": "Schema for validating the administrative 'Break Glass' request to generate a one-time emergency recovery key for a user account.",
+  "type": "object",
+  "required": [
+    "_func",
+    "user_id"
+  ],
+  "properties": {
+    "_func": {
+      "type": "string",
+      "const": "generate_master_key",
+      "description": "The internal function identifier for the Break Glass protocol."
+    },
+    "user_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "The unique identifier (UUID) of the user account for which the master key is being generated.",
+      "examples": [
+        "132a8134-dfc8-48a8-93bf-cb7b8aca3ad8"
+      ]
+    }
+  },
+  "additionalProperties": false
+}
