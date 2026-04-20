@@ -17,6 +17,7 @@
         .protocol-tag { background: #eff6ff; color: #1d4ed8; padding: 2px 10px; border-radius: 9999px; font-weight: 800; font-size: 10px; border: 1px solid #dbeafe; text-transform: uppercase; letter-spacing: 0.05em; }
         .method-label { font-size: 10px; font-weight: 900; color: #64748b; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px; display: block; }
         .auth-grid { background: #f1f5f9; padding: 1.5rem; border-radius: 0.75rem; border: 1px solid #e2e8f0; }
+        .highlight-box { border-left: 4px solid var(--dx-blue); background: #f0f7ff; padding: 1rem; border-radius: 0 0.5rem 0.5rem 0; margin-bottom: 1.5rem; }
     </style>
 </head>
 <body class="p-6 md:p-16">
@@ -45,6 +46,14 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </section>
+
+        <!-- Single Package Concept -->
+        <section class="mb-16">
+            <div class="highlight-box">
+                <h4 class="text-xs font-black text-blue-800 uppercase tracking-widest mb-1">Architectural Pillar: Single Package Routing</h4>
+                <p class="text-xs text-blue-600 leading-relaxed">The TSI DX Node eliminates the need for filesystem-based uploads or shared folders. By embedding data directly as a <strong>Base64 String</strong>, the system ensures metadata and payload travel as one atomic unit, increasing reliability across enterprise proxies.</p>
             </div>
         </section>
 
@@ -99,21 +108,22 @@
             </div>
 
             <div class="section-card shadow-sm border-t-4 border-t-blue-600 !p-10">
-                <span class="method-label">Execution</span>
-                <h3 class="text-2xl font-black text-slate-900 uppercase italic mb-4">initiate_transfer</h3>
-                <p class="text-sm text-slate-500 mb-8 leading-relaxed">Pushes a Base64-encoded payload to the node. The node automatically enforces the governing Data Contract, performs PII anonymization, and initiates the mTLS handshake with the partner.</p>
+                <span class="method-label">Execution (Direct Injection)</span>
+                <h3 class="text-2xl font-black text-slate-900 uppercase italic mb-2">initiate_transfer</h3>
+                <p class="text-[11px] font-bold text-blue-600 uppercase mb-6">Requirement: Pass file_data as a raw Base64 string.</p>
+                <p class="text-sm text-slate-500 mb-8 leading-relaxed">Pushes the payload directly to the node's staging area. The node automatically enforces the governing Data Contract, performs PII anonymization, and initiates the mTLS handshake with the partner.</p>
                 <div class="code-block">
 {
   "_func": "initiate_transfer",
   "contract_id": "c7b3d8e0-f2a1-4b3c-8d9e-0f1a2b3c4d5e",
-  "file_name": "quarterly_leads_2026.json",
-  "file_data": "eyAiYWdlbnRfaWQiOiAiWDAwMSIsICJkYXRhIjogWy4uLl0gfQ=="
+  "file_name": "lead_export_550e8400.json",
+  "file_data": "eyJsZWFkX2lkIjoiNTUwZTg0MDAtZTI5Yi00MWQ0LWE3MTYtNDQ2NjU1NDQwMDAwIiwiZmlyc3RfbmFtZSI6IkpvaG4iLCJsYXN0X25hbWUiOiJEb2UiLCJlbWFpbCI6ImpvaG4uZG9lQGV4YW1wbGUuY29tIiwicGhvbmUiOiIrMTQxNTU1NTI2NzEiLCJjb21wYW55IjoiVFNJIENvbnN1bHRpbmciLCJzb3VyY2UiOiJXZWIiLCJpbnRlcmVzdF9zY29yZSI6ODV9"
 }
                 </div>
                 <div class="mt-8 pt-6 border-t border-slate-100 flex justify-between items-center">
-                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Async Response</span>
+                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Immediate Response</span>
                     <div class="code-block !mt-0 !bg-slate-50 !text-blue-600 border-none font-bold">
-{ "success": true, "transfer_id": "8cec1cdd-..." }
+{ "success": true, "transfer_id": "8cec1cdd-...", "message": "Single-package payload accepted." }
                     </div>
                 </div>
             </div>
@@ -142,7 +152,7 @@
                 <div class="relative z-10">
                     <span class="method-label !text-blue-400">Governance Audit</span>
                     <h3 class="text-xl font-black uppercase italic mb-4">view_forensic_payload</h3>
-                    <p class="text-sm text-slate-400 mb-8 leading-relaxed">The TSI DX Node implements <strong>Forensic Mirroring</strong>. This function returns the Bit-Perfect version of the data *after* it was processed by the node's anonymization engine. Use this to prove compliance with digital sharing agreements.</p>
+                    <p class="text-sm text-slate-400 mb-8 leading-relaxed">The TSI DX Node implements <strong>Forensic Mirroring</strong>. This function returns the Bit-Perfect version of the data *after* it was processed by the node's anonymization engine. Use this to verify exactly what crossed the wire.</p>
                     <div class="code-block !bg-slate-800 !border-slate-700 !text-emerald-400">
 {
   "_func": "view_forensic_payload",
@@ -150,7 +160,6 @@
 }
                     </div>
                 </div>
-                <!-- Background Decoration -->
                 <div class="absolute -bottom-20 -right-20 w-64 h-64 bg-blue-600/10 rounded-full blur-3xl"></div>
             </div>
         </section>

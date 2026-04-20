@@ -1,5 +1,5 @@
 # Client APIs
-
+/api/client/dx=org.tsicoop.dxnode.api.client.DX
 
 # Admin Handlers
 /api/admin/registeradmin=org.tsicoop.dxnode.api.admin.RegisterAdmin
