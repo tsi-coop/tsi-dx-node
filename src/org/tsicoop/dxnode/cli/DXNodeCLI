@@ -1,0 +1,158 @@
+package org.tsicoop.dxnode.cli;
+
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Base64;
+import java.util.Scanner;
+
+/**
+ * Command Line Interface for the TSI DX Node.
+ * Reuses the core "Single Package Routing" logic.
+ * Usage: java DXNodeCLI <command> [options]
+ */
+public class DXNodeCLI {
+
+    private static final String CONFIG_DIR = System.getProperty("user.home") + "/.dx-node";
+    private static final String CONFIG_FILE = CONFIG_DIR + "/config";
+    
+    private String apiUrl;
+    private String apiKey;
+    private String apiSecret;
+
+    public static void main(String[] args) {
+        if (args.length == 0) {
+            printUsage();
+            return;
+        }
+
+        DXNodeCLI cli = new DXNodeCLI();
+        try {
+            cli.loadConfig();
+            
+            String command = args[0].toLowerCase();
+            switch (command) {
+                case "init":
+                    cli.handleInit();
+                    break;
+                case "send":
+                    cli.handleSend(args);
+                    break;
+                case "status":
+                    cli.handleStatus(args);
+                    break;
+                case "contracts":
+                    cli.handleListContracts();
+                    break;
+                default:
+                    System.err.println("Unknown command: " + command);
+                    printUsage();
+            }
+        } catch (Exception e) {
+            System.err.println("[CLI ERROR] " + e.getMessage());
+        }
+    }
+
+    private void handleInit() throws IOException {
+        Scanner scanner = new Scanner(System.in);
+        System.out.print("Enter Node API URL (e.g., http://localhost:8082): ");
+        String url = scanner.nextLine().trim();
+        System.out.print("Enter Client X-API-KEY: ");
+        String key = scanner.nextLine().trim();
+        System.out.print("Enter Client X-API-SECRET: ");
+        String secret = scanner.nextLine().trim();
+
+        Path path = Path.of(CONFIG_DIR);
+        if (!Files.exists(path)) Files.createDirectories(path);
+
+        String configContent = String.format("url=%s\nkey=%s\nsecret=%s", url, key, secret);
+        Files.writeString(Path.of(CONFIG_FILE), configContent);
+        System.out.println("Configuration saved to " + CONFIG_FILE);
+    }
+
+    private void handleSend(String[] args) throws Exception {
+        if (args.length < 3) {
+            System.out.println("Usage: dx-node send <file_path> <contract_uuid>");
+            return;
+        }
+
+        Path filePath = Path.of(args[1]);
+        String contractId = args[2];
+
+        if (!Files.exists(filePath)) throw new IOException("File not found: " + filePath);
+
+        // 1. Read and Encode to Base64 (Single Package Routing)
+        byte[] fileBytes = Files.readAllBytes(filePath);
+        String base64Content = Base64.getEncoder().encodeToString(fileBytes);
+
+        // 2. Build JSON Request Body
+        String jsonBody = String.format(
+            "{ \"_func\": \"initiate_transfer\", \"contract_id\": \"%s\", \"file_name\": \"%s\", \"file_data\": \"%s\" }",
+            contractId, filePath.getFileName().toString(), base64Content
+        );
+
+        // 3. Dispatch via HttpClient
+        dispatchRequest(jsonBody);
+    }
+
+    private void handleStatus(String[] args) throws Exception {
+        if (args.length < 2) {
+            System.out.println("Usage: dx-node status <transfer_uuid>");
+            return;
+        }
+        String jsonBody = String.format("{ \"_func\": \"get_transfer_status\", \"transfer_id\": \"%s\" }", args[1]);
+        dispatchRequest(jsonBody);
+    }
+
+    private void handleListContracts() throws Exception {
+        dispatchRequest("{ \"_func\": \"list_contracts\" }");
+    }
+
+    private void dispatchRequest(String jsonBody) throws Exception {
+        if (apiUrl == null) throw new IllegalStateException("CLI not initialized. Run 'dx-node init' first.");
+
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(apiUrl + "/api/client/dx"))
+                .header("Content-Type", "application/json")
+                .header("X-API-KEY", apiKey)
+                .header("X-API-SECRET", apiSecret)
+                .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
+                .build();
+
+        System.out.println("Connecting to node at " + apiUrl + "...");
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() >= 200 && response.statusCode() < 300) {
+            System.out.println("\n[SUCCESS]");
+            System.out.println(response.body());
+        } else {
+            System.err.println("\n[FAILURE] HTTP " + response.statusCode());
+            System.err.println(response.body());
+        }
+    }
+
+    private void loadConfig() throws IOException {
+        Path path = Path.of(CONFIG_FILE);
+        if (!Files.exists(path)) return;
+
+        for (String line : Files.readAllLines(path)) {
+            if (line.startsWith("url=")) apiUrl = line.substring(4);
+            if (line.startsWith("key=")) apiKey = line.substring(4);
+            if (line.startsWith("secret=")) apiSecret = line.substring(7);
+        }
+    }
+
+    private static void printUsage() {
+        System.out.println("TSI DX Node CLI Utility");
+        System.out.println("Commands:");
+        System.out.println("  init                      - Configure node connection credentials");
+        System.out.println("  contracts                 - List authorized Data Contracts");
+        System.out.println("  send <file> <contract_id> - Initiate a Single Package Transfer");
+        System.out.println("  status <transfer_id>      - Check real-time transfer progress");
+    }
+}
