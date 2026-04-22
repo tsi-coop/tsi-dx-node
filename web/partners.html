@@ -20,6 +20,8 @@
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         .status-terminating { opacity: 0.7; background-color: #fff7ed; border-left: 4px solid #f97316; }
+        .file-upload-zone { border: 2px dashed #e2e8f0; transition: all 0.2s; cursor: pointer; }
+        .file-upload-zone:hover { border-color: var(--dx-accent); background-color: #f8fafc; }
     </style>
 </head>
 <body class="flex h-screen overflow-hidden">
@@ -40,7 +42,7 @@
         <nav class="flex-1 overflow-y-auto custom-scrollbar">
             <div class="px-8 mb-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest nav-text">Operational Hub</div>
             <a href="dashboard.html" class="nav-item">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6z" /></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2-2V6z" /></svg>
                 <span class="nav-text">Dashboard</span>
             </a>
             
@@ -72,7 +74,7 @@
                 <span class="nav-text">Apps & API Keys</span>
             </a>
             <a href="settings.html" class="nav-item">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                 <span class="nav-text">Node Settings</span>
             </a>
         </nav>
@@ -87,7 +89,7 @@
     <main class="flex-1 flex flex-col min-w-0">
         <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 z-10">
             <div class="flex items-center gap-4">
-                <button onclick="toggleSidebar()" class="p-2 hover:bg-slate-100 rounded-lg text-slate-500"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg></button>
+                <button onclick="toggleSidebar()" class="p-2 hover:bg-slate-100 rounded-lg text-slate-500"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M4 6h16M4 12h16M4 18h16" /></svg></button>
                 <div class="h-8 w-px bg-slate-200 mx-2"></div>
                 <div class="flex flex-col">
                     <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none">Current Node Instance</span>
@@ -126,34 +128,45 @@
         </div>
     </main>
 
-    <!-- Register Partner Modal -->
+    <!-- Register Partner Modal: UPDATED with File Upload -->
     <div id="partnerModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop">
         <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col">
             <div class="px-8 py-6 bg-slate-900 flex items-center justify-between">
                 <div><h3 class="text-xl font-black text-white uppercase tracking-tight">Register Partner</h3><p class="text-[10px] text-blue-400 font-bold uppercase tracking-widest mt-1">Identity Setup</p></div>
-                <button onclick="closePartnerModal()" class="text-slate-400 hover:text-white transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
+                <button onclick="closePartnerModal()" class="text-slate-400 hover:text-white transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M6 18L18 6M6 6l12 12" /></svg></button>
             </div>
             <div class="p-8">
                 <form id="addPartnerForm" onsubmit="handleCreatePartner(event)" class="space-y-6">
                     <div>
                         <label class="block text-[10px] font-black text-slate-500 uppercase mb-2">Target Node ID</label>
-                        <input type="text" id="p-nodeid" required placeholder="DX-PEER-UUID" class="w-full p-3 bg-slate-50 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500/10">
+                        <input type="text" id="p-nodeid" required placeholder="DX-PEER-UUID" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500/10">
                     </div>
                     <div class="grid grid-cols-3 gap-4">
                         <div class="col-span-2">
                             <label class="block text-[10px] font-black text-slate-500 uppercase mb-2">Host</label>
-                            <input type="text" id="p-host" required placeholder="192.168.1.100" class="w-full p-3 bg-slate-50 border rounded-lg text-sm outline-none">
+                            <input type="text" id="p-host" required placeholder="192.168.1.100" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none">
                         </div>
                         <div>
                             <label class="block text-[10px] font-black text-slate-500 uppercase mb-2">Port</label>
-                            <input type="number" id="p-port" required value="8082" class="w-full p-3 bg-slate-50 border rounded-lg text-sm outline-none">
+                            <input type="number" id="p-port" required value="8443" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none">
                         </div>
                     </div>
+                    
+                    <!-- REVISED: File Upload for Public Key -->
                     <div>
-                        <label class="block text-[10px] font-black text-slate-500 uppercase mb-2">Public Key (PEM)</label>
-                        <textarea id="p-pubkey" rows="6" placeholder="-----BEGIN CERTIFICATE-----" class="w-full p-3 bg-slate-50 border rounded-lg text-[10px] font-mono outline-none"></textarea>
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="block text-[10px] font-black text-slate-500 uppercase">Public Identity (.pem / .crt)</label>
+                            <button type="button" onclick="document.getElementById('file-pubkey').click()" class="text-[9px] font-black text-blue-500 uppercase hover:underline">Select File</button>
+                        </div>
+                        <div class="file-upload-zone rounded-xl p-6 text-center border-slate-200" onclick="document.getElementById('file-pubkey').click()">
+                            <input type="file" id="file-pubkey" class="hidden" accept=".pem,.crt" onchange="handleFileSelect(this, 'p-pubkey')">
+                            <div id="pubkey-status" class="text-xs text-slate-400 italic">No identity file selected</div>
+                        </div>
+                        <textarea id="p-pubkey" class="hidden"></textarea>
                     </div>
+
                     <div id="form-error" class="hidden p-3 bg-red-50 border border-red-100 rounded-lg text-[10px] font-black text-red-600 uppercase text-center"></div>
+                    
                     <div class="pt-4 flex gap-4">
                         <button type="button" onclick="closePartnerModal()" class="flex-1 py-3 text-xs font-black uppercase text-slate-400 hover:text-slate-600 transition-colors">Cancel</button>
                         <button id="savePartnerBtn" type="submit" class="flex-1 py-4 bg-slate-900 text-white rounded-xl text-xs font-black uppercase shadow-lg shadow-slate-900/20 hover:bg-slate-800 transition-all transform hover:-translate-y-0.5">Send Invitation</button>
@@ -188,6 +201,24 @@
             }
         }
 
+        /**
+         * Reads the partner's PEM file as text.
+         */
+        function handleFileSelect(input, targetId) {
+            const file = input.files[0];
+            if (!file) return;
+            const statusEl = document.getElementById('pubkey-status');
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const content = e.target.result.trim();
+                document.getElementById(targetId).value = content;
+                statusEl.innerText = `Loaded: ${file.name} (${content.length} bytes)`;
+                statusEl.className = "text-[10px] font-bold text-green-600 uppercase mt-1 text-center";
+                console.log(`[Partners] Public key file read: ${file.name}`);
+            };
+            reader.readAsText(file);
+        }
+
         async function fetchPartners() {
             const res = await callApi("list_partners", {});
             const tbody = document.getElementById('partner-table-body');
@@ -204,7 +235,6 @@
                     let actionHtml = '';
                     if (isAdmin) {
                         if (p.status === 'Invited') {
-                            // REVISED: Allow sender to cancel invitation
                             actionHtml = `
                                 <div class="flex items-center justify-end gap-3">
                                     <span class="text-[9px] text-slate-400 font-black uppercase italic tracking-widest">Awaiting Peer</span>
@@ -292,6 +322,14 @@
             e.preventDefault();
             const btn = document.getElementById('savePartnerBtn');
             const errDiv = document.getElementById('form-error');
+            const pubKey = document.getElementById('p-pubkey').value;
+            
+            if(!pubKey || pubKey.trim().length < 64) {
+                errDiv.innerText = "Please select a valid PEM identity file.";
+                errDiv.classList.remove('hidden');
+                return;
+            }
+
             errDiv.classList.add('hidden');
             btn.disabled = true;
             btn.innerText = "DISPATCHING...";
@@ -304,7 +342,7 @@
                 name: document.getElementById('p-nodeid').value,
                 fqdn: fullFqdn,
                 node_id: document.getElementById('p-nodeid').value,
-                public_key_pem: document.getElementById('p-pubkey').value
+                public_key_pem: pubKey
             });
             
             if (res) { closePartnerModal(); fetchPartners(); } 
@@ -330,7 +368,6 @@
         }
 
         async function handleDelete(id, actionType = 'remove') {
-            // REVISED: Improved confirmation messages based on invitation context
             const msg = actionType === 'revoke' 
                 ? "Initiate termination request? Peer node administrator must accept before the record is physically deleted." 
                 : (actionType === 'reject' ? "Decline this partnership invitation? The sender will be notified to purge the record." : (actionType === 'cancel' ? "Cancel this invitation? The recipient node will be notified to purge the record." : "Remove this entry from the local registry?"));
@@ -343,7 +380,13 @@
 
         function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
         function openPartnerModal() { document.getElementById('partnerModal').classList.remove('hidden'); }
-        function closePartnerModal() { document.getElementById('partnerModal').classList.add('hidden'); document.getElementById('addPartnerForm').reset(); }
+        function closePartnerModal() { 
+            document.getElementById('partnerModal').classList.add('hidden'); 
+            document.getElementById('addPartnerForm').reset();
+            document.getElementById('pubkey-status').innerText = 'No identity file selected';
+            document.getElementById('pubkey-status').className = 'text-xs text-slate-400 italic';
+            document.getElementById('p-pubkey').value = '';
+        }
         function logout() { localStorage.clear(); window.location.href = 'index.html'; }
     </script>
 </body>
