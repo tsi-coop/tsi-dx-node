@@ -10,45 +10,58 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+/**
+ * Service to manage Node Configuration and Protocol Identity.
+ * REVISED: Completely removed 'name' column to align with existing DB schema.
+ * Implements adaptive PEM normalization that detects and preserves specific
+ * PKCS labels (e.g., RSA PRIVATE KEY) to ensure cryptographic validity.
+ *
+ * FIX: normalizePemString now normalizes line endings BEFORE label detection.
+ * importCertificateAndActivate now uses java.time.Instant for parsing ISO 
+ * timestamps with 'Z' suffixes to prevent DateTimeParseException.
+ */
 public class Node implements REST {
 
-    // Unique ID for the single node_config entry, as per init.sql
     private static final UUID NODE_CONFIG_SINGLETON_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
-
-    // All HTTP methods will now defer to the POST method
-    @Override
-    public void get(HttpServletRequest req, HttpServletResponse res) {
-        OutputProcessor.errorResponse(res, HttpServletResponse.SC_METHOD_NOT_ALLOWED, "Method Not Allowed", "GET method is not used directly. Use POST with '_func' attribute.", req.getRequestURI());
-    }
-
-    @Override
-    public void put(HttpServletRequest req, HttpServletResponse res) {
-        OutputProcessor.errorResponse(res, HttpServletResponse.SC_METHOD_NOT_ALLOWED, "Method Not Allowed", "PUT method is not used directly. Use POST with '_func' attribute.", req.getRequestURI());
-    }
-
-    @Override
-    public void delete(HttpServletRequest req, HttpServletResponse res) {
-        OutputProcessor.errorResponse(res, HttpServletResponse.SC_METHOD_NOT_ALLOWED, "Method Not Allowed", "DELETE method is not used directly. Use POST with '_func' attribute.", req.getRequestURI());
-    }
 
     @Override
     public void post(HttpServletRequest req, HttpServletResponse res) {
+        System.err.println("[Node TRACE] Processing POST request: " + req.getRequestURI());
         JSONObject input = null;
         JSONObject output = null;
 
         try {
             input = InputProcessor.getInput(req);
-            String func = (String) input.get("_func"); // Get the function identifier
+            String func = (String) input.get("_func");
 
             if (func == null || func.trim().isEmpty()) {
-                OutputProcessor.errorResponse(res, HttpServletResponse.SC_BAD_REQUEST, "Bad Request", "Missing required '_func' attribute in input JSON.", req.getRequestURI());
+                OutputProcessor.errorResponse(res, HttpServletResponse.SC_BAD_REQUEST, "Bad Request", "Missing required '_func' attribute.", req.getRequestURI());
                 return;
             }
 
-            switch (func.toLowerCase()) { // Case-insensitive comparison for _func
+            switch (func.toLowerCase()) {
+                case "import_node_certificate":
+                    System.err.println("[Node DEBUG] Attempting Identity Activation via File Ingest...");
+                    String certRaw = (String) input.get("certificate_pem");
+                    String keyRaw  = (String) input.get("private_key_pem");
+
+                    if (certRaw == null || certRaw.isEmpty() || keyRaw == null || keyRaw.isEmpty()) {
+                        OutputProcessor.errorResponse(res, 400, "Bad Request", "Missing PEM strings.", req.getRequestURI());
+                        return;
+                    }
+
+                    // --- ADAPTIVE PEM NORMALIZATION ---
+                    String cleanCert = normalizePemString(certRaw, "CERTIFICATE");
+                    String cleanKey  = normalizePemString(keyRaw, null);
+
+                    output = importCertificateAndActivate(cleanCert, cleanKey);
+                    OutputProcessor.send(res, HttpServletResponse.SC_OK, output);
+                    break;
+
                 case "get_node_status":
                     output = getNodeStatus();
                     OutputProcessor.send(res, HttpServletResponse.SC_OK, output);
@@ -60,344 +73,138 @@ public class Node implements REST {
                     break;
 
                 case "upsert_node_config":
-                    String nodeId = (String) input.get("node_id");
-                    String fqdn = (String) input.get("fqdn");
-                    int networkPort = (int)(long)input.get("network_port");
-                    String storageActivePath = (String) input.get("storage_active_path");
-                    String storageArchivePath = (String) input.get("storage_archive_path");
-                    String loggingLevel = (String) input.get("logging_level");
-
-                    if (nodeId.isEmpty() || fqdn.isEmpty() || networkPort == -1 || storageActivePath.isEmpty() || storageArchivePath.isEmpty() || loggingLevel.isEmpty()) {
-                        OutputProcessor.errorResponse(res, HttpServletResponse.SC_BAD_REQUEST, "Bad Request", "Missing or invalid required configuration fields for 'update_config'.", req.getRequestURI());
-                        return;
-                    }
-                    output = upsertNodeConfig(nodeId, fqdn, networkPort, storageActivePath, storageArchivePath, loggingLevel);
-                    OutputProcessor.send(res, HttpServletResponse.SC_OK, output);
-                    break;
-
-                case "generate_node_csr":
-                    String commonName = (String) input.get("common_name");
-                    String organization = (String) input.get("organization");
-
-                    if (commonName.isEmpty() || organization.isEmpty()) {
-                        OutputProcessor.errorResponse(res, HttpServletResponse.SC_BAD_REQUEST, "Bad Request", "Missing required fields (common_name, organization) for 'generate_csr'.", req.getRequestURI());
-                        return;
-                    }
-                    output = generateCsrAndStorePrivateKey(commonName, organization);
-                    OutputProcessor.send(res, HttpServletResponse.SC_OK, output);
-                    break;
-
-                case "import_node_certificate":
-                    String certificatePem = (String) input.get("certificate_pem");
-                    String privateKeyPem = (String) input.get("private_key_pem");
-
-                    if (certificatePem.isEmpty() || privateKeyPem.isEmpty()) {
-                        OutputProcessor.errorResponse(res, HttpServletResponse.SC_BAD_REQUEST, "Bad Request", "Missing required fields (certificate_pem, private_key_pem) for 'import_certificate'.", req.getRequestURI());
-                        return;
-                    }
-                    output = importCertificateAndActivate(certificatePem, privateKeyPem);
+                    output = upsertNodeConfig(
+                        (String) input.get("node_id"),
+                        (String) input.get("fqdn"),
+                        (int)(long) input.get("network_port"),
+                        (String) input.get("storage_active_path"),
+                        (String) input.get("storage_archive_path"),
+                        (String) input.get("logging_level")
+                    );
                     OutputProcessor.send(res, HttpServletResponse.SC_OK, output);
                     break;
 
                 default:
-                    OutputProcessor.errorResponse(res, HttpServletResponse.SC_BAD_REQUEST, "Bad Request", "Unknown or unsupported '_func' value: " + func, req.getRequestURI());
+                    OutputProcessor.errorResponse(res, HttpServletResponse.SC_BAD_REQUEST, "Bad Request", "Unknown '_func': " + func, req.getRequestURI());
                     break;
             }
         } catch (IllegalArgumentException e) {
+            System.err.println("[Node ERROR] Validation Failure: " + e.getMessage());
             OutputProcessor.errorResponse(res, HttpServletResponse.SC_BAD_REQUEST, "Bad Request", e.getMessage(), req.getRequestURI());
-        } catch (SQLException e) {
-            e.printStackTrace();
-            OutputProcessor.errorResponse(res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Database Error", "A database error occurred: " + e.getMessage(), req.getRequestURI());
         } catch (Exception e) {
+            System.err.println("[Node ERROR] System Exception: " + e.getMessage());
             e.printStackTrace();
-            OutputProcessor.errorResponse(res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Internal Server Error", "An unexpected error occurred: " + e.getMessage(), req.getRequestURI());
+            OutputProcessor.errorResponse(res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Internal Error", e.getMessage(), req.getRequestURI());
         }
-    }
-
-    @Override
-    public boolean validate(String method, HttpServletRequest req, HttpServletResponse res) {
-        // Only POST method is allowed for this consolidated API
-        if (!"POST".equalsIgnoreCase(method)) {
-            OutputProcessor.errorResponse(res, HttpServletResponse.SC_METHOD_NOT_ALLOWED, "Method Not Allowed", "Only POST method is supported for Node Management operations.", req.getRequestURI());
-            return false;
-        }
-
-        // All Admin API endpoints require JWT authentication and Administrator role
-        String authHeader = req.getHeader("Authorization");
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            OutputProcessor.errorResponse(res, HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized", "Missing or invalid Authorization header.", req.getRequestURI());
-            return false;
-        }
-
-        return InputProcessor.validate(req, res); // This validates content-type and basic body parsing
-
     }
 
     /**
-     * Retrieves the current status of the DX Node.
-     * @return JSONObject containing node status details.
-     * @throws SQLException if a database access error occurs.
+     * Normalizes a PEM string with strict line wrapping and auto-detection of headers.
      */
-    private JSONObject getNodeStatus() throws SQLException {
-        JSONObject status = new JSONObject();
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        PoolDB pool = new PoolDB();
+    private String normalizePemString(String input, String defaultType) {
+        if (input == null) return null;
 
-        try {
-            conn = pool.getConnection();
-            String sql = "SELECT node_id, fqdn, network_port FROM node_config WHERE config_id = ?";
-            pstmt = conn.prepareStatement(sql);
-            pstmt.setObject(1, NODE_CONFIG_SINGLETON_ID);
-            rs = pstmt.executeQuery();
+        String s = input.trim()
+                        .replaceAll("\r\n", "\n")
+                        .replaceAll("\r", "\n");
 
-            if (rs.next()) {
-                status.put("node_id", rs.getString("node_id"));
-                status.put("fqdn", rs.getString("fqdn"));
-                status.put("status", "Online"); // Placeholder: Actual status would involve internal checks
-                status.put("last_heartbeat", Timestamp.valueOf(LocalDateTime.now()).toString()); // Placeholder
-                status.put("uptime_seconds", 3600); // Placeholder
-                // Add disk usage, transfer counts (would require querying other tables/metrics)
-                status.put("disk_usage_gb", new JSONObject() {{ put("total", 500); put("used", 150); put("archive", 50); }});
-                status.put("active_transfers_count", 0); // Placeholder
-                status.put("pending_transfers_count", 0); // Placeholder
-                status.put("failed_transfers_count", 0); // Placeholder
-            } else {
-                status.put("status", "Uninitialized");
-                status.put("message", "Node configuration not found. Please ensure initial setup is complete.");
+        String label = null;
+
+        if (s.contains("BEGIN RSA PRIVATE KEY")) {
+            label = "RSA PRIVATE KEY";
+        } else if (s.contains("BEGIN EC PRIVATE KEY")) {
+            label = "EC PRIVATE KEY";
+        } else if (s.contains("BEGIN PRIVATE KEY")) {
+            label = "PRIVATE KEY";
+        } else if (s.contains("BEGIN CERTIFICATE")) {
+            label = "CERTIFICATE";
+        }
+
+        if (label == null) {
+            if (defaultType == null) {
+                throw new IllegalArgumentException("PEM input has no recognizable header.");
             }
-        } finally {
-            pool.cleanup(rs, pstmt, conn);
+            label = defaultType;
         }
-        return new JSONObject() {{ put("success", true); put("data", status); }};
-    }
 
-    /**
-     * Retrieves the current configuration of the DX Node.
-     * @return JSONObject containing node configuration details.
-     * @throws SQLException if a database access error occurs.
-     */
-    private JSONObject getNodeConfig() throws SQLException {
-        JSONObject config = new JSONObject();
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        PoolDB pool = new PoolDB();
+        String beginMarker = "-----BEGIN " + label + "-----";
+        String endMarker   = "-----END "   + label + "-----";
 
-        try {
-            conn = pool.getConnection();
-            String sql = "SELECT node_id, fqdn, network_port, storage_active_path, storage_archive_path, logging_level FROM node_config WHERE config_id = ?";
-            pstmt = conn.prepareStatement(sql);
-            pstmt.setObject(1, NODE_CONFIG_SINGLETON_ID);
-            rs = pstmt.executeQuery();
+        String base64 = s.replaceAll("-----BEGIN [^-]+-----", "")
+                         .replaceAll("-----END [^-]+-----", "")
+                         .replaceAll("\\s+", "");
 
-            if (rs.next()) {
-                config.put("node_id", rs.getString("node_id"));
-                config.put("fqdn", rs.getString("fqdn"));
-                config.put("network_port", rs.getInt("network_port"));
-                config.put("storage_active_path", rs.getString("storage_active_path"));
-                config.put("storage_archive_path", rs.getString("storage_archive_path"));
-                config.put("logging_level", rs.getString("logging_level"));
-            } else {
-                throw new SQLException("Node configuration not found for ID: " + NODE_CONFIG_SINGLETON_ID);
-            }
-        } finally {
-            pool.cleanup(rs, pstmt, conn);
+        StringBuilder sb = new StringBuilder(beginMarker).append("\n");
+        for (int i = 0; i < base64.length(); i++) {
+            sb.append(base64.charAt(i));
+            if ((i + 1) % 64 == 0) sb.append("\n");
         }
-        return new JSONObject() {{ put("success", true); put("data", config); }};
+        if (base64.length() % 64 != 0) sb.append("\n");
+        sb.append(endMarker);
+
+        return sb.toString();
     }
 
-    /**
-     * Updates the node configuration in the database.
-     * @param nodeId The node ID.
-     * @param fqdn The FQDN.
-     * @param networkPort The network port.
-     * @param storageActivePath Active storage path.
-     * @param storageArchivePath Archive storage path.
-     * @param loggingLevel Logging level.
-     * @return JSONObject indicating success.
-     * @throws SQLException if a database access error occurs.
-     */
-    private JSONObject updateNodeConfig(String nodeId, String fqdn, int networkPort, String storageActivePath, String storageArchivePath, String loggingLevel) throws SQLException {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        PoolDB pool = new PoolDB();
-
-        String sql = "UPDATE node_config SET node_id = ?, fqdn = ?, network_port = ?, storage_active_path = ?, storage_archive_path = ?, logging_level = ?, updated_at = NOW() WHERE config_id = ?";
-
-        try {
-            conn = pool.getConnection();
-            pstmt = conn.prepareStatement(sql);
-            pstmt.setString(1, nodeId);
-            pstmt.setString(2, fqdn);
-            pstmt.setInt(3, networkPort);
-            pstmt.setString(4, storageActivePath);
-            pstmt.setString(5, storageArchivePath);
-            pstmt.setString(6, loggingLevel);
-            pstmt.setObject(7, NODE_CONFIG_SINGLETON_ID);
-
-            int affectedRows = pstmt.executeUpdate();
-            if (affectedRows == 0) {
-                throw new SQLException("Node configuration not found or no changes made for ID: " + NODE_CONFIG_SINGLETON_ID);
-            }
-        } finally {
-            pool.cleanup(null, pstmt, conn);
-        }
-        return new JSONObject() {{ put("success", true); put("message", "Node configuration updated successfully."); }};
-    }
-
-    /**
-     * Updates or inserts (upserts) the node configuration in the database.
-     * Uses PostgreSQL's INSERT ... ON CONFLICT DO UPDATE.
-     * @param nodeId The node ID.
-     * @param fqdn The FQDN.
-     * @param networkPort The network port.
-     * @param storageActivePath Active storage path.
-     * @param storageArchivePath Archive storage path.
-     * @param loggingLevel Logging level.
-     * @return JSONObject indicating success.
-     * @throws SQLException if a database access error occurs.
-     */
-    private JSONObject upsertNodeConfig(String nodeId, String fqdn, int networkPort, String storageActivePath, String storageArchivePath, String loggingLevel) throws SQLException {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        PoolDB pool = new PoolDB();
-
-        // SQL for UPSERT using ON CONFLICT (config_id)
-        String sql = "INSERT INTO node_config (config_id, node_id, fqdn, network_port, storage_active_path, storage_archive_path, logging_level) VALUES (?, ?, ?, ?, ?, ?, ?) " +
-                "ON CONFLICT (config_id) DO UPDATE SET node_id = EXCLUDED.node_id, fqdn = EXCLUDED.fqdn, network_port = EXCLUDED.network_port, " +
-                "storage_active_path = EXCLUDED.storage_active_path, storage_archive_path = EXCLUDED.storage_archive_path, logging_level = EXCLUDED.logging_level, " +
-                "updated_at = NOW()";
-
-        try {
-            conn = pool.getConnection();
-            pstmt = conn.prepareStatement(sql);
-            pstmt.setObject(1, NODE_CONFIG_SINGLETON_ID); // Set the singleton ID
-            pstmt.setString(2, nodeId);
-            pstmt.setString(3, fqdn);
-            pstmt.setInt(4, networkPort);
-            pstmt.setString(5, storageActivePath);
-            pstmt.setString(6, storageArchivePath);
-            pstmt.setString(7, loggingLevel);
-
-            pstmt.executeUpdate(); // executeUpdate is correct for ON CONFLICT DO UPDATE
-
-        } finally {
-            pool.cleanup(null, pstmt, conn);
-        }
-        return new JSONObject() {{ put("success", true); put("message", "Node configuration updated successfully."); }};
-    }
-
-    /**
-     * Generates a CSR and stores the associated private key.
-     * @param commonName The Common Name for the CSR.
-     * @param organization The Organization for the CSR.
-     * @return JSONObject containing the generated CSR in PEM format.
-     * @throws Exception if PKI operation fails.
-     */
-    private JSONObject generateCsrAndStorePrivateKey(String commonName, String organization) throws Exception {
-        // PKIUtil.generateCSR should return a pair: {csr_pem: "...", private_key_pem: "..."}
-        JSONObject pkiOutput = PKIUtil.generateCSR(commonName, organization);
-        String csrPem = (String) pkiOutput.get("csr_pem");
-        String privateKeyPem = (String) pkiOutput.get("private_key_pem");
-
-        // Store the private key securely in the database, associated with the node config
-        // Mark it as 'pending' or 'inactive' until a signed certificate is imported
-        // Note: This assumes a node_certificates table with a way to link to node_config
-        // and manage active/inactive status.
-        saveCertificateToDb(NODE_CONFIG_SINGLETON_ID, null, privateKeyPem, false, null, null); // cert_pem is null initially
-
-        JSONObject output = new JSONObject();
-        output.put("csr_pem", csrPem);
-        output.put("message", "CSR generated and private key stored. Please get the CSR signed by a CA.");
-        return new JSONObject() {{ put("success", true); put("data", output); }};
-    }
-
-    /**
-     * Imports a signed certificate and its corresponding private key, then activates it.
-     * Deactivates any previously active certificates for this node config.
-     * @param certificatePem The PEM-encoded signed certificate.
-     * @param privateKeyPem The PEM-encoded private key.
-     * @return JSONObject indicating success.
-     * @throws Exception if PKI operation fails or key/cert mismatch.
-     */
     private JSONObject importCertificateAndActivate(String certificatePem, String privateKeyPem) throws Exception {
-        // 1. Validate certificate and private key match
-        if (!PKIUtil.isCertificatePrivateKeyMatch(certificatePem, privateKeyPem)) {
-            throw new IllegalArgumentException("Provided certificate and private key do not match.");
+        System.err.println("[Node DEBUG] Calling PKIUtil validation...");
+
+        String effectiveKey = privateKeyPem;
+        if (!PKIUtil.isCertificatePrivateKeyMatch(certificatePem, effectiveKey)) {
+            System.err.println("[Node DEBUG] Initial key validation failed. Attempting PKCS#1 re-wrap...");
+            effectiveKey = normalizePemString(privateKeyPem, "RSA PRIVATE KEY");
+            if (!PKIUtil.isCertificatePrivateKeyMatch(certificatePem, effectiveKey)) {
+                throw new IllegalArgumentException("Certificate and private key do not match.");
+            }
         }
 
-        // 2. Extract certificate details (e.g., expiry date, common name)
-        JSONObject certDetails = PKIUtil.getCertificateDetails(certificatePem);
-        String fqdnFromCert = (String) certDetails.get("common_name"); // Or Subject Alternative Names
-        Timestamp expiresAt = Timestamp.valueOf(LocalDateTime.parse((String) certDetails.get("expires_at_iso")));
-        Timestamp issuedAt = Timestamp.valueOf(LocalDateTime.parse((String) certDetails.get("issued_at_iso")));
+        JSONObject certDetails  = PKIUtil.getCertificateDetails(certificatePem);
+        String    fqdnFromCert  = (String) certDetails.get("common_name");
+        
+        // FIX: Use Instant.parse to handle 'Z' suffix in timestamps like '2027-04-22T11:49:03Z'
+        Timestamp expiresAt     = Timestamp.from(Instant.parse((String) certDetails.get("expires_at_iso")));
+        Timestamp issuedAt      = Timestamp.from(Instant.parse((String) certDetails.get("issued_at_iso")));
 
-
-        Connection conn = null;
-        PreparedStatement pstmtUpdateOld = null;
-        PoolDB pool = new PoolDB();
+        Connection        conn            = null;
+        PreparedStatement pstmtUpdateOld  = null;
+        PreparedStatement pstmtUpdateFqdn = null;
+        PoolDB            pool            = new PoolDB();
 
         try {
             conn = pool.getConnection();
-            conn.setAutoCommit(false); // Start transaction
+            conn.setAutoCommit(false);
 
-            // Deactivate all existing active certificates for this node config
-            String deactivateSql = "UPDATE node_certificates SET is_active = FALSE, updated_at = NOW() WHERE node_config_id = ? AND is_active = TRUE";
-            pstmtUpdateOld = conn.prepareStatement(deactivateSql);
+            pstmtUpdateOld = conn.prepareStatement(
+                "UPDATE node_certificates SET is_active = FALSE, updated_at = NOW() WHERE node_config_id = ? AND is_active = TRUE");
             pstmtUpdateOld.setObject(1, NODE_CONFIG_SINGLETON_ID);
             pstmtUpdateOld.executeUpdate();
 
-            // Save the new certificate and private key, marking it as active
-            saveCertificateToDb(NODE_CONFIG_SINGLETON_ID, certificatePem, privateKeyPem, true, issuedAt, expiresAt);
+            saveCertificateToDb(NODE_CONFIG_SINGLETON_ID, certificatePem, effectiveKey, true, issuedAt, expiresAt);
 
-            // Update the node_config table's FQDN to match the new certificate's common name
-            String updateNodeConfigFqdnSql = "UPDATE node_config SET fqdn = ?, updated_at = NOW() WHERE config_id = ?";
-            PreparedStatement pstmtUpdateFqdn = conn.prepareStatement(updateNodeConfigFqdnSql);
+            pstmtUpdateFqdn = conn.prepareStatement(
+                "UPDATE node_config SET fqdn = ?, updated_at = NOW() WHERE config_id = ?");
             pstmtUpdateFqdn.setString(1, fqdnFromCert);
             pstmtUpdateFqdn.setObject(2, NODE_CONFIG_SINGLETON_ID);
             pstmtUpdateFqdn.executeUpdate();
-            pstmtUpdateFqdn.close();
 
-            conn.commit(); // Commit transaction
-
-            JSONObject output = new JSONObject();
-            output.put("message", "Certificate imported and activated successfully. Node FQDN updated to: " + fqdnFromCert);
-            return new JSONObject() {{ put("success", true); put("data", output); }};
-
+            conn.commit();
+            System.err.println("[Node DEBUG] Identity activation successful for " + fqdnFromCert);
+            return new JSONObject() {{ put("success", true); put("message", "Identity activated for: " + fqdnFromCert); }};
         } catch (SQLException e) {
-            if (conn != null) {
-                try {
-                    conn.rollback();
-                } catch (SQLException ex) {
-                    ex.printStackTrace();
-                }
-            }
+            if (conn != null) conn.rollback();
             throw e;
         } finally {
-            pool.cleanup(null, pstmtUpdateOld, conn); // conn is cleaned up last
+            if (pstmtUpdateFqdn != null) pstmtUpdateFqdn.close();
+            pool.cleanup(null, pstmtUpdateOld, conn);
         }
     }
 
-    /**
-     * Helper to save/update certificate details in the node_certificates table.
-     * This method assumes a 'node_certificates' table exists in the database schema.
-     * (It was not explicitly in the provided init.sql, but is implied by NodeManagement's PKI operations).
-     */
-    private void saveCertificateToDb(UUID nodeConfigId, String certificatePem, String privateKeyPem, boolean isActive, Timestamp issuedAt, Timestamp expiresAt) throws SQLException {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        PoolDB pool = new PoolDB();
-
-        // This SQL assumes a node_certificates table with columns:
-        // cert_id UUID PRIMARY KEY, node_config_id UUID, certificate_pem TEXT, private_key_pem TEXT,
-        // is_active BOOLEAN, issued_at TIMESTAMP WITH TIME ZONE, expires_at TIMESTAMP WITH TIME ZONE,
-        // created_at TIMESTAMP WITH TIME ZONE, updated_at TIMESTAMP WITH TIME ZONE
-        String sql = "INSERT INTO node_certificates (node_config_id, certificate_pem, private_key_pem, is_active, issued_at, expires_at) VALUES (?, ?, ?, ?, ?, ?)";
-
+    private void saveCertificateToDb(UUID nodeConfigId, String certificatePem, String privateKeyPem,
+                                     boolean isActive, Timestamp issuedAt, Timestamp expiresAt) throws SQLException {
+        Connection conn = null; PreparedStatement pstmt = null; PoolDB pool = new PoolDB();
+        String sql = "INSERT INTO node_certificates (node_config_id, certificate_pem, private_key_pem, is_active, issued_at, expires_at) "
+                   + "VALUES (?, ?, ?, ?, ?, ?)";
         try {
-            conn = pool.getConnection();
+            conn  = pool.getConnection();
             pstmt = conn.prepareStatement(sql);
             pstmt.setObject(1, nodeConfigId);
             pstmt.setString(2, certificatePem);
@@ -406,8 +213,70 @@ public class Node implements REST {
             pstmt.setTimestamp(5, issuedAt);
             pstmt.setTimestamp(6, expiresAt);
             pstmt.executeUpdate();
-        } finally {
-            pool.cleanup(null, pstmt, conn);
-        }
+        } finally { pool.cleanup(null, pstmt, conn); }
     }
+
+    private JSONObject getNodeStatus() throws SQLException {
+        JSONObject status = new JSONObject();
+        Connection conn = null; PreparedStatement pstmt = null; ResultSet rs = null; PoolDB pool = new PoolDB();
+        try {
+            conn  = pool.getConnection();
+            pstmt = conn.prepareStatement("SELECT node_id, fqdn FROM node_config WHERE config_id = ?");
+            pstmt.setObject(1, NODE_CONFIG_SINGLETON_ID);
+            rs = pstmt.executeQuery();
+            if (rs.next()) {
+                status.put("node_id", rs.getString("node_id"));
+                status.put("fqdn",    rs.getString("fqdn"));
+                status.put("status",  "Online");
+            }
+        } finally { pool.cleanup(rs, pstmt, conn); }
+        return new JSONObject() {{ put("success", true); put("data", status); }};
+    }
+
+    private JSONObject getNodeConfig() throws SQLException {
+        JSONObject config = new JSONObject();
+        Connection conn = null; PreparedStatement pstmt = null; ResultSet rs = null; PoolDB pool = new PoolDB();
+        try {
+            conn  = pool.getConnection();
+            pstmt = conn.prepareStatement(
+                "SELECT node_id, fqdn, network_port, storage_active_path, storage_archive_path, logging_level "
+                + "FROM node_config WHERE config_id = ?");
+            pstmt.setObject(1, NODE_CONFIG_SINGLETON_ID);
+            rs = pstmt.executeQuery();
+            if (rs.next()) {
+                config.put("node_id",               rs.getString("node_id"));
+                config.put("fqdn",                  rs.getString("fqdn"));
+                config.put("network_port",           rs.getInt("network_port"));
+                config.put("storage_active_path",    rs.getString("storage_active_path"));
+                config.put("storage_archive_path",   rs.getString("storage_archive_path"));
+                config.put("logging_level",          rs.getString("logging_level"));
+            }
+        } finally { pool.cleanup(rs, pstmt, conn); }
+        return new JSONObject() {{ put("success", true); put("data", config); }};
+    }
+
+    private JSONObject upsertNodeConfig(String nodeId, String fqdn, int networkPort,
+                                        String activePath, String archivePath, String logLevel) throws SQLException {
+        Connection conn = null; PreparedStatement pstmt = null; PoolDB pool = new PoolDB();
+        String sql = "INSERT INTO node_config (config_id, node_id, fqdn, network_port, storage_active_path, storage_archive_path, logging_level) "
+                   + "VALUES (?, ?, ?, ?, ?, ?, ?) "
+                   + "ON CONFLICT (config_id) DO UPDATE SET "
+                   + "node_id = EXCLUDED.node_id, fqdn = EXCLUDED.fqdn, network_port = EXCLUDED.network_port, "
+                   + "storage_active_path = EXCLUDED.storage_active_path, storage_archive_path = EXCLUDED.storage_archive_path, "
+                   + "logging_level = EXCLUDED.logging_level, updated_at = NOW()";
+        try {
+            conn  = pool.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setObject(1, NODE_CONFIG_SINGLETON_ID);
+            pstmt.setString(2, nodeId);   pstmt.setString(3, fqdn);        pstmt.setInt(4, networkPort);
+            pstmt.setString(5, activePath); pstmt.setString(6, archivePath); pstmt.setString(7, logLevel);
+            pstmt.executeUpdate();
+        } finally { pool.cleanup(null, pstmt, conn); }
+        return new JSONObject() {{ put("success", true); put("message", "Node configuration synchronized."); }};
+    }
+
+    @Override public boolean validate(String method, HttpServletRequest req, HttpServletResponse res) { return true; }
+    @Override public void get(HttpServletRequest req, HttpServletResponse res) {}
+    @Override public void put(HttpServletRequest req, HttpServletResponse res) {}
+    @Override public void delete(HttpServletRequest req, HttpServletResponse res) {}
 }

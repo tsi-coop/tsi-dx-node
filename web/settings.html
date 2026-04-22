@@ -7,468 +7,277 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-        
-        :root {
-            --dx-primary: #0f172a;
-            --dx-accent: #3b82f6;
-            --sidebar-width: 280px;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f8fafc;
-        }
-
-        .sidebar {
-            width: var(--sidebar-width);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .sidebar.collapsed {
-            width: 80px;
-        }
-
-        .sidebar.collapsed .nav-text, 
-        .sidebar.collapsed .nav-badge,
-        .sidebar.collapsed .brand-full {
-            display: none;
-        }
-
-        .nav-item {
-            display: flex;
-            align-items: center;
-            padding: 0.75rem 1rem;
-            color: #94a3b8;
-            transition: all 0.2s;
-            border-radius: 0.5rem;
-            margin: 0.25rem 0.75rem;
-        }
-
-        .nav-item:hover, .nav-item.active {
-            background-color: rgba(255, 255, 255, 0.05);
-            color: white;
-        }
-
-        .nav-item.active {
-            background-color: var(--dx-accent);
-            color: white;
-            box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
-        }
-
-        .card {
-            background: white;
-            border-radius: 12px;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        }
-
-        .sub-nav-item.active {
-            background-color: #eff6ff;
-            color: var(--dx-accent);
-            border-right: 3px solid var(--dx-accent);
-        }
-
+        :root { --dx-primary: #0f172a; --dx-accent: #3b82f6; --sidebar-width: 280px; }
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .sidebar { width: var(--sidebar-width); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .sidebar.collapsed { width: 80px; }
+        .sidebar.collapsed .nav-text, .sidebar.collapsed .brand-full { display: none; }
+        .nav-item { display: flex; align-items: center; padding: 0.75rem 1rem; color: #94a3b8; border-radius: 0.5rem; margin: 0.25rem 0.75rem; transition: all 0.2s; }
+        .nav-item:hover, .nav-item.active { background-color: rgba(255, 255, 255, 0.05); color: white; }
+        .nav-item.active { background-color: var(--dx-accent); color: white; box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2); }
+        .card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .sub-nav-item { transition: all 0.2s; border-right: 3px solid transparent; }
+        .sub-nav-item.active { background-color: #eff6ff; color: var(--dx-accent); border-right: 3px solid var(--dx-accent); font-weight: 700; }
+        .modal-backdrop { background-color: rgba(15, 23, 42, 0.7); backdrop-filter: blur(4px); }
+        .file-upload-zone { border: 2px dashed #e2e8f0; transition: all 0.2s; cursor: pointer; }
+        .file-upload-zone:hover { border-color: var(--dx-accent); background-color: #f8fafc; }
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-
-        .modal-backdrop {
-            background-color: rgba(15, 23, 42, 0.7);
-            backdrop-filter: blur(4px);
-        }
     </style>
 </head>
 <body class="flex h-screen overflow-hidden">
 
+    <!-- Sidebar Navigation -->
     <aside id="sidebar" class="sidebar bg-slate-900 flex flex-col z-20">
         <div class="p-6 mb-4">
             <div class="flex items-center gap-3 brand-container">
-                <div class="brand-icon bg-blue-600 p-2.5 rounded-xl shadow-lg flex-shrink-0">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                    </svg>
+                <div class="brand-icon bg-blue-600 p-2.5 rounded-xl shadow-lg shadow-blue-900/20 flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
                 </div>
                 <div class="brand-full flex flex-col overflow-hidden">
-                    <span class="font-black text-white tracking-tighter text-xl leading-none">TSI DX NODE</span>
-                    <span class="text-[9px] text-blue-400 font-bold uppercase tracking-[0.2em] mt-1">Direct Exchange</span>
+                    <span class="font-black text-white tracking-tighter text-xl leading-none uppercase">TSI DX NODE</span>
+                    <span class="text-[9px] text-blue-400 font-bold uppercase tracking-[0.2em] mt-1 leading-none">Direct Exchange</span>
                 </div>
             </div>
         </div>
 
-        <nav class="flex-1 overflow-y-auto">
+        <nav class="flex-1 overflow-y-auto custom-scrollbar">
             <div class="px-8 mb-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest nav-text">Operational Hub</div>
-            <a href="dashboard.html" class="nav-item">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6z" /></svg>
-                <span class="nav-text">Dashboard</span>
-            </a>
+            <a href="dashboard.html" class="nav-item"><span class="nav-text">Dashboard</span></a>
             
             <div class="px-8 mt-6 mb-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest nav-text">Partnership</div>
-            <a href="partners.html" class="nav-item">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-                <span class="nav-text">Partner Nodes</span>
-            </a>
-            <a href="contracts.html" class="nav-item">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                <span class="nav-text">Data Contracts</span>
-            </a>
-            <a href="transfers.html" class="nav-item">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
-                <span class="nav-text">Transfer Logs</span>
-            </a>
+            <a href="partners.html" class="nav-item"><span class="nav-text">Partner Nodes</span></a>
+            <a href="contracts.html" class="nav-item"><span class="nav-text">Data Contracts</span></a>
+            <a href="transfers.html" class="nav-item"><span class="nav-text">Transfer Logs</span></a>
 
             <div class="px-8 mt-6 mb-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest nav-text">System</div>
-            <a href="audit.html" class="nav-item">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 00-2 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
-                <span class="nav-text">Audit Trail</span>
-            </a>
-            <a href="users.html" class="nav-item">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-                <span class="nav-text">Users & Roles</span>
-            </a>
-            <a href="apikeys.html" class="nav-item">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-                <span class="nav-text">Apps & API Keys</span>
-            </a>
-            <a href="settings.html" class="nav-item active">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                <span class="nav-text">Node Settings</span>
-            </a>
+            <a href="audit.html" class="nav-item"><span class="nav-text">Audit Trail</span></a>
+            <a href="users.html" class="nav-item"><span class="nav-text">Users & Roles</span></a>
+            <!-- RESTORED: Apps & API Keys link in main nav -->
+            <a href="apikeys.html" class="nav-item"><span class="nav-text">Apps & API Keys</span></a>
+            <a href="settings.html" class="nav-item active"><span class="nav-text">Node Settings</span></a>
         </nav>
-
-        <div class="p-4 border-t border-slate-800">
-            <button onclick="logout()" class="nav-item w-full text-left hover:bg-red-500/10 hover:text-red-400">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
-                <span class="nav-text">Sign Out</span>
-            </button>
-        </div>
+        <div class="p-4 border-t border-slate-800"><button onclick="logout()" class="nav-item w-full text-left hover:bg-red-500/10 hover:text-red-400">Sign Out</button></div>
     </aside>
 
-    <!-- Main Content Area -->
     <main class="flex-1 flex flex-col min-w-0">
         <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 z-10">
             <div class="flex items-center gap-4">
-                <button onclick="toggleSidebar()" class="p-2 hover:bg-slate-100 rounded-lg text-slate-500">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
-                </button>
+                <button onclick="toggleSidebar()" class="p-2 hover:bg-slate-100 rounded-lg text-slate-500"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M4 6h16M4 12h16M4 18h16" /></svg></button>
                 <div class="h-8 w-px bg-slate-200 mx-2"></div>
-                <div class="flex flex-col">
-                    <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-tight">Current Node Instance</span>
-                    <span class="text-xs font-black text-slate-900 leading-tight" id="header-node-id">...</span>
-                </div>
+                <div class="flex flex-col"><span class="text-[9px] font-bold text-slate-400 uppercase leading-none">Current Node Instance</span><span class="text-xs font-black text-slate-900" id="header-node-id">...</span></div>
             </div>
-
             <div class="flex items-center gap-3">
-                <div class="flex flex-col items-end">
-                    <span class="text-xs font-bold text-slate-900" id="header-username">...</span>
-                    <span class="text-[10px] text-slate-400 font-medium uppercase tracking-tighter" id="header-role">...</span>
-                </div>
-                <div class="h-10 w-10 bg-slate-200 rounded-xl border-2 border-white shadow-sm overflow-hidden">
-                    <img src="" id="header-avatar" alt="Avatar">
-                </div>
+                <div class="flex flex-col items-end"><span class="text-xs font-bold text-slate-900" id="header-username">...</span><span class="text-[10px] text-slate-400 font-medium uppercase" id="header-role">...</span></div>
+                <div class="h-10 w-10 bg-slate-200 rounded-xl border-2 border-white overflow-hidden"><img src="" id="header-avatar" alt="Avatar"></div>
             </div>
         </header>
 
-        <!-- Dynamic View Area -->
         <div class="flex-1 flex overflow-hidden">
+            <!-- REVISED Inner Navigation Sidebar -->
             <aside class="w-64 bg-white border-r border-slate-200 flex flex-col py-8">
                 <div class="px-8 mb-6">
-                    <h2 class="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Node Config</h2>
+                    <h2 class="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Settings</h2>
                 </div>
                 <nav class="flex-1">
-                    <button onclick="showSection('node')" id="btn-node" class="sub-nav-item active w-full text-left px-8 py-3 text-xs font-bold uppercase tracking-widest transition-all">Node Settings</button>
-                    <!-- PII ANONYMIZATION HIDDEN PER REQUEST -->
-                    <button onclick="showSection('pii')" id="btn-pii" class="hidden sub-nav-item w-full text-left px-8 py-3 text-xs font-bold uppercase tracking-widest text-slate-500 hover:text-slate-900 transition-all">PII Anonymization</button>
-                    <button onclick="showSection('retention')" id="btn-retention" class="sub-nav-item w-full text-left px-8 py-3 text-xs font-bold uppercase tracking-widest text-slate-500 hover:text-slate-900 transition-all">Archiving & Purging</button>
+                    <button onclick="showSection('node')" id="btn-node" class="sub-nav-item active w-full text-left px-8 py-3 text-xs uppercase tracking-widest">Node Settings</button>
+                    <a href="apikeys.html" class="sub-nav-item w-full text-left px-8 py-3 text-xs uppercase tracking-widest text-slate-500 hover:text-slate-900 block">Apps & API Keys</a>
+                    <button onclick="showSection('retention')" id="btn-retention" class="sub-nav-item w-full text-left px-8 py-3 text-xs uppercase tracking-widest text-slate-500 transition-all hover:text-slate-900">Archiving & Storage</button>
                 </nav>
             </aside>
 
-            <div class="flex-1 overflow-y-auto p-12 custom-scrollbar bg-slate-50">
+            <div class="flex-1 overflow-y-auto p-12 bg-slate-50 custom-scrollbar">
                 <div class="max-w-4xl mx-auto">
                     <div id="settings-feedback" class="hidden p-4 mb-8 rounded-xl text-[11px] font-black uppercase text-center border"></div>
 
-                    <!-- Node Settings Section -->
+                    <!-- Section: Node Settings (No Friendly Name) -->
                     <section id="section-node" class="space-y-8">
                         <div>
-                            <h1 class="text-2xl font-black text-slate-900 uppercase tracking-tight">Node Core Parameters</h1>
-                            <p class="text-xs text-slate-500 font-medium mt-1">Manage network identity, FQDN, and organizational description.</p>
+                            <h1 class="text-2xl font-black text-slate-900 uppercase tracking-tight">Core Parameters</h1>
+                            <p class="text-xs text-slate-500 font-medium mt-1">Manage network identity and protocol presence.</p>
                         </div>
-
                         <div class="card p-8 space-y-6">
-                            <div class="grid grid-cols-1 gap-6">
-                                <div>
-                                    <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Local Node ID (Immutable)</label>
-                                    <input type="text" id="node-id-input" disabled class="w-full px-4 py-2.5 bg-slate-100 border border-slate-200 rounded-lg text-sm font-mono text-slate-500 cursor-not-allowed">
-                                </div>
-                                <div>
-                                    <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Public FQDN (CNAME)</label>
-                                    <input type="text" id="node-fqdn-input" class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500/20">
-                                </div>
-                                <div>
-                                    <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Protocol Port (mTLS)</label>
-                                    <input type="number" id="node-port-input" class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500/20">
-                                </div>
-                                <!-- REVISED: Added About Textarea -->
-                                <div>
-                                    <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Node Description (About)</label>
-                                    <textarea id="node-about-input" rows="4" placeholder="Briefly describe this node's role, organizational context, or administrative ownership..." class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm font-medium outline-none focus:ring-2 focus:ring-blue-500/20 resize-none custom-scrollbar"></textarea>
-                                </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="md:col-span-2"><label class="block text-[10px] font-black text-slate-500 uppercase mb-2">Immutable Node ID</label><input type="text" id="node-id-input" disabled class="w-full px-4 py-2.5 bg-slate-100 border border-slate-200 rounded-lg text-sm font-mono text-slate-500"></div>
+                                <div><label class="block text-[10px] font-black text-slate-500 uppercase mb-2">Public FQDN / IP</label><input type="text" id="node-fqdn-input" class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm font-bold"></div>
+                                <div><label class="block text-[10px] font-black text-slate-500 uppercase mb-2">Protocol Port (mTLS)</label><input type="number" id="node-port-input" class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm font-bold"></div>
+                                <div><label class="block text-[10px] font-black text-slate-500 uppercase mb-2">Log Level</label><select id="node-log-level" class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm font-bold"><option value="INFO">INFO</option><option value="DEBUG">DEBUG</option></select></div>
                             </div>
                         </div>
-
-                        <!-- PKI Management Section -->
                         <div class="card p-8 space-y-6 border-blue-100 bg-blue-50/10">
-                            <div>
-                                <h3 class="text-xs font-black text-slate-900 uppercase tracking-widest">PKI Management</h3>
-                                <p class="text-[10px] text-slate-400 font-medium mt-1 uppercase">Establish your protocol identity for sovereign mTLS handshakes.</p>
-                            </div>
-                            <div class="flex gap-4">
-                                <button onclick="openCsrModal()" class="flex-1 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-slate-800 transition-all">Generate CSR</button>
-                                <button onclick="openImportModal()" class="flex-1 py-3 bg-white border border-slate-200 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all">Import Signed Cert</button>
-                            </div>
-                            <p class="text-[9px] text-slate-400 italic">Self-signed identity is recommended for private B2B links to prevent metadata leakage to public logs.</p>
+                            <h3 class="text-xs font-black text-slate-900 uppercase tracking-widest">Protocol Identity Activation</h3>
+                            <button onclick="openImportModal()" class="w-full py-4 bg-slate-900 text-white rounded-xl text-xs font-black uppercase shadow-lg hover:bg-slate-800 transition-all">Import Sovereign Identity (.pem / .key)</button>
                         </div>
                     </section>
 
-                    <!-- PII Anonymization Section -->
-                    <section id="section-pii" class="hidden space-y-8">
-                        <div>
-                            <h1 class="text-2xl font-black text-slate-900 uppercase tracking-tight">PII Anonymization Rules</h1>
-                            <p class="text-xs text-slate-500 font-medium mt-1">Define global data governance templates for sensitive field handling.</p>
-                        </div>
-                        <div class="card p-8">
-                            <div class="space-y-4" id="pii-rules-container"></div>
-                            <button onclick="handleAddNewPiiRule()" class="mt-4 w-full py-4 border-2 border-dashed border-slate-200 rounded-xl text-[10px] font-black text-slate-400 uppercase tracking-widest hover:bg-white hover:text-blue-600 transition-all">+ Add New Rule Template</button>
-                        </div>
-                    </section>
-
-                    <!-- Retention Section -->
+                    <!-- Section: Archiving & Storage -->
                     <section id="section-retention" class="hidden space-y-8">
-                        <div>
-                            <h1 class="text-2xl font-black text-slate-900 uppercase tracking-tight">Archiving & Purging</h1>
-                            <p class="text-xs text-slate-500 font-medium mt-1">Configure automated lifecycle rules for active data and audit logs.</p>
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div class="card p-8 space-y-6">
-                                <h3 class="text-xs font-black text-slate-900 uppercase tracking-widest">Active Data Persistence</h3>
-                                <div>
-                                    <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Move to Archive After (Days)</label>
-                                    <input type="number" id="retention-days-input" class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500/20">
-                                </div>
-                                <p class="text-[10px] text-slate-400 leading-relaxed uppercase font-bold tracking-tight">Active data is stored in high-performance staging for immediate access.</p>
-                            </div>
-                            <div class="card p-8 space-y-6">
-                                <h3 class="text-xs font-black text-slate-900 uppercase tracking-widest">Permanent Purge Policy</h3>
-                                <div>
-                                    <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Purge Archive After (Years)</label>
-                                    <input type="number" id="retention-years-input" class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500/20">
-                                </div>
-                                <p class="text-[10px] text-red-400 leading-relaxed uppercase font-bold tracking-tight italic">Warning: Purging is an immutable destructive action.</p>
+                        <div><h1 class="text-2xl font-black text-slate-900 uppercase tracking-tight">Archiving & Storage</h1><p class="text-xs text-slate-500 font-medium mt-1">Configure automated lifecycle rules for data persistence.</p></div>
+                        <div class="card p-8 space-y-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div><label class="block text-[10px] font-black text-slate-500 uppercase mb-2">Active Staging Path</label><input type="text" id="path-active-input" class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-xs font-mono"></div>
+                                <div><label class="block text-[10px] font-black text-slate-500 uppercase mb-2">Archive Storage Path</label><input type="text" id="path-archive-input" class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-xs font-mono"></div>
                             </div>
                         </div>
                     </section>
 
                     <div class="mt-12 pt-8 border-t border-slate-200 flex justify-end">
-                        <button id="global-save-btn" onclick="handleGlobalSave()" class="px-10 py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-xl shadow-blue-500/20 transition-all transform hover:-translate-y-1 active:translate-y-0">Apply Changes</button>
+                        <button id="global-save-btn" onclick="handleGlobalSave()" class="px-10 py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-xl transition-all">Apply Parameters</button>
                     </div>
                 </div>
             </div>
         </div>
     </main>
 
-    <!-- Modals (CSR and Import) -->
-    <div id="csrModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop">
-        <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden">
-            <div class="px-8 py-6 bg-slate-900 flex items-center justify-between">
-                <h3 class="text-xl font-black text-white uppercase tracking-tight">Generate Node CSR</h3>
-                <button onclick="closeCsrModal()" class="text-slate-400 hover:text-white transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
+    <!-- Modal: Identity Import -->
+    <div id="importModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop no-print">
+        <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="px-8 py-6 bg-slate-900 flex items-center justify-between text-white">
+                <h3 class="text-xl font-black uppercase tracking-tight">Identity Activation</h3>
+                <button onclick="closeImportModal()"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M6 18L18 6M6 6l12 12" /></svg></button>
             </div>
-            <div class="p-8 space-y-6">
-                <div id="csr-inputs">
-                    <div>
-                        <label class="block text-[10px] font-black text-slate-500 uppercase mb-2">Common Name (CN / FQDN)</label>
-                        <input type="text" id="csr-cn" placeholder="dx.yourcompany.org" class="w-full p-3 bg-slate-50 border rounded-lg text-sm font-bold outline-none">
+            <div class="p-8 space-y-8 overflow-y-auto">
+                <div class="space-y-4">
+                    <label class="text-[10px] font-black text-slate-500 uppercase">1. Public Identity (.pem)</label>
+                    <div class="file-upload-zone rounded-xl p-6 text-center border-slate-200" onclick="document.getElementById('file-cert').click()">
+                        <input type="file" id="file-cert" class="hidden" accept=".pem,.crt" onchange="handleFileSelect(this, 'import-cert-pem')">
+                        <div id="cert-status" class="text-xs text-slate-400 italic">Select public identity file</div>
                     </div>
-                    <div class="mt-4">
-                        <label class="block text-[10px] font-black text-slate-500 uppercase mb-2">Organization (O)</label>
-                        <input type="text" id="csr-org" placeholder="TSI Consulting LLP" class="w-full p-3 bg-slate-50 border rounded-lg text-sm outline-none">
-                    </div>
+                    <textarea id="import-cert-pem" class="hidden"></textarea>
                 </div>
-                <div id="csr-result-container" class="hidden space-y-4">
-                    <div class="flex justify-between items-center">
-                        <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest">CSR Content</label>
-                        <button onclick="copyCsrToClipboard()" class="text-[10px] font-black text-blue-600 uppercase hover:underline">Copy</button>
+                <div class="space-y-4">
+                    <label class="text-[10px] font-black text-slate-500 uppercase">2. Private Key (.key)</label>
+                    <div class="file-upload-zone rounded-xl p-6 text-center border-slate-200" onclick="document.getElementById('file-key').click()">
+                        <input type="file" id="file-key" class="hidden" accept=".key,.pem" onchange="handleFileSelect(this, 'import-key-pem')">
+                        <div id="key-status" class="text-xs text-slate-400 italic">Select private key file</div>
                     </div>
-                    <textarea id="csr-output" readonly class="w-full h-48 p-3 bg-slate-900 text-blue-400 font-mono text-[10px] rounded-lg resize-none custom-scrollbar"></textarea>
-                </div>
-                <div class="flex gap-4 pt-2">
-                    <button id="csr-cancel-btn" onclick="closeCsrModal()" class="flex-1 py-3 text-xs font-black uppercase text-slate-400">Cancel</button>
-                    <button id="csr-submit-btn" onclick="handleGenerateCsr()" class="flex-1 py-3 bg-slate-900 text-white rounded-xl text-xs font-black uppercase shadow-lg">Generate</button>
+                    <textarea id="import-key-pem" class="hidden"></textarea>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <div id="importModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop">
-        <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden">
-            <div class="px-8 py-6 bg-slate-900 flex items-center justify-between">
-                <h3 class="text-xl font-black text-white uppercase tracking-tight">Import Certificate</h3>
-                <button onclick="closeImportModal()" class="text-slate-400 hover:text-white transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
-            </div>
-            <div class="p-8 space-y-6">
-                <div>
-                    <label class="block text-[10px] font-black text-slate-500 uppercase mb-2 tracking-widest">Certificate Block (PEM)</label>
-                    <textarea id="import-cert-pem" required class="w-full h-40 p-4 bg-slate-50 border border-slate-200 rounded-xl font-mono text-[10px] outline-none" placeholder="-----BEGIN CERTIFICATE-----..."></textarea>
-                </div>
-                <div>
-                    <label class="block text-[10px] font-black text-slate-500 uppercase mb-2 tracking-widest">Private Key Block (PEM)</label>
-                    <textarea id="import-key-pem" required class="w-full h-32 p-4 bg-slate-50 border border-slate-200 rounded-xl font-mono text-[10px] outline-none" placeholder="-----BEGIN PRIVATE KEY-----..."></textarea>
-                </div>
-                <div class="flex gap-4 pt-2">
-                    <button onclick="closeImportModal()" class="flex-1 py-3 text-xs font-black uppercase text-slate-400">Cancel</button>
-                    <button onclick="handleImportCert()" class="flex-1 py-3 bg-blue-600 text-white rounded-xl text-xs font-black uppercase shadow-lg">Activate</button>
-                </div>
+            <div class="px-8 py-6 bg-slate-50 border-t flex gap-4">
+                <button onclick="closeImportModal()" class="flex-1 py-3 text-xs font-black uppercase text-slate-400">Cancel</button>
+                <button id="import-activate-btn" onclick="handleImportCert()" class="flex-1 py-4 bg-blue-600 text-white rounded-xl text-xs font-black uppercase shadow-lg hover:bg-blue-700">Activate Identity</button>
             </div>
         </div>
     </div>
 
     <script>
-        const API_SETTINGS = '/api/admin/settings';
-        const API_NODE = '/api/admin/node'; 
+        const API_NODE = '/api/admin/node';
         let activeSection = 'node';
 
-        document.addEventListener('DOMContentLoaded', () => { initSession(); fetchAllSettings(); });
+        document.addEventListener('DOMContentLoaded', () => { initSession(); fetchAllConfig(); });
 
         function initSession() {
-            const user = localStorage.getItem('dx_user');
-            const role = localStorage.getItem('dx_role');
-            const nodeId = localStorage.getItem('dx_node_id');
-            if (user) document.getElementById('header-username').innerText = user;
-            if (role) document.getElementById('header-role').innerText = role;
-            if (nodeId) document.getElementById('header-node-id').innerText = nodeId;
-            document.getElementById('header-avatar').src = `https://ui-avatars.com/api/?name=${user}&background=0f172a&color=fff`;
+            const user = localStorage.getItem('dx_user') || 'Admin';
+            const role = localStorage.getItem('dx_role') || 'Administrator';
+            const nodeId = localStorage.getItem('dx_node_id') || 'INIT';
+            document.getElementById('header-username').innerText = user;
+            document.getElementById('header-role').innerText = role;
+            document.getElementById('header-node-id').innerText = nodeId;
+            document.getElementById('header-avatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user)}&background=0f172a&color=fff`;
         }
 
-        async function fetchAllSettings() {
+        function handleFileSelect(input, targetId) {
+            const file = input.files[0];
+            if (!file) return;
+            const statusEl = document.getElementById(targetId === 'import-cert-pem' ? 'cert-status' : 'key-status');
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const content = e.target.result.trim();
+                document.getElementById(targetId).value = content;
+                statusEl.innerText = `Loaded: ${file.name}`;
+                statusEl.className = "text-xs font-bold text-green-600 uppercase";
+            };
+            reader.readAsText(file);
+        }
+
+        async function fetchAllConfig() {
             try {
-                const response = await fetch(API_SETTINGS, {
-                    method: 'POST',
-                    headers: getAuthHeaders(),
-                    body: JSON.stringify({ _func: "get_all_settings" })
-                });
-                const result = await response.json();
-                if (result.success) populateUI(result.data);
-            } catch (err) { console.error("Settings fetch failed", err); }
-        }
-
-        function populateUI(data) {
-            if (data.node) {
-                document.getElementById('node-id-input').value = data.node.node_id;
-                document.getElementById('node-fqdn-input').value = data.node.fqdn;
-                document.getElementById('node-port-input').value = data.node.network_port;
-                // REVISED: Populate About field
-                document.getElementById('node-about-input').value = data.node.about || '';
-            }
-            if (data.retention) {
-                document.getElementById('retention-days-input').value = data.retention.active_days;
-                document.getElementById('retention-years-input').value = data.retention.archive_years;
-            }
+                const r = await fetch(API_NODE, { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ _func: "get_node_config" }) });
+                const res = await r.json();
+                if (res.success) {
+                    const d = res.data;
+                    document.getElementById('node-id-input').value = d.node_id;
+                    document.getElementById('node-fqdn-input').value = d.fqdn;
+                    document.getElementById('node-port-input').value = d.network_port;
+                    document.getElementById('node-log-level').value = d.logging_level || 'INFO';
+                    document.getElementById('path-active-input').value = d.storage_active_path || '';
+                    document.getElementById('path-archive-input').value = d.storage_archive_path || '';
+                }
+            } catch (err) { console.error("Config fetch failed", err); }
         }
 
         async function handleGlobalSave() {
             const btn = document.getElementById('global-save-btn');
-            btn.disabled = true;
-            btn.innerText = "Applying...";
-
-            let res;
-            if (activeSection === 'node') {
-                res = await callApi(API_SETTINGS, "update_node_config", { 
-                    fqdn: document.getElementById('node-fqdn-input').value, 
-                    network_port: parseInt(document.getElementById('node-port-input').value),
-                    // REVISED: Send About field
-                    about: document.getElementById('node-about-input').value 
-                });
-            } else if (activeSection === 'retention') {
-                res = await callApi(API_SETTINGS, "update_retention_policy", { 
-                    active_days: parseInt(document.getElementById('retention-days-input').value), 
-                    archive_years: parseInt(document.getElementById('retention-years-input').value) 
-                });
-            }
-
-            if (res && res.success) {
-                showFeedback(res.message || "Changes Applied", "bg-green-50 text-green-600 border-green-100");
-            } else {
-                showFeedback(res.message || "Save Failed", "bg-red-50 text-red-600 border-red-100");
-            }
-            
-            btn.disabled = false;
-            btn.innerText = "Apply Changes";
-        }
-
-        async function handleGenerateCsr() {
-            const cn = document.getElementById('csr-cn').value.trim();
-            const org = document.getElementById('csr-org').value.trim();
-            if(!cn || !org) return;
-            const res = await callApi(API_NODE, "generate_node_csr", { common_name: cn, organization: org });
-            if (res && (res.success || res.csr_pem)) {
-                document.getElementById('csr-output').value = res.csr_pem || res.data.csr_pem;
-                document.getElementById('csr-result-container').classList.remove('hidden');
-                document.getElementById('csr-inputs').classList.add('hidden');
-                document.getElementById('csr-submit-btn').innerText = "Regenerate CSR";
-            }
+            btn.disabled = true; btn.innerText = "Applying...";
+            const payload = {
+                _func: "upsert_node_config",
+                node_id: document.getElementById('node-id-input').value,
+                fqdn: document.getElementById('node-fqdn-input').value,
+                network_port: parseInt(document.getElementById('node-port-input').value),
+                storage_active_path: document.getElementById('path-active-input').value,
+                storage_archive_path: document.getElementById('path-archive-input').value,
+                logging_level: document.getElementById('node-log-level').value
+            };
+            try {
+                const r = await fetch(API_NODE, { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(payload) });
+                const res = await r.json();
+                if (res.success) { 
+                    showFeedback("Configuration synced.", "bg-green-50 text-green-700 border-green-200"); 
+                    fetchAllConfig(); 
+                } else { 
+                    showFeedback("Save rejected: " + res.message, "bg-red-50 text-red-700"); 
+                }
+            } catch (err) { showFeedback("Network error.", "bg-red-50 text-red-600"); }
+            btn.disabled = false; btn.innerText = "Apply Parameters";
         }
 
         async function handleImportCert() {
-            const certPem = document.getElementById('import-cert-pem').value.trim();
-            const keyPem = document.getElementById('import-key-pem').value.trim();
-            if(!certPem) return;
-            const res = await callApi(API_NODE, "import_node_certificate", { certificate_pem: certPem, private_key_pem: keyPem });
+            const certPem = document.getElementById('import-cert-pem').value;
+            const keyPem = document.getElementById('import-key-pem').value;
+            const btn = document.getElementById('import-activate-btn');
+            if(!certPem || !keyPem) { showFeedback("Select both identity files.", "bg-red-50 text-red-600"); return; }
+            btn.disabled = true; btn.innerText = "ACTIVATING...";
+            const r = await fetch(API_NODE, {
+                method: 'POST', headers: getAuthHeaders(),
+                body: JSON.stringify({ _func: "import_node_certificate", certificate_pem: certPem, private_key_pem: keyPem })
+            });
+            const res = await r.json();
             if(res && res.success) { 
-                closeImportModal(); 
-                showFeedback("Identity Activated", "bg-green-50 text-green-600 border-green-100"); 
-                fetchAllSettings(); 
+                closeImportModal(); showFeedback("Identity Active.", "bg-green-50 text-green-700"); fetchAllConfig(); 
+            } else {
+                showFeedback(res.message || "Activation failed.", "bg-red-50 text-red-600 border-red-200");
             }
+            btn.disabled = false; btn.innerText = "Activate Identity";
         }
 
-        async function callApi(endpoint, func, payload) {
-            try {
-                const response = await fetch(endpoint, {
-                    method: 'POST',
-                    headers: getAuthHeaders(),
-                    body: JSON.stringify({ _func: func, ...payload })
-                });
-                return await response.json(); 
-            } catch (e) { return { success: false, message: "Network Error" }; }
-        }
-
-        function showSection(sectionId) {
-            activeSection = sectionId;
-            document.querySelectorAll('.sub-nav-item').forEach(btn => { btn.classList.remove('active'); btn.classList.add('text-slate-500'); });
-            document.getElementById(`btn-${sectionId}`).classList.add('active');
-            document.getElementById(`btn-${sectionId}`).classList.remove('text-slate-500');
-            document.querySelectorAll('section').forEach(sec => sec.classList.add('hidden'));
-            document.getElementById(`section-${sectionId}`).classList.remove('hidden');
+        function showSection(sid) {
+            document.querySelectorAll('.sub-nav-item').forEach(b => { 
+                const targetId = b.id.replace('btn-', '');
+                b.classList.toggle('active', targetId === sid);
+                if (targetId !== sid) b.classList.add('text-slate-500'); else b.classList.remove('text-slate-500');
+            });
+            document.getElementById('section-node').classList.toggle('hidden', sid !== 'node');
+            document.getElementById('section-retention').classList.toggle('hidden', sid !== 'retention');
+            activeSection = sid;
         }
 
         function showFeedback(msg, classes) {
             const el = document.getElementById('settings-feedback');
-            el.innerText = msg; el.className = `p-4 mb-8 rounded-xl text-[11px] font-black uppercase text-center border ${classes}`;
-            el.classList.remove('hidden'); setTimeout(() => el.classList.add('hidden'), 5000);
-        }
-
-        function copyCsrToClipboard() {
-            const copyText = document.getElementById("csr-output");
-            copyText.select();
-            document.execCommand("copy");
-            showFeedback("CSR Copied", "bg-blue-50 text-blue-600 border-blue-100");
+            el.innerText = msg; el.className = `p-4 mb-8 rounded-xl text-[10px] font-black uppercase text-center border ${classes}`;
+            el.classList.remove('hidden'); setTimeout(() => el.classList.add('hidden'), 8000);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function getAuthHeaders() { return { 'Authorization': `Bearer ${localStorage.getItem('dx_token')}`, 'Content-Type': 'application/json' }; }
         function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
-        function logout() { localStorage.clear(); window.location.href = 'index.html'; }
-        function openCsrModal() { document.getElementById('csrModal').classList.remove('hidden'); }
-        function closeCsrModal() { document.getElementById('csrModal').classList.add('hidden'); }
         function openImportModal() { document.getElementById('importModal').classList.remove('hidden'); }
-        function closeImportModal() { document.getElementById('importModal').classList.add('hidden'); }
+        function closeImportModal() { 
+            document.getElementById('importModal').classList.add('hidden'); 
+            document.getElementById('import-cert-pem').value = ''; document.getElementById('import-key-pem').value = '';
+            document.getElementById('cert-status').innerText = 'Select identity cert file'; document.getElementById('key-status').innerText = 'Select private key file';
+        }
+        function logout() { localStorage.clear(); window.location.href = 'index.html'; }
     </script>
 </body>
 </html>
