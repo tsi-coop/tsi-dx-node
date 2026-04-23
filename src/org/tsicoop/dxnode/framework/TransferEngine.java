@@ -48,10 +48,7 @@ public class TransferEngine implements ServletContextListener {
     private static final long FRESHNESS_THRESHOLD_MS = 300000; 
 
     public TransferEngine() {
-        this.httpClient = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofSeconds(60))
-                .followRedirects(HttpClient.Redirect.NORMAL)
-                .build();
+        this.httpClient = P2PClient.build(Duration.ofSeconds(60), HttpClient.Redirect.NORMAL);
     }
 
     public static synchronized TransferEngine getInstance() {

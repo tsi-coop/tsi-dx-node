@@ -29,9 +29,7 @@ import java.util.UUID;
 public class DataContract implements REST {
 
     private static final String P2P_HANDSHAKE_TOKEN = "DX-P2P-PROTOCOL-V1";
-    private final HttpClient httpClient = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofSeconds(10))
-            .build();
+    private final HttpClient httpClient = P2PClient.build(Duration.ofSeconds(10));
 
     @Override
     public void post(HttpServletRequest req, HttpServletResponse res) {
