@@ -95,7 +95,7 @@ public class DXManager implements REST {
                     JSONObject details = new JSONObject();
                     details.put("file_name", fileName);
                     details.put("action", "UI_INSPECTION");
-                    logAudit("SECURITY", "WARNING", InputProcessor.getEmail(req), tid, details, req);
+                    logAudit("DATA_ACCESS", "INFO", resolveActor(req), tid, details, req);
 
                     JSONObject out = new JSONObject();
                     out.put("success", true);
@@ -149,7 +149,7 @@ public class DXManager implements REST {
             JSONObject details = new JSONObject();
             details.put("receiver", receiverNodeId);
             details.put("file", fileName);
-            logAudit("TRANSFER", "INFO", InputProcessor.getEmail(req), tid.toString(), details, req);
+            logAudit("TRANSFER", "INFO", resolveActor(req), tid.toString(), details, req);
 
             return new JSONObject() {{ put("success", true); put("transfer_id", tid.toString()); }};
         } finally { pool.cleanup(rs, pstmt, conn); }
@@ -273,6 +273,18 @@ public class DXManager implements REST {
             response.put("success", true); response.put("data", arr);
         } finally { pool.cleanup(rs, pstmt, conn); }
         return response;
+    }
+
+    /**
+     * Builds a human-readable actor label: "Full Name (email)" when both are available,
+     * falling back to just email or "SYSTEM".
+     */
+    private String resolveActor(HttpServletRequest req) {
+        String email = InputProcessor.getEmail(req);
+        String name  = InputProcessor.getName(req);
+        if (email == null || email.isEmpty()) return "SYSTEM";
+        if (name != null && !name.isEmpty() && !name.equals(email)) return name + " (" + email + ")";
+        return email;
     }
 
     private void logAudit(String type, String severity, String actor, String entityId, JSONObject details, HttpServletRequest req) {

@@ -56,7 +56,7 @@ public class DataContract implements REST {
                     JSONObject cDetails = new JSONObject();
                     cDetails.put("name", getString(input, "name"));
                     cDetails.put("format", ((JSONObject) input.get("metadata")).get("format"));
-                    logAudit("CONTRACT_CREATED", "INFO", InputProcessor.getEmail(req), (String) created.get("contract_id"), cDetails, req);
+                    logAudit("CONTRACT_CREATED", "INFO", resolveActor(req), (String) created.get("contract_id"), cDetails, req);
                     OutputProcessor.send(res, 201, created);
                     break;
 
@@ -69,7 +69,7 @@ public class DataContract implements REST {
                     // AUDIT: Record outbound proposal
                     JSONObject pDetails = new JSONObject();
                     pDetails.put("action", "PROPOSED_TO_PARTNER");
-                    logAudit("CONTRACT_PROPOSAL", "INFO", InputProcessor.getEmail(req), contractId.toString(), pDetails, req);
+                    logAudit("CONTRACT_PROPOSAL", "INFO", resolveActor(req), contractId.toString(), pDetails, req);
                     
                     OutputProcessor.send(res, 200, new JSONObject() {{ put("success", true); }});
                     break;
@@ -82,7 +82,7 @@ public class DataContract implements REST {
                     // AUDIT: Record acceptance
                     JSONObject aDetails = new JSONObject();
                     aDetails.put("status", "Active");
-                    logAudit("CONTRACT_ACCEPTED", "INFO", InputProcessor.getEmail(req), contractId.toString(), aDetails, req);
+                    logAudit("CONTRACT_ACCEPTED", "INFO", resolveActor(req), contractId.toString(), aDetails, req);
                     
                     OutputProcessor.send(res, 200, new JSONObject() {{ put("success", true); }});
                     break;
@@ -95,7 +95,7 @@ public class DataContract implements REST {
                     // AUDIT: Record rejection
                     JSONObject rDetails = new JSONObject();
                     rDetails.put("status", "Rejected");
-                    logAudit("CONTRACT_REJECTED", "WARNING", InputProcessor.getEmail(req), contractId.toString(), rDetails, req);
+                    logAudit("CONTRACT_REJECTED", "INFO", resolveActor(req), contractId.toString(), rDetails, req);
                     
                     OutputProcessor.send(res, 200, new JSONObject() {{ put("success", true); }});
                     break;
@@ -151,6 +151,14 @@ public class DataContract implements REST {
             e.printStackTrace();
             OutputProcessor.errorResponse(res, 500, "Internal Protocol Error", e.getMessage(), req.getRequestURI());
         }
+    }
+
+    private String resolveActor(HttpServletRequest req) {
+        String email = InputProcessor.getEmail(req);
+        String name  = InputProcessor.getName(req);
+        if (email == null || email.isEmpty()) return "SYSTEM";
+        if (name != null && !name.isEmpty() && !name.equals(email)) return name + " (" + email + ")";
+        return email;
     }
 
     /**
