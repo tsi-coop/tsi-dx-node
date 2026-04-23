@@ -340,13 +340,13 @@ On Node B (`http://localhost:8083`): **Partner Nodes → Add Partner**
 ## 10. Teardown
 
 ```bash
-# Stop Node A (add -v to also wipe its database volume)
+# Stop Node A (-v wipes database volume)
 docker compose -f docker-compose.yml -f docker-compose.p2p.yml \
-  --project-name node-a down
+  --project-name node-a down -v
 
 # Stop Node B
 docker compose -f docker-compose.yml -f docker-compose.p2p.yml \
-  --project-name node-b down
+  --project-name node-b down -v
 
 # Remove shared network (only when fully done with P2P testing)
 docker network rm tsi-p2p-net

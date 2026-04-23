@@ -286,7 +286,12 @@ public class DataContract implements REST {
         JSONArray arr = new JSONArray(); Connection conn = null; PreparedStatement pstmt = null; ResultSet rs = null; PoolDB pool = new PoolDB();
         try {
             conn = pool.getConnection();
-            pstmt = conn.prepareStatement("SELECT * FROM data_contracts ORDER BY updated_at DESC");
+            pstmt = conn.prepareStatement(
+                "SELECT dc.*, " +
+                "(SELECT node_id FROM node_config LIMIT 1) AS local_node_id, " +
+                "(dc.receiver_partner_id = (SELECT node_id FROM node_config LIMIT 1)) AS is_receiver, " +
+                "(dc.sender_partner_id = (SELECT node_id FROM node_config LIMIT 1)) AS is_initiator " +
+                "FROM data_contracts dc ORDER BY dc.updated_at DESC");
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 JSONObject c = new JSONObject();
@@ -295,6 +300,9 @@ public class DataContract implements REST {
                 c.put("status", rs.getString("status"));
                 c.put("sender_partner_id", rs.getString("sender_partner_id"));
                 c.put("receiver_partner_id", rs.getString("receiver_partner_id"));
+                c.put("local_node_id", rs.getString("local_node_id"));
+                c.put("is_receiver", rs.getBoolean("is_receiver"));
+                c.put("is_initiator", rs.getBoolean("is_initiator"));
                 try { c.put("metadata", new JSONParser().parse(rs.getString("metadata"))); } catch (Exception e) {}
                 arr.add(c);
             }
@@ -394,7 +402,7 @@ public class DataContract implements REST {
         Connection conn = null; PreparedStatement pstmt = null; PoolDB pool = new PoolDB();
         String sql = "INSERT INTO data_contracts (contract_id, name, direction, sender_partner_id, receiver_partner_id, " +
                      "schema_definition, metadata, pii_fields, status, updated_at) " +
-                     "VALUES (?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?, 'Proposed', NOW()) " +
+                     "VALUES (?, ?, ?, ?, (SELECT node_id FROM node_config LIMIT 1), ?::jsonb, ?::jsonb, ?, 'Proposed', NOW()) " +
                      "ON CONFLICT (contract_id) DO UPDATE SET status = 'Proposed', updated_at = NOW()";
         try {
             conn = pool.getConnection();
@@ -403,13 +411,12 @@ public class DataContract implements REST {
             pstmt.setString(2, getString(input, "name"));
             pstmt.setString(3, getString(input, "direction"));
             pstmt.setString(4, getString(input, "sender_partner_id"));
-            pstmt.setString(5, getString(input, "receiver_partner_id"));
-            pstmt.setString(6, ((JSONObject) input.get("schema_definition")).toJSONString());
-            pstmt.setString(7, ((JSONObject) input.get("metadata")).toJSONString());
-            
+            pstmt.setString(5, ((JSONObject) input.get("schema_definition")).toJSONString());
+            pstmt.setString(6, ((JSONObject) input.get("metadata")).toJSONString());
+
             JSONArray piiArr = (JSONArray) input.get("pii_fields");
             String[] piiStrings = piiArr != null ? (String[]) piiArr.toArray(new String[0]) : new String[0];
-            pstmt.setArray(8, conn.createArrayOf("text", piiStrings));
+            pstmt.setArray(7, conn.createArrayOf("text", piiStrings));
 
             pstmt.executeUpdate();
             return new JSONObject() {{ put("success", true); }};

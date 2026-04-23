@@ -287,8 +287,8 @@
             
             if (res && Array.isArray(res) && res.length > 0) {
                 res.forEach(c => {
-                    const isInitiator = c.sender_partner_id === localNodeId;
-                    const isReceiver = c.receiver_partner_id === localNodeId;
+                    const isInitiator = c.is_initiator === true;
+                    const isReceiver = c.is_receiver === true;
                     const partnerId = isInitiator ? c.receiver_partner_id : c.sender_partner_id;
                     const row = document.createElement('tr');
                     row.className = "hover:bg-slate-50 transition-all";

@@ -169,9 +169,15 @@ public class RegisterAdmin implements REST {
         ResultSet rs = null;
         PoolDB pool = new PoolDB();
 
-        // SQL corrected: removed 'name' from node_config as per DB schema error
+        // Derive storage paths from TSI_EXPORT_PATH so files land inside the Docker volume
+        // and survive container restarts. Falls back to /var/lib/tsi/exports/ (the compose default).
+        String exportBase = System.getenv().getOrDefault("TSI_EXPORT_PATH", "/var/lib/tsi/exports/");
+        if (!exportBase.endsWith("/")) exportBase = exportBase + "/";
+        String activeStoragePath  = exportBase + "active/";
+        String archiveStoragePath = exportBase + "archive/";
+
         String configSql = "INSERT INTO node_config (config_id, node_id, fqdn, network_port, storage_active_path, storage_archive_path, logging_level) " +
-                          "VALUES (?, ?, ?, ?, '/opt/dxnode/data/active', '/opt/dxnode/data/archive', 'INFO')";
+                          "VALUES (?, ?, ?, ?, ?, ?, 'INFO')";
 
         String userSql = "INSERT INTO users (username, email, password_hash, role_id, status) VALUES (?, ?, ?, ?, 'Active') RETURNING user_id";
 
@@ -185,6 +191,8 @@ public class RegisterAdmin implements REST {
             pstmtConfig.setString(2, nodeId);
             pstmtConfig.setString(3, fqdn);
             pstmtConfig.setInt(4, networkPort);
+            pstmtConfig.setString(5, activeStoragePath);
+            pstmtConfig.setString(6, archiveStoragePath);
             pstmtConfig.executeUpdate();
 
             // 2. Create Master Administrator (Sets the name/username in User table)
