@@ -1,0 +1,35 @@
+# docker-compose.p2p.yml
+# Local P2P testing overlay — combine with docker-compose.yml via -f flag.
+#
+# PRE-REQUISITE:
+#   docker network create tsi-p2p-net
+#
+# USAGE — Node A:
+#   docker compose -f docker-compose.yml -f docker-compose.p2p.yml \
+#     --project-name node-a --env-file .env.node-a up --build -d
+#
+# USAGE — Node B:
+#   docker compose -f docker-compose.yml -f docker-compose.p2p.yml \
+#     --project-name node-b --env-file .env.node-b up --build -d
+
+services:
+
+  server:
+    ports:
+      # APP_PORT_MAP differs per node (.env.node-a=8082:8080 / .env.node-b=8083:8080)
+      - "${APP_PORT_MAP:-8082:8080}"
+      # P2P_PORT_MAP exposes the HTTPS/mTLS port on the host, maps to Jetty HTTPS 8443
+      # (.env.node-a=8443:8443 / .env.node-b=9443:8443)
+      - "${P2P_PORT_MAP:-8443:8080}"
+    networks:
+      - default      # retains connectivity to database service
+      - tsi-p2p-net  # peer-to-peer discovery network
+
+  database:
+    # Database stays on default network only — not exposed to the peer network
+    networks:
+      - default
+
+networks:
+  tsi-p2p-net:
+    external: true

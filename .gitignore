@@ -2,6 +2,8 @@
 /.idea/
 /target/
 .env
+.env.nodeA
+.env.nodeB
 .help
 .help2
 /server/.env

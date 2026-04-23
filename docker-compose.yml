@@ -7,7 +7,7 @@ x-db-credentials: &db-credentials
 
 services:
   # 1. PostgreSQL Database Service
-  postgres_db:
+  database:
     image: postgres:15-alpine
     # REMOVED: container_name to allow multiple instances via project flags
     # container_name: tsi_dx_node_db
@@ -26,7 +26,7 @@ services:
       retries: 5
    
   # 2. Java Jetty Web Application Service
-  jetty_app:
+  server:
     # Uses the IMAGE_NAME from .env, defaults to latest if not set
     #image: "${IMAGE_NAME:-tsicoop/tsi-dx-node:latest}"
     
@@ -44,7 +44,7 @@ services:
       - "${APP_PORT_MAP:-8082:8080}"
     
     environment:
-      POSTGRES_HOST: "jdbc:postgresql://postgres_db:5432"
+      POSTGRES_HOST: "jdbc:postgresql://database:5432"
       POSTGRES_DB: "${POSTGRES_DB:-tsi_dx_node}"
       POSTGRES_USER: "${POSTGRES_USER:-tsi_admin}"
       POSTGRES_PASSWD: "${POSTGRES_PASSWD:-secure_dev_password}"
@@ -56,7 +56,7 @@ services:
       - "tsi_reports_data:${TSI_EXPORT_PATH:-/var/lib/tsi/exports/}:rw"
     
     depends_on:
-      postgres_db:
+      database:
         condition: service_healthy
    
 
