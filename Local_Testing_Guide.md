@@ -1,6 +1,4 @@
-# TSI DX Node — Local P2P Testing Guide
-
-> **Docker Compose · Two-Node Setup · Self-Signed mTLS**
+# Local P2P Testing Guide
 
 This guide walks through running two fully independent TSI DX Node instances (Node A and Node B) on a single development machine. The base `docker-compose.yml` used in production is extended by a `docker-compose.p2p.yml` overlay — no production files are modified.
 
