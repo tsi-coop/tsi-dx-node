@@ -2,7 +2,7 @@
 
 TSI DX Node is an open-source, decentralized solution designed for peer-to-peer data exchange among business partners. It eliminates the need for centralized intermediaries by allowing direct, secure, and governed data flows between independent nodes.
 
-For a high-level functional overview and the rationale behind this architecture, read our [soft launch post](#).
+For a high-level functional overview and the rationale behind this architecture, read our [soft launch post](https://techadvisory.substack.com/p/tsi-dx-node-open-source-b2b-data).
 
 ---
 
@@ -28,11 +28,11 @@ Explore the core capabilities of the TSI DX Node through this step-by-step techn
 
 | Step | Milestone | Description | Documentation & Demo |
 |------|-----------|-------------|----------------------|
-| 01 | **Node Bootstrap** | Initialization of independent node instances. Setting the immutable Node ID, configuring the public FQDN, and establishing the root administrative identity. | [Watch Video](#) |
-| 02 | **Partner Handshake** | Executing the bidirectional identity protocol. Exchanging public keys, verifying mTLS endpoints, and establishing the verified link between independent nodes. | [Watch Video](#) |
-| 03 | **Data Contracts** | Defining governance boundaries. Implementing L1 structural validation and L2 PII anonymization (Hashing/Masking) to enforce the Digital Agreement at the source. | [Watch Video](#) |
-| 04 | **Transfer Service** | Executing the 'Single Package' routing. Monitoring sequences, message timestamps, and forensic mirroring of the transmitted data payloads. | [Watch Video](#) |
-| 05 | **API Integration** | Bridging internal systems. Registering applications (CRM/ERP), generating Client API credentials, and restricting access to specific authorized data contracts. | [Watch Video](#) |
+| 01 | **Node Bootstrap** | Initialization of independent node instances. Setting the immutable Node ID, configuring the public FQDN, and establishing the root administrative identity. | [Watch Video](https://youtu.be/kieEhDHei-Q) |
+| 02 | **Partner Handshake** | Executing the bidirectional identity protocol. Exchanging public keys, verifying mTLS endpoints, and establishing the verified link between independent nodes. | [Watch Video](https://youtu.be/0G5NrmXAtXM) |
+| 03 | **Data Contracts** | Defining governance boundaries. Implementing L1 structural validation and L2 PII anonymization (Hashing/Masking) to enforce the Digital Agreement at the source. | [Watch Video](https://youtu.be/iSkrnkcbZzY) |
+| 04 | **Transfer Service** | Executing the 'Single Package' routing. Monitoring sequences, message timestamps, and forensic mirroring of the transmitted data payloads. | [Watch Video](https://youtu.be/5Lu0wGrjoIM) |
+| 05 | **API Integration** | Bridging internal systems. Registering applications (CRM/ERP), generating Client API credentials, and restricting access to specific authorized data contracts. | [Watch Video](https://youtu.be/MNuQCFofpdc) |
 
 ---
 
