@@ -18,13 +18,13 @@ git clone https://github.com/tsi-coop/tsi-dx-node.git tsi-dx-node-eval
 
 ## Getting Started
 
-To set up your environment and run your first peer-to-peer exchange, please follow the detailed instructions in our **Local Testing Guide**. This guide covers the prerequisites and configuration steps necessary to simulate a multi-node network on your machine.
+To set up your environment and run your first peer-to-peer exchange, the [**Local Testing Guide**](https://github.com/tsi-coop/tsi-dx-node/blob/main/Local_Testing_Guide.md) will get you up and running quickly, covering prerequisites and configuration steps to simulate a multi-node network on your machine. For those who prefer a detailed walkthrough, the step-by-step video tutorials below cover each stage in depth.
 
 ---
 
-## Technical Journey: Guided Tour
+## Guided Tour
 
-Explore the core capabilities of the TSI DX Node through this step-by-step technical journey. Each stage includes a deep-dive video tutorial to guide you through the process.
+Explore the core capabilities of the TSI DX Node through this step-by-step technical journey. Each stage includes a video tutorial to guide you through the process.
 
 | Step | Milestone | Description | Documentation & Demo |
 |------|-----------|-------------|----------------------|
