@@ -192,7 +192,7 @@ Expected response:
 
 ## 5. Node Bootstrapping
 
-Initialize the identity for each node via the web UI. Use the Docker service hostname as the FQDN and **always use port `8443`** — that is the internal Jetty HTTPS port that all P2P traffic uses, regardless of what host port the node is exposed on.
+Initialize the identity for each node via the web UI. Use the Docker service hostname as the FQDN and **always use port `8443`** - that is the internal Jetty HTTPS port that all P2P traffic uses, regardless of what host port the node is exposed on.
 
 > **Warning:** When prompted for "Public FQDN", enter the Docker service hostname (e.g. `node-a-server-1`), NOT your machine's LAN IP or `localhost`. The P2P handshake resolves hostnames over `tsi-p2p-net`. Using `localhost` would make the node advertise itself as the partner's own loopback address.
 
