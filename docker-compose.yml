@@ -28,12 +28,12 @@ services:
   # 2. Java Jetty Web Application Service
   server:
     # Uses the IMAGE_NAME from .env, defaults to latest if not set
-    image: "${IMAGE_NAME:-tsicoop/tsi-dx-node:latest}"
+    #image: "${IMAGE_NAME:-tsicoop/tsi-dx-node:latest}"
     
     # DEVELOPERS: To build from local source, uncomment the block below
-    #build:
-    #  context: .
-    #  dockerfile: Dockerfile
+    build:
+      context: .
+      dockerfile: Dockerfile
     
     user: "root"
     # REMOVED: container_name to allow multiple instances via project flags

@@ -41,7 +41,10 @@
         </div>
         <nav class="flex-1 overflow-y-auto custom-scrollbar">
             <div class="px-8 mb-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest nav-text">Operational Hub</div>
-            <a href="dashboard.html" class="nav-item"><span class="nav-text">Dashboard</span></a>
+            <a href="dashboard.html" class="nav-item">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6z" /></svg>
+                <span class="nav-text">Dashboard</span>
+            </a>
             
             <div class="px-8 mt-6 mb-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest nav-text">Partnership</div>
             <a href="partners.html" class="nav-item active">
@@ -66,13 +69,9 @@
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
                 <span class="nav-text">Users & Roles</span>
             </a>
-            <a href="apikeys.html" class="nav-item">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m-2 4a2 2 0 012 2m-2-4a2 2 0 01-2-2m2 4a2 2 0 01-2 2m5-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11h4a1 1 0 011 1v5a1 1 0 01-1 1H8a1 1 0 01-1-1v-5a1 1 0 011-1z" /></svg>
-                <span class="nav-text">Apps & API Keys</span>
-            </a>
             <a href="settings.html" class="nav-item">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                <span class="nav-text">Node Settings</span>
+                <span class="nav-text">Configuration</span>
             </a>
         </nav>
         <div class="p-4 border-t border-slate-800">
@@ -103,13 +102,13 @@
             <div id="handshake-alert" class="hidden mb-6 p-4 border rounded-xl flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-center justify-center"></div>
 
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-                <div><h1 class="text-2xl font-black text-slate-900 uppercase tracking-tight">Partner Registry</h1><p class="text-xs text-slate-500 font-medium">Define sovereign B2B links by registering partner public identities.</p></div>
-                <button id="addPartnerBtn" onclick="openPartnerModal()" class="px-4 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-black uppercase shadow-lg shadow-blue-500/20 transition-all hover:bg-blue-700">Register Partner</button>
+                <div><h1 class="text-2xl font-black text-slate-900 uppercase tracking-tight">Partner Registry</h1><p class="text-xs text-slate-500 font-medium italic">Mutual Trust Exchange: Nodes must pre-register each other's public identities.</p></div>
+                <button id="addPartnerBtn" onclick="openPartnerModal()" class="px-4 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-black uppercase shadow-lg shadow-blue-500/20 transition-all hover:bg-blue-700">Add Partner</button>
             </div>
 
             <div class="card overflow-hidden">
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm">
+                    <table class="w-full text-left text-sm" id="partner-table">
                         <thead>
                             <tr class="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-50 border-b">
                                 <th class="px-6 py-4">Node Identity</th>
@@ -118,40 +117,52 @@
                                 <th class="px-6 py-4 text-right">Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="partner-table-body" class="divide-y divide-slate-100"></tbody>
+                        <tbody id="partner-table-body" class="divide-y divide-slate-100">
+                            <!-- Data injected here -->
+                        </tbody>
                     </table>
+                </div>
+
+                <!-- Elegant Empty State -->
+                <div id="empty-state" class="hidden flex flex-col items-center justify-center py-20 bg-white">
+                    <div class="p-6 bg-slate-50 rounded-full mb-6 border border-slate-100">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                    </div>
+                    <h3 class="text-sm font-black text-slate-400 uppercase tracking-widest mb-2">No Partners Registered</h3>
+                    <p class="text-xs text-slate-400 italic max-w-sm text-center leading-relaxed mb-8">Establish mutual trust by registering a partner node's public key and FQDN address.</p>
+                    <button onclick="openPartnerModal()" class="px-6 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-slate-800 transition-all">Register Your First Partner</button>
                 </div>
             </div>
         </div>
     </main>
 
-    <!-- Register Partner Modal: UPDATED for Direct Trust -->
+    <!-- Register Partner Modal -->
     <div id="partnerModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop">
         <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col">
             <div class="px-8 py-6 bg-slate-900 flex items-center justify-between">
-                <div><h3 class="text-xl font-black text-white uppercase tracking-tight">Register Partner</h3><p class="text-[10px] text-blue-400 font-bold uppercase tracking-widest mt-1">Direct Identity Handshake</p></div>
+                <div><h3 class="text-xl font-black text-white uppercase tracking-tight">Register Partner</h3><p class="text-[10px] text-blue-400 font-bold uppercase tracking-widest mt-1 italic">Mutual Trust Handshake</p></div>
                 <button onclick="closePartnerModal()" class="text-slate-400 hover:text-white transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
             </div>
             <div class="p-8">
                 <form id="addPartnerForm" onsubmit="handleCreatePartner(event)" class="space-y-6">
                     <div>
-                        <label class="block text-[10px] font-black text-slate-500 uppercase mb-2">Target Node ID</label>
-                        <input type="text" id="p-nodeid" required placeholder="e.g. NODE-B-NORTH" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500/10">
+                        <label class="block text-[10px] font-black text-slate-500 uppercase mb-2">Node ID</label>
+                        <input type="text" id="p-nodeid" required placeholder="e.g. NODE-B-NORTH" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500/10 font-bold">
                     </div>
                     <div class="grid grid-cols-3 gap-4">
                         <div class="col-span-2">
-                            <label class="block text-[10px] font-black text-slate-500 uppercase mb-2">Host (Public IP/FQDN)</label>
-                            <input type="text" id="p-host" required placeholder="192.168.1.10" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none">
+                            <label class="block text-[10px] font-black text-slate-500 uppercase mb-2">Host (Internal FQDN)</label>
+                            <input type="text" id="p-host" required placeholder="e.g. node-b-server-1" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none font-bold">
                         </div>
                         <div>
                             <label class="block text-[10px] font-black text-slate-500 uppercase mb-2">Port</label>
-                            <input type="number" id="p-port" required value="8443" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none">
+                            <input type="number" id="p-port" required value="8443" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none font-bold">
                         </div>
                     </div>
                     
                     <div>
                         <div class="flex items-center justify-between mb-2">
-                            <label class="block text-[10px] font-black text-slate-500 uppercase">Partner Public Identity (.pem / .crt)</label>
+                            <label class="block text-[10px] font-black text-slate-500 uppercase">Public Key Identity (.pem)</label>
                             <button type="button" onclick="document.getElementById('file-pubkey').click()" class="text-[9px] font-black text-blue-500 uppercase hover:underline">Select File</button>
                         </div>
                         <div class="file-upload-zone rounded-xl p-6 text-center border-slate-200" onclick="document.getElementById('file-pubkey').click()">
@@ -165,7 +176,7 @@
                     
                     <div class="pt-4 flex gap-4">
                         <button type="button" onclick="closePartnerModal()" class="flex-1 py-3 text-xs font-black uppercase text-slate-400 hover:text-slate-600 transition-colors">Cancel</button>
-                        <button id="savePartnerBtn" type="submit" class="flex-1 py-4 bg-slate-900 text-white rounded-xl text-xs font-black uppercase shadow-lg shadow-slate-900/20 hover:bg-slate-800 transition-all transform hover:-translate-y-0.5">Register & Sync</button>
+                        <button id="savePartnerBtn" type="submit" class="flex-1 py-4 bg-slate-900 text-white rounded-xl text-xs font-black uppercase shadow-lg shadow-slate-900/20 hover:bg-slate-800 transition-all transform hover:-translate-y-0.5">Register Partner</button>
                     </div>
                 </form>
             </div>
@@ -214,38 +225,46 @@
         async function fetchPartners() {
             const res = await callApi("list_partners", {});
             const tbody = document.getElementById('partner-table-body');
+            const table = document.getElementById('partner-table');
+            const emptyState = document.getElementById('empty-state');
+            
             tbody.innerHTML = '';
             
             const dataArr = Array.isArray(res) ? res : (res && res.data ? res.data : []);
+            
             if (dataArr.length > 0) {
+                table.classList.remove('hidden');
+                emptyState.classList.add('hidden');
+                
                 dataArr.forEach(p => {
                     const row = document.createElement('tr');
-                    const isTerminating = p.status === 'Terminating';
+                    const isTerminating = p.status === 'Terminating' || p.status === 'TerminationRequested';
                     row.className = `hover:bg-slate-50 transition-colors ${isTerminating ? 'status-terminating' : ''}`;
                     const isAdmin = currentUserRole === 'Administrator';
-                    
+
                     let actionHtml = '';
                     if (isAdmin) {
-                        // REVISED Logic: Simplified status flow
-                        if (p.status === 'Invited' || p.status === 'Pending') {
-                            // Status is "Registered", action is to trigger the protocol sync
+                        if (p.status === 'Pending' || p.status === 'Invited') {
                             actionHtml = `
                                 <div class="flex items-center justify-end gap-4">
                                     <button onclick="handleAction('${p.partner_id}', 'accept_partnership')" class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-[9px] font-black uppercase shadow-sm hover:bg-blue-700">Sync Identity</button>
-                                    <button onclick="handleDelete('${p.partner_id}', 'reject')" class="text-red-500 text-[10px] font-black uppercase hover:underline">Remove</button>
+                                    <button onclick="handleDelete('${p.partner_id}', 'remove')" class="text-red-500 text-[10px] font-black uppercase hover:underline">Remove</button>
                                 </div>
                             `;
                         } else if (p.status === 'Active') {
                             actionHtml = `
                                 <div class="flex items-center justify-end gap-3">
                                     <button onclick=\"syncConnectivity('${p.partner_id}')\" class=\"px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-[9px] font-black uppercase hover:bg-slate-200 transition-all\">Verify Link</button>
-                                    <button onclick="handleDelete('${p.partner_id}', 'revoke')" class="text-slate-300 hover:text-red-600 transition-colors" title="Revoke Trust"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                                    <button onclick="handleDelete('${p.partner_id}', 'revoke')" class="text-slate-300 hover:text-red-600 transition-colors" title="Revoke Trust Link"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
                                 </div>
                             `;
-                        } else if (isTerminating) {
+                        } else if (p.status === 'TerminationRequested') {
+                            actionHtml = `<span class="text-[9px] text-orange-400 font-bold uppercase tracking-widest italic">Awaiting Peer Response...</span>`;
+                        } else if (p.status === 'Terminating') {
                             actionHtml = `
-                                <div class="flex items-center justify-end gap-4">
-                                    <button onclick="handleAction('${p.partner_id}', 'accept_termination')" class="text-red-600 text-[10px] font-black uppercase hover:underline">Accept Purge</button>
+                                <div class="flex items-center justify-end gap-3">
+                                    <button onclick="handleAction('${p.partner_id}', 'accept_termination')" class="px-3 py-1.5 bg-red-600 text-white rounded-lg text-[9px] font-black uppercase shadow-sm hover:bg-red-700">Accept</button>
+                                    <button onclick="handleAction('${p.partner_id}', 'reject_termination')" class="px-3 py-1.5 bg-slate-200 text-slate-700 rounded-lg text-[9px] font-black uppercase hover:bg-slate-300">Reject</button>
                                 </div>
                             `;
                         }
@@ -253,18 +272,15 @@
                         actionHtml = '<span class="text-[9px] text-slate-300 font-bold uppercase tracking-widest italic">Locked</span>';
                     }
 
-                    // Map internal DB status to UI status
                     let uiStatus = p.status;
                     let statusClass = 'bg-yellow-100 text-yellow-700';
-                    if (p.status === 'Invited' || p.status === 'Pending') {
-                        uiStatus = 'Identity Registered';
-                    } else if (p.status === 'Active') {
-                        uiStatus = 'Verified';
-                        statusClass = 'bg-green-100 text-green-700';
-                    }
+                    if (p.status === 'Invited' || p.status === 'Pending') uiStatus = 'Pending';
+                    else if (p.status === 'Active') { uiStatus = 'Active'; statusClass = 'bg-green-100 text-green-700'; }
+                    else if (p.status === 'TerminationRequested') { uiStatus = 'Termination Sent'; statusClass = 'bg-orange-100 text-orange-700'; }
+                    else if (p.status === 'Terminating') { uiStatus = 'Review Required'; statusClass = 'bg-red-100 text-red-700'; }
 
                     row.innerHTML = `
-                        <td class="px-6 py-4 font-mono text-[11px] text-slate-500">${p.node_id}</td>
+                        <td class="px-6 py-4 font-black text-[11px] text-slate-900 uppercase">${p.node_id}</td>
                         <td class="px-6 py-4 text-xs font-mono text-slate-500">${p.fqdn}</td>
                         <td class="px-6 py-4">
                             <span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${statusClass}">${uiStatus}</span>
@@ -274,14 +290,15 @@
                     tbody.appendChild(row);
                 });
             } else {
-                tbody.innerHTML = `<tr><td colspan="4" class="px-6 py-16 text-center text-slate-400 text-xs font-bold uppercase tracking-widest italic">Partner Registry is Empty</td></tr>`;
+                table.classList.add('hidden');
+                emptyState.classList.remove('hidden');
             }
         }
 
         async function syncConnectivity(id) {
             const alert = document.getElementById('handshake-alert');
-            alert.className = "mb-6 p-4 bg-blue-50 border-blue-200 text-blue-600 rounded-xl flex items-center gap-4 justify-center";
-            alert.innerText = "Probing mTLS tunnel health...";
+            alert.className = "mb-6 p-4 bg-blue-50 border-blue-200 text-blue-600 rounded-xl flex items-center gap-4 justify-center shadow-sm";
+            alert.innerText = "Probing sovereign mTLS tunnel health...";
             alert.classList.remove('hidden');
 
             const res = await callApi("check_connectivity", { partner_id: id });
@@ -289,28 +306,29 @@
                 alert.innerText = "Protocol Link Verified: Online";
                 alert.className = "mb-6 p-4 bg-green-50 border-green-200 text-green-700 rounded-xl flex items-center gap-4 shadow-lg justify-center";
             } else {
-                alert.innerText = "Link Failure: Partner node unreachable.";
+                alert.innerText = (res && res.message) ? res.message : "Link Failure: Partner node unreachable.";
                 alert.className = "mb-6 p-4 bg-red-50 border-red-200 text-red-600 rounded-xl flex items-center gap-4 shadow-sm justify-center";
             }
-            setTimeout(() => alert.classList.add('hidden'), 5000);
+            setTimeout(() => alert.classList.add('hidden'), 8000);
         }
 
         async function handleAction(id, func) {
             const alert = document.getElementById('handshake-alert');
-            alert.className = "mb-6 p-4 bg-blue-50 border-blue-200 text-blue-600 rounded-xl flex items-center justify-center";
+            alert.className = "mb-6 p-4 bg-blue-50 border-blue-200 text-blue-600 rounded-xl flex items-center justify-center shadow-sm";
             alert.innerText = "Syncing identity with partner node...";
             alert.classList.remove('hidden');
 
             const res = await callApi(func, { partner_id: id });
-            if (res) {
-                alert.innerText = "Mutual Trust Established.";
+            if (res && res.success) {
+                alert.innerText = res.message || "Identity Handshake Successful.";
                 alert.className = "mb-6 p-4 bg-green-50 border-green-200 text-green-700 rounded-xl flex items-center justify-center shadow-lg";
                 fetchPartners();
             } else {
-                alert.innerText = "Sync failed. Partner may not have registered your node yet.";
+                const errMsg = (res && (res.message || res.error)) ? (res.message || res.error) : "Sync failed. Ensure both nodes have registered each other.";
+                alert.innerText = errMsg;
                 alert.className = "mb-6 p-4 bg-red-50 border-red-200 text-red-600 rounded-xl flex items-center justify-center shadow-sm";
             }
-            setTimeout(() => alert.classList.add('hidden'), 5000);
+            setTimeout(() => alert.classList.add('hidden'), 8000);
         }
 
         async function handleCreatePartner(e) {
@@ -340,10 +358,13 @@
                 public_key_pem: pubKey
             });
             
-            if (res) { closePartnerModal(); fetchPartners(); } 
-            else { errDiv.innerText = "Conflict: Node ID already registered."; errDiv.classList.remove('hidden'); }
+            if (res && res.success) { closePartnerModal(); fetchPartners(); } 
+            else { 
+                errDiv.innerText = (res && res.message) ? res.message : "Conflict: Node ID or FQDN already registered."; 
+                errDiv.classList.remove('hidden'); 
+            }
             btn.disabled = false;
-            btn.innerText = "Register & Sync";
+            btn.innerText = "Register Partner";
         }
 
         async function callApi(func, data) {
@@ -353,19 +374,22 @@
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('dx_token')}`, 'X-DX-FUNCTION': func },
                     body: JSON.stringify({ _func: func, ...data })
                 });
-                let text = await r.text();
-                if (text && text.includes('-')) {
-                    text = text.replace(/:\s*([a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12})(?=\s*[,}])/gi, ': "$1"');
+                
+                const text = await r.text();
+                let out = null;
+                if (text && text.trim().length > 0) {
+                    try { out = JSON.parse(text); } catch (e) { return null; }
                 }
-                let out = text ? JSON.parse(text) : {};
-                return r.ok ? (out.data || out) : null;
-            } catch (e) { return null; }
+                
+                if (!r.ok) return out;
+                return out.data || out;
+            } catch (e) { return { error: "Network connection failure." }; }
         }
 
         async function handleDelete(id, actionType = 'remove') {
             const msg = actionType === 'revoke' 
-                ? "Request partnership termination? Partner must acknowledge before physical disposal." 
-                : "Permanently remove this partner identity from your local registry?";
+                ? "Initiate termination request? Partner must acknowledge before local record is purged." 
+                : "Permanently remove this partner record from your local registry?";
             
             if (confirm(msg)) {
                 const res = await callApi("delete_partner", { partner_id: id });
