@@ -339,16 +339,22 @@ On Node B (`http://localhost:8083`): **Partner Nodes → Add Partner**
 
 ## 10. Teardown
 
-```bash
 # Stop Node A (-v wipes database volume)
+
+```bash
 docker compose -f docker-compose.yml -f docker-compose.p2p.yml \
   --project-name node-a down -v
+```
 
 # Stop Node B
+
+```bash
 docker compose -f docker-compose.yml -f docker-compose.p2p.yml \
   --project-name node-b down -v
+```
 
 # Remove shared network (only when fully done with P2P testing)
+```bash
 docker network rm tsi-p2p-net
 ```
 
@@ -358,12 +364,22 @@ docker network rm tsi-p2p-net
 
 ## 11. Troubleshooting
 
-| Error / Symptom | Fix |
-|---|---|
-| `network tsi-p2p-net declared as external, but could not be found` | Run `docker network create tsi-p2p-net` before starting either node. |
-| `database "tsi_dx_node_a" does not exist` | Ensure `POSTGRES_DB=tsi_dx_node` (not `tsi_dx_node_a`) in `.env.node-a`, then run `down -v && up`. |
-| `No such container: nodea-server-1` | Docker names containers as `<project>-<service>-<index>`. The correct name is `node-a-server-1` (hyphen, not camelCase). |
-| `ConnectException / 502` on handshake | Confirm both containers are on `tsi-p2p-net`: `docker network inspect tsi-p2p-net`. Ensure the FQDN registered in the UI uses port `8443` (not `9443`), and the hostname is `node-b-server-1` (not `localhost`). |
-| `SSLHandshakeException / 502 mTLS Handshake Failed` | The partner's identity cert is not yet in the local trust store. Ensure both nodes have activated their identity (step 6.3) and registered each other's public key (step 7) before syncing. |
-| `docker ps` shows `->8080/tcp` for P2P port | Image was built before the Dockerfile change. Rebuild with `--build` to pick up the HTTPS connector and new `P2P_PORT_MAP`. |
-| Jetty starts before DB is ready | The healthcheck on `database` handles this. If Jetty still fails, add `restart: on-failure` to the `server` service in `docker-compose.p2p.yml`. |
+# Check logs - Node A
+
+```bash
+docker compose -p node-a logs -f server
+```
+
+```bash
+docker compose -p node-a logs -f database
+```
+
+# Check logs - Node B
+
+```bash
+docker compose -p node-b logs -f server
+```
+
+```bash
+docker compose -p node-b logs -f database
+```
