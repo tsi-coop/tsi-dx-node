@@ -22,7 +22,7 @@ import java.util.UUID;
  * This allows external systems to push data directly without folder-based uploads.
  * FIX: Resolved unclosed string literals and illegal characters in the validate method.
  */
-public class DX implements REST {
+public class DX implements Action {
 
     private final PasswordHasher passwordHasher = new PasswordHasher();
     private static final String ATTR_APP_ID = "dx_authenticated_app_id";

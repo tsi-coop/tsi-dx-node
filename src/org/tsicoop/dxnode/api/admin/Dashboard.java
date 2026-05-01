@@ -17,7 +17,7 @@ import java.util.UUID;
  * Aggregates system metrics, recent activities, and pending actions.
  * Updated to prioritize Data Contract visibility over storage metrics.
  */
-public class Dashboard implements REST {
+public class Dashboard implements Action {
 
     private static final UUID NODE_CONFIG_SINGLETON_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
 

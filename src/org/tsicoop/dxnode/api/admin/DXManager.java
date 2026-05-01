@@ -21,7 +21,7 @@ import java.util.UUID;
  * REVISED: Implements Receiver-side Replay Protection and cryptographic sequence persistence.
  * Instrumented with forensic audit logging.
  */
-public class DXManager implements REST {
+public class DXManager implements Action {
 
     @Override
     public void post(HttpServletRequest req, HttpServletResponse res) {

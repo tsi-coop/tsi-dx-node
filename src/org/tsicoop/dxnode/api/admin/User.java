@@ -23,7 +23,7 @@ import java.util.regex.Pattern;
  * REVISED: Implements 'Break Glass' protocol using a dedicated master_key_hash column.
  * This ensures original passwords remain valid while a recovery key is active.
  */
-public class User implements REST {
+public class User implements Action {
 
     private final PasswordHasher passwordHasher = new PasswordHasher();
 

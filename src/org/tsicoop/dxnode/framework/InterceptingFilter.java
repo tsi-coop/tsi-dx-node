@@ -87,8 +87,8 @@ public class InterceptingFilter implements Filter {
                          return;
                      }
 
-                     // Instantiate the REST action class (e.g., DataContract)
-                     REST action = ((REST) Class.forName(classname).getConstructor().newInstance());
+                     // Instantiate the Action class (e.g., DataContract)
+                     Action action = ((Action) Class.forName(classname).getConstructor().newInstance());
                      
                      // Action-level validation (checks params, schema, and re-verifies P2P token)
                      if (action.validate(method, req, res)) {

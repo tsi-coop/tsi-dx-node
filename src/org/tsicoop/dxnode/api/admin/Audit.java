@@ -25,7 +25,7 @@ import java.util.Optional;
  * Provides immutable read-access to node operations, protocol events, and security logs.
  * Supports granular filtering and JSONB detail inspection.
  */
-public class Audit implements REST {
+public class Audit implements Action {
 
     @Override
     public void post(HttpServletRequest req, HttpServletResponse res) {

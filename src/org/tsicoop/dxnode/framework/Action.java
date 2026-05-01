@@ -4,7 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.json.simple.JSONObject;
 
-public interface REST {
+public interface Action {
 
     String NONE = "none";
     String CSV_OUTPUT = "csv";

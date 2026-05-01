@@ -26,7 +26,7 @@ import java.util.UUID;
  * Implements full P2P lifecycle synchronization and robust status relay logic.
  * Instrumented with forensic audit logging for compliance and governance monitoring.
  */
-public class DataContract implements REST {
+public class DataContract implements Action {
 
     private static final String P2P_HANDSHAKE_TOKEN = "DX-P2P-PROTOCOL-V1";
     private final HttpClient httpClient = P2PClient.build(Duration.ofSeconds(10));

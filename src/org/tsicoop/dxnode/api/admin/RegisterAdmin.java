@@ -18,7 +18,7 @@ import java.util.regex.Pattern;
  * Sets the immutable Node Identity (including port) and creates the Master Administrator.
  * Aligned with the latest init.html and init.sql requirements.
  */
-public class RegisterAdmin implements REST {
+public class RegisterAdmin implements Action {
 
     private final PasswordHasher passwordHasher = new PasswordHasher();
     private static final UUID NODE_CONFIG_SINGLETON_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");

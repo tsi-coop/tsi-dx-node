@@ -24,7 +24,7 @@ import java.util.Optional;
 // import org.tsicoop.aadhaarvault.framework.PoolDB;
 // import org.tsicoop.aadhaarvault.framework.JWTUtil; // For JWT validation and claims extraction
 
-public class Governance implements REST {
+public class Governance implements Action {
 
     // Unique ID for the single archiving_purging_config entry
     private static final UUID ARCHIVING_PURGING_CONFIG_SINGLETON_ID = UUID.fromString("00000000-0000-0000-0000-000000000002");

@@ -19,7 +19,7 @@ import java.util.UUID;
  * Service to manage administrative authentication.
  * Instrumented with forensic audit logging to track access attempts and security events.
  */
-public class Login implements REST {
+public class Login implements Action {
 
     private final PasswordHasher passwordHasher = new PasswordHasher();
 

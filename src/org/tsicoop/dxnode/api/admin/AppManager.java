@@ -17,7 +17,7 @@ import java.util.UUID;
  * Enforces one-time visibility for API Secrets with secure SHA-256 hashing.
  * Standardized on 200 OK responses with JSON bodies to ensure frontend stability.
  */
-public class AppManager implements REST {
+public class AppManager implements Action {
 
     private final PasswordHasher passwordHasher = new PasswordHasher();
     private static final String KEY_PREFIX = "dx_";

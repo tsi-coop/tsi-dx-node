@@ -17,7 +17,7 @@ import java.util.UUID;
  * Manages Node Config, PII Rules, and Retention Policies.
  * Updated to include 'About' metadata and remove script dependencies.
  */
-public class Settings implements REST {
+public class Settings implements Action {
 
     private static final UUID NODE_CONFIG_SINGLETON_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
 

@@ -24,7 +24,7 @@ import java.util.UUID;
  * importCertificateAndActivate now uses java.time.Instant for parsing ISO 
  * timestamps with 'Z' suffixes to prevent DateTimeParseException.
  */
-public class Node implements REST {
+public class Node implements Action {
 
     private static final UUID NODE_CONFIG_SINGLETON_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
 

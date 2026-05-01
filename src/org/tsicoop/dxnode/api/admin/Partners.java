@@ -38,7 +38,7 @@ import java.util.UUID;
  * Ensures mTLS handshakes succeed for self-signed certificates by matching 
  * the raw DER encoding against the Partner Registry.
  */
-public class Partners implements REST {
+public class Partners implements Action {
 
     private static final String P2P_HANDSHAKE_TOKEN = "DX-P2P-PROTOCOL-V1";
     private volatile HttpClient httpClient;
