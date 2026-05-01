@@ -339,21 +339,21 @@ On Node B (`http://localhost:8083`): **Partner Nodes → Add Partner**
 
 ## 10. Teardown
 
-# Stop Node A (-v wipes database volume)
+**Stop Node A** (-v wipes database volume)
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.p2p.yml \
   --project-name node-a down -v
 ```
 
-# Stop Node B
+**Stop Node B**
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.p2p.yml \
   --project-name node-b down -v
 ```
 
-# Remove shared network (only when fully done with P2P testing)
+**Remove shared network** (only when fully done with P2P testing)
 ```bash
 docker network rm tsi-p2p-net
 ```
@@ -364,7 +364,7 @@ docker network rm tsi-p2p-net
 
 ## 11. Troubleshooting
 
-# Check logs - Node A
+**Check server and database logs - Node A**
 
 ```bash
 docker compose -p node-a logs -f server
@@ -374,7 +374,7 @@ docker compose -p node-a logs -f server
 docker compose -p node-a logs -f database
 ```
 
-# Check logs - Node B
+**Check server and database logs - Node B**
 
 ```bash
 docker compose -p node-b logs -f server
