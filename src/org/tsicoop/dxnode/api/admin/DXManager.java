@@ -1,6 +1,8 @@
 package org.tsicoop.dxnode.api.admin;
 
 import org.tsicoop.dxnode.framework.*;
+import org.tsicoop.dxnode.framework.SyncEngine;
+import org.json.simple.parser.JSONParser;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.json.simple.JSONArray;
@@ -51,6 +53,18 @@ public class DXManager implements Action {
 
                 case "receive_transfer_stream":
                     handleIncomingJsonTransfer(input, res, req);
+                    break;
+
+                case "receive_sync_request":
+                    SyncEngine.getInstance().receiveSyncRequest(input, res, req);
+                    break;
+
+                case "execute_sync_request":
+                    OutputProcessor.send(res, 200, executeSyncRequestAdmin(input));
+                    break;
+
+                case "list_sync_audit_logs":
+                    OutputProcessor.send(res, 200, listSyncAuditLogs(input));
                     break;
 
                 case "get_transfer_payload":
@@ -314,6 +328,53 @@ public class DXManager implements Action {
         } finally {
             pool.cleanup(null, pstmt, conn);
         }
+    }
+
+    private JSONObject executeSyncRequestAdmin(JSONObject input) throws Exception {
+        String contractIdStr = (String) input.get("contract_id");
+        if (contractIdStr == null) throw new IllegalArgumentException("contract_id required.");
+        JSONObject requestPayload = (JSONObject) input.get("request_payload");
+        if (requestPayload == null) throw new IllegalArgumentException("request_payload required.");
+        String idempotencyKey = input.get("idempotency_key") != null ? input.get("idempotency_key").toString() : null;
+        return SyncEngine.getInstance().executeSyncRequest(UUID.fromString(contractIdStr), requestPayload, idempotencyKey);
+    }
+
+    private JSONObject listSyncAuditLogs(JSONObject input) throws SQLException {
+        JSONObject response = new JSONObject(); JSONArray arr = new JSONArray();
+        Connection conn = null; PreparedStatement pstmt = null; ResultSet rs = null; PoolDB pool = new PoolDB();
+        try {
+            conn = pool.getConnection();
+            String status     = (input != null && input.get("status") != null)      ? input.get("status").toString()      : null;
+            String contractId = (input != null && input.get("contract_id") != null) ? input.get("contract_id").toString() : null;
+            StringBuilder sql = new StringBuilder(
+                "SELECT l.*, c.name AS contract_name FROM sync_audit_log l " +
+                "LEFT JOIN data_contracts c ON l.contract_id = c.contract_id WHERE 1=1");
+            if (status     != null && !status.isEmpty())     sql.append(" AND l.status = ?");
+            if (contractId != null && !contractId.isEmpty()) sql.append(" AND l.contract_id = ?::uuid");
+            sql.append(" ORDER BY l.timestamp DESC LIMIT 50");
+            pstmt = conn.prepareStatement(sql.toString());
+            int idx = 1;
+            if (status     != null && !status.isEmpty())     pstmt.setString(idx++, status);
+            if (contractId != null && !contractId.isEmpty()) pstmt.setString(idx,   contractId);
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                JSONObject l = new JSONObject();
+                l.put("log_id",          rs.getString("log_id"));
+                l.put("contract_id",     rs.getString("contract_id"));
+                l.put("contract_name",   rs.getString("contract_name"));
+                l.put("sender_node_id",  rs.getString("sender_node_id"));
+                l.put("receiver_node_id",rs.getString("receiver_node_id"));
+                l.put("duration_ms",     rs.getLong("duration_ms"));
+                l.put("status",          rs.getString("status"));
+                l.put("idempotency_key", rs.getString("idempotency_key"));
+                l.put("timestamp",       rs.getTimestamp("timestamp").toString());
+                try { l.put("request_payload",  new JSONParser().parse(rs.getString("request_payload"))); }  catch (Exception ignored) {}
+                try { l.put("response_payload", new JSONParser().parse(rs.getString("response_payload"))); } catch (Exception ignored) {}
+                arr.add(l);
+            }
+            response.put("success", true); response.put("data", arr);
+        } finally { pool.cleanup(rs, pstmt, conn); }
+        return response;
     }
 
     @Override public boolean validate(String m, HttpServletRequest req, HttpServletResponse res) { return true; }

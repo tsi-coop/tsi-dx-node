@@ -75,7 +75,7 @@ public class OutputProcessor {
         resp.put("error", message);
         try {
             out = res.getOutputStream();
-            out.print(String.valueOf(out));
+            out.print(resp.toJSONString());
         } catch (Exception e) {
         } finally {
             if (out != null) {

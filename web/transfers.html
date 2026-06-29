@@ -124,9 +124,10 @@
                 <button onclick="fetchTransfers('Pending')" id="tab-pending" class="tab-btn px-1 py-4 text-xs font-black uppercase text-slate-400">Pending</button>
                 <button onclick="fetchTransfers('Delivered')" id="tab-completed" class="tab-btn px-1 py-4 text-xs font-black uppercase text-slate-400">Completed</button>
                 <button onclick="fetchTransfers('Failed')" id="tab-failed" class="tab-btn px-1 py-4 text-xs font-black uppercase text-slate-400">Failed</button>
+                <button onclick="fetchSyncCalls()" id="tab-sync" class="tab-btn px-1 py-4 text-xs font-black uppercase text-slate-400">Sync Calls</button>
             </div>
 
-            <div class="card overflow-hidden">
+            <div id="transfers-table-card" class="card overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-sm">
                         <thead>
@@ -144,8 +145,42 @@
                     </table>
                 </div>
             </div>
+            <div id="sync-calls-panel" class="hidden card overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead>
+                            <tr class="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-50 border-b">
+                                <th class="px-6 py-4">Timestamp</th>
+                                <th class="px-6 py-4">Counterparty</th>
+                                <th class="px-6 py-4">Contract</th>
+                                <th class="px-6 py-4">Duration</th>
+                                <th class="px-6 py-4">Status</th>
+                                <th class="px-6 py-4 text-right">Inspect</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sync-calls-body" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </main>
+
+    <!-- Sync Call Inspect Modal -->
+    <div id="syncInspectModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop">
+        <div class="bg-white w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+            <div class="px-8 py-6 bg-slate-900 flex items-center justify-between">
+                <div><h3 class="text-xl font-black text-white uppercase tracking-tight">Sync Call Record</h3><p id="sync-inspect-status" class="text-[10px] text-blue-400 font-bold uppercase tracking-widest mt-1">---</p></div>
+                <button onclick="closeSyncInspectModal()" class="text-slate-400 hover:text-white transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
+            </div>
+            <div class="grid grid-cols-2 divide-x divide-slate-100 overflow-y-auto flex-1">
+                <div class="p-6"><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Request Payload</p><textarea id="sync-request-content" readonly class="w-full min-h-[320px] p-4 payload-viewer outline-none resize-none text-xs" spellcheck="false"></textarea></div>
+                <div class="p-6"><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Response Payload</p><textarea id="sync-response-content" readonly class="w-full min-h-[320px] p-4 payload-viewer outline-none resize-none text-xs" spellcheck="false"></textarea></div>
+            </div>
+            <div class="px-8 py-4 bg-slate-50 border-t flex justify-end">
+                <button onclick="closeSyncInspectModal()" class="px-6 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest">Close</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Initiation Modal -->
     <div id="transferModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop no-print">
@@ -162,11 +197,21 @@
                     </div>
                     <div>
                         <label class="block text-[10px] font-black text-slate-500 uppercase mb-2">2. Governing Contract</label>
-                        <select id="m-contract" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-blue-500/10 transition-all"></select>
+                        <select id="m-contract" required onchange="onContractChange()" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-blue-500/10 transition-all"></select>
                     </div>
-                    <div>
+                    <div id="m-async-step">
                         <label class="block text-[10px] font-black text-slate-500 uppercase mb-2">3. Select Data File (JSON or CSV only)</label>
-                        <input type="file" id="m-file" accept=".json, .csv" required class="w-full p-2 bg-slate-50 border border-dashed border-slate-300 rounded-lg text-xs file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-[10px] file:font-black file:uppercase file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-all">
+                        <input type="file" id="m-file" accept=".json, .csv" class="w-full p-2 bg-slate-50 border border-dashed border-slate-300 rounded-lg text-xs file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-[10px] file:font-black file:uppercase file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-all">
+                    </div>
+                    <div id="m-sync-step" class="hidden space-y-3">
+                        <div>
+                            <label class="block text-[10px] font-black text-slate-500 uppercase mb-2">3. Request Payload (JSON)</label>
+                            <textarea id="m-sync-payload" rows="5" placeholder='{"key": "value"}' class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono outline-none resize-none focus:ring-2 focus:ring-blue-500/10 transition-all"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-slate-500 uppercase mb-2">Idempotency Key (optional)</label>
+                            <input type="text" id="m-idempotency-key" placeholder="unique-key-123" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none">
+                        </div>
                     </div>
                 </div>
                 <div class="flex gap-4 pt-2">
@@ -221,6 +266,8 @@
         const API = '/api/admin/transfers';
         const CONTRACTS_API = '/api/admin/contracts';
         const PARTNERS_API = '/api/admin/partners';
+        let contractsMap = {};
+        let syncLogsData = [];
 
         document.addEventListener('DOMContentLoaded', () => {
             initIdentity();
@@ -240,6 +287,8 @@
 
         async function fetchTransfers(status = '') {
             updateTabs(status);
+            document.getElementById('transfers-table-card').classList.remove('hidden');
+            document.getElementById('sync-calls-panel').classList.add('hidden');
             const res = await callApi(API, { _func: "list_transfers", status: status });
             const tbody = document.getElementById('transfer-table-body');
             tbody.innerHTML = '';
@@ -316,34 +365,44 @@
         async function handleInitiate(e) {
             e.preventDefault();
             const btn = document.getElementById('submitBtn');
+            const contractId = document.getElementById('m-contract').value;
+            const contract = contractsMap[contractId];
+            const isSync = contract && contract.interaction_type === 'sync';
+
+            if (isSync) {
+                const payloadStr = document.getElementById('m-sync-payload').value.trim();
+                if (!payloadStr) { alert('Request payload is required.'); return; }
+                let requestPayload;
+                try { requestPayload = JSON.parse(payloadStr); } catch (pe) { alert('Invalid JSON in request payload.'); return; }
+                const idempotencyKey = document.getElementById('m-idempotency-key').value.trim();
+                btn.disabled = true; btn.innerText = 'SENDING...';
+                try {
+                    const payload = { _func: "execute_sync_request", contract_id: contractId, request_payload: requestPayload };
+                    if (idempotencyKey) payload.idempotency_key = idempotencyKey;
+                    const res = await callApi(API, payload);
+                    if (res && res.success !== false) { closeTransferModal(); fetchSyncCalls(); }
+                } catch (err) { alert(err.message); }
+                finally { btn.disabled = false; btn.innerText = 'Send Request'; }
+                return;
+            }
+
             const fileInput = document.getElementById('m-file');
             const file = fileInput.files[0];
             if (!file) return;
-
-            btn.disabled = true;
-            btn.innerText = "ENCODING...";
-
-            const toBase64 = file => new Promise((resolve, reject) => {
+            btn.disabled = true; btn.innerText = 'ENCODING...';
+            const toBase64 = f => new Promise((resolve, reject) => {
                 const reader = new FileReader();
-                reader.readAsDataURL(file);
+                reader.readAsDataURL(f);
                 reader.onload = () => resolve(reader.result.split(',')[1]);
                 reader.onerror = error => reject(error);
             });
-
             try {
                 const base64Data = await toBase64(file);
-                const payload = {
-                    _func: "initiate_transfer",
-                    contract_id: document.getElementById('m-contract').value,
-                    receiver_node_id: document.getElementById('m-partner').value,
-                    file_name: file.name,
-                    file_data: base64Data,
-                    file_size: file.size
-                };
+                const payload = { _func: "initiate_transfer", contract_id: contractId, receiver_node_id: document.getElementById('m-partner').value, file_name: file.name, file_data: base64Data, file_size: file.size };
                 const res = await callApi(API, payload);
                 if (res) { closeTransferModal(); fetchTransfers(); }
-            } catch (err) { alert(err.message); } 
-            finally { btn.disabled = false; btn.innerText = "Upload & Start"; }
+            } catch (err) { alert(err.message); }
+            finally { btn.disabled = false; btn.innerText = 'Upload & Start'; }
         }
 
         async function populateModal() {
@@ -353,8 +412,15 @@
             const pSel = document.getElementById('m-partner');
             cSel.innerHTML = '<option value="">Select Contract Schema...</option>';
             pSel.innerHTML = '<option value="">Select Target Partner...</option>';
+            contractsMap = {};
             if (contracts && Array.isArray(contracts)) {
-                contracts.forEach(c => { if (c.status === 'Active') cSel.innerHTML += `<option value="${c.contract_id}">${c.name}</option>`; });
+                contracts.forEach(c => {
+                    if (c.status === 'Active') {
+                        contractsMap[c.contract_id] = c;
+                        const tag = c.interaction_type === 'sync' ? ' [SYNC]' : '';
+                        cSel.innerHTML += `<option value="${c.contract_id}">${c.name}${tag}</option>`;
+                    }
+                });
             }
             if (partners && Array.isArray(partners)) {
                 partners.forEach(p => { if (p.status === 'Active') pSel.innerHTML += `<option value="${p.node_id}">${p.name} (${p.node_id})</option>`; });
@@ -377,9 +443,64 @@
             });
         }
 
+        function onContractChange() {
+            const contractId = document.getElementById('m-contract').value;
+            const contract = contractsMap[contractId];
+            const isSync = contract && contract.interaction_type === 'sync';
+            document.getElementById('m-async-step').classList.toggle('hidden', isSync);
+            document.getElementById('m-sync-step').classList.toggle('hidden', !isSync);
+            document.getElementById('submitBtn').innerText = isSync ? 'Send Request' : 'Upload & Start';
+        }
+
+        async function fetchSyncCalls() {
+            updateTabs('sync');
+            document.getElementById('transfers-table-card').classList.add('hidden');
+            document.getElementById('sync-calls-panel').classList.remove('hidden');
+            const res = await callApi(API, { _func: "list_sync_audit_logs" });
+            const tbody = document.getElementById('sync-calls-body');
+            tbody.innerHTML = '';
+            syncLogsData = Array.isArray(res) ? res : (res && res.data ? res.data : []);
+            if (syncLogsData.length > 0) {
+                syncLogsData.forEach((l, idx) => {
+                    const row = document.createElement('tr');
+                    row.className = 'hover:bg-slate-50 transition-colors';
+                    const statusColor = l.status === 'SUCCESS' ? 'text-green-600' : (l.status === 'TIMEOUT' ? 'text-orange-500' : 'text-red-600');
+                    row.innerHTML = `
+                        <td class="px-6 py-4 text-[10px] font-bold text-slate-600">${formatTimestamp(l.timestamp)}</td>
+                        <td class="px-6 py-4 font-bold text-slate-900 uppercase text-xs">${l.receiver_node_id || l.sender_node_id || '---'}</td>
+                        <td class="px-6 py-4 text-xs text-slate-600">${l.contract_name || (l.contract_id ? l.contract_id.substring(0, 8) + '...' : '---')}</td>
+                        <td class="px-6 py-4 text-xs font-mono text-slate-700">${l.duration_ms} ms</td>
+                        <td class="px-6 py-4 text-[10px] font-bold ${statusColor} uppercase">${l.status}</td>
+                        <td class="px-6 py-4 text-right"><button onclick="viewSyncLog(${idx})" class="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-[9px] font-black uppercase hover:bg-slate-200 transition-all">Inspect</button></td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } else {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td colspan="6" class="px-6 py-24 text-center"><p class="text-[10px] text-slate-400 font-black uppercase italic tracking-widest">No sync call records found</p></td>`;
+                tbody.appendChild(row);
+            }
+        }
+
+        function viewSyncLog(idx) {
+            const l = syncLogsData[idx];
+            document.getElementById('sync-inspect-status').innerText = `${l.status} - ${l.duration_ms}ms - ${formatTimestamp(l.timestamp)}`;
+            document.getElementById('sync-request-content').value = JSON.stringify(l.request_payload || {}, null, 2);
+            document.getElementById('sync-response-content').value = JSON.stringify(l.response_payload || {}, null, 2);
+            document.getElementById('syncInspectModal').classList.remove('hidden');
+        }
+
+        function closeSyncInspectModal() { document.getElementById('syncInspectModal').classList.add('hidden'); }
+
         function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
         function openTransferModal() { populateModal(); document.getElementById('transferModal').classList.remove('hidden'); }
-        function closeTransferModal() { document.getElementById('transferModal').classList.add('hidden'); document.getElementById('transferForm').reset(); }
+        function closeTransferModal() {
+            document.getElementById('transferModal').classList.add('hidden');
+            document.getElementById('transferForm').reset();
+            document.getElementById('m-async-step').classList.remove('hidden');
+            document.getElementById('m-sync-step').classList.add('hidden');
+            document.getElementById('submitBtn').innerText = 'Upload & Start';
+        }
         function closePayloadModal() { document.getElementById('payloadModal').classList.add('hidden'); }
         function logout() { localStorage.clear(); window.location.href = 'index.html'; }
     </script>

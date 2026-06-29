@@ -240,9 +240,27 @@ public class TransferEngine implements ServletContextListener {
         }
     }
 
-    private byte[] applyGovernance(byte[] data, String format, JSONObject schema, JSONObject metadata) throws Exception {
+    public byte[] applyGovernance(byte[] data, String format, JSONObject schema, JSONObject metadata) throws Exception {
         if ("csv".equals(format)) return processCsvGovernance(data, schema, metadata);
         return processJsonGovernance(data, schema, metadata);
+    }
+
+    /**
+     * Applies only L2 PII anonymization to a JSON payload, skipping L1 schema validation.
+     * Used for sync response payloads, which have a different structure than the request schema.
+     */
+    public byte[] applyPiiOnly(byte[] data, JSONObject metadata) throws Exception {
+        String jsonStr = new String(data, StandardCharsets.UTF_8);
+        JSONObject payload = (JSONObject) new JSONParser().parse(jsonStr);
+        JSONObject governanceRules = (JSONObject) metadata.get("governance_rules");
+        JSONObject anonRules = governanceRules != null ? (JSONObject) governanceRules.get("pii_anonymization") : null;
+        if (anonRules != null) {
+            for (Object key : anonRules.keySet()) {
+                String fieldName = (String) key;
+                if (payload.containsKey(fieldName)) payload.put(fieldName, transformValue(payload.get(fieldName), anonRules.get(fieldName).toString()));
+            }
+        }
+        return payload.toJSONString().getBytes(StandardCharsets.UTF_8);
     }
 
     private byte[] processJsonGovernance(byte[] data, JSONObject schema, JSONObject metadata) throws Exception {

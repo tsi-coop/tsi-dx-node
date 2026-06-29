@@ -58,7 +58,17 @@ services:
     depends_on:
       database:
         condition: service_healthy
-   
+
+  # 3. Sync Contract Mock Responder (for local testing only)
+  # Listens on port 8099 and returns {"result":"ok"} for any POST.
+  # Set sync_responder_url = http://mock-responder:8099/<path> in your test contract.
+  # Remove or comment out this service before deploying to production.
+  mock-responder:
+    image: python:3.12-alpine
+    restart: unless-stopped
+    command: python3 /app/mock_responder.py
+    volumes:
+      - ./test/mock_responder.py:/app/mock_responder.py:ro
 
 # Infrastructure Definitions
 volumes:

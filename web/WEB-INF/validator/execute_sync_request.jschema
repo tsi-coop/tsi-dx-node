@@ -1,0 +1,34 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Execute Sync Request",
+  "description": "Schema for sending a synchronous governed request over an active sync data contract.",
+  "type": "object",
+  "required": [
+    "_func",
+    "contract_id",
+    "request_payload"
+  ],
+  "properties": {
+    "_func": {
+      "type": "string",
+      "const": "execute_sync_request",
+      "description": "The internal function identifier for synchronous contract execution."
+    },
+    "contract_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "UUID of the active sync data contract governing this exchange."
+    },
+    "request_payload": {
+      "type": "object",
+      "description": "The request body to be governed by the contract's L1/L2 rules and forwarded to the partner.",
+      "additionalProperties": true
+    },
+    "idempotency_key": {
+      "type": "string",
+      "description": "Optional caller-supplied key for idempotency. Re-submitting with the same key avoids duplicate downstream effects.",
+      "maxLength": 255
+    }
+  },
+  "additionalProperties": false
+}

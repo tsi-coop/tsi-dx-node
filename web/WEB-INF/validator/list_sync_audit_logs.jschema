@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "List Sync Audit Logs",
+  "description": "Schema for querying the synchronous exchange audit log.",
+  "type": "object",
+  "required": [
+    "_func"
+  ],
+  "properties": {
+    "_func": {
+      "type": "string",
+      "const": "list_sync_audit_logs",
+      "description": "The internal function identifier for listing sync audit entries."
+    },
+    "contract_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Optional filter: return only entries for this contract."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["SUCCESS", "TIMEOUT", "ERROR"],
+      "description": "Optional filter: return only entries with this outcome status."
+    },
+    "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100,
+      "default": 50,
+      "description": "Maximum number of entries to return."
+    },
+    "offset": {
+      "type": "integer",
+      "minimum": 0,
+      "default": 0,
+      "description": "Pagination offset."
+    }
+  },
+  "additionalProperties": false
+}

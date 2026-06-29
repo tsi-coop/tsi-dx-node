@@ -185,7 +185,7 @@
             <h1 class="text-2xl font-black text-slate-900 mb-8 uppercase tracking-tight">System Summary</h1>
 
             <!-- Top Grid Stats - Ordered: Partners, Contracts, Transfers, Pending Actions -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
                 <!-- 1. Partners Online -->
                 <div class="card p-6 flex flex-col">
                     <span class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-1">Partners Online</span>
@@ -216,6 +216,14 @@
                     <div class="flex items-end justify-between">
                         <span class="text-3xl font-black text-slate-900" id="stat-pending">0</span>
                         <span class="text-orange-500 text-[10px] font-bold">Action Req.</span>
+                    </div>
+                </div>
+                <!-- 5. Sync Calls (24h) -->
+                <div class="card p-6 flex flex-col">
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-1">Sync Calls (24h)</span>
+                    <div class="flex items-end justify-between">
+                        <span class="text-3xl font-black text-slate-900" id="stat-sync-calls">0</span>
+                        <span class="text-purple-500 text-[10px] font-bold">Real-time</span>
                     </div>
                 </div>
             </div>
@@ -347,6 +355,7 @@
             document.getElementById('stat-pending').innerText = data.pending_actions.length;
             document.getElementById('stat-transfers').innerText = data.transfers_24h;
             document.getElementById('stat-contracts').innerText = data.contracts_active_count;
+            fetchSyncCallsCount();
 
             renderTransfers(data.recent_transfers);
             renderAudit(data.recent_audit);
@@ -419,6 +428,21 @@
 
         function getAuthHeaders() {
             return { 'Authorization': `Bearer ${localStorage.getItem('dx_token')}`, 'Content-Type': 'application/json' };
+        }
+
+        async function fetchSyncCallsCount() {
+            try {
+                const r = await fetch('/api/admin/transfers', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('dx_token')}` },
+                    body: JSON.stringify({ _func: "list_sync_audit_logs" })
+                });
+                const json = await r.json();
+                const records = json.data || [];
+                const cutoff = Date.now() - 86400000;
+                const count = records.filter(l => new Date(l.timestamp).getTime() > cutoff).length;
+                document.getElementById('stat-sync-calls').innerText = count;
+            } catch (e) {}
         }
 
         function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }

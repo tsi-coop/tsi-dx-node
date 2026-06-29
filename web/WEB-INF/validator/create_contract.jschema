@@ -69,6 +69,11 @@
       "type": "array",
       "items": { "type": "string" },
       "description": "A flat list of field names or JSON paths flagged for PII masking/anonymization."
+    },
+    "interaction_type": {
+      "type": "string",
+      "enum": ["async", "sync"],
+      "description": "Whether this contract governs async batch transfers or synchronous request/response exchanges."
     }
   },
   "additionalProperties": false

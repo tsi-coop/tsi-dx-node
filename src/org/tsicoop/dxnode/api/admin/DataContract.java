@@ -266,9 +266,11 @@ public class DataContract implements Action {
     private JSONObject createContract(JSONObject input) throws SQLException {
         Connection conn = null; PreparedStatement pstmt = null; PoolDB pool = new PoolDB();
         UUID id = UUID.randomUUID();
+        String interactionType = getString(input, "interaction_type");
+        if (!interactionType.equals("sync") && !interactionType.equals("async")) interactionType = "async";
         String sql = "INSERT INTO data_contracts (contract_id, name, direction, sender_partner_id, receiver_partner_id, " +
-                     "schema_definition, metadata, pii_fields, status, updated_at) " +
-                     "VALUES (?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?, 'Draft', NOW())";
+                     "schema_definition, metadata, pii_fields, interaction_type, status, updated_at) " +
+                     "VALUES (?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?, ?, 'Draft', NOW())";
         try {
             conn = pool.getConnection();
             pstmt = conn.prepareStatement(sql);
@@ -279,12 +281,13 @@ public class DataContract implements Action {
             pstmt.setString(5, getString(input, "receiver_partner_id"));
             pstmt.setString(6, ((JSONObject) input.get("schema_definition")).toJSONString());
             pstmt.setString(7, ((JSONObject) input.get("metadata")).toJSONString());
-            
+
             JSONArray piiArr = (JSONArray) input.get("pii_fields");
             String[] piiStrings = piiArr != null ? (String[]) piiArr.toArray(new String[0]) : new String[0];
             pstmt.setArray(8, conn.createArrayOf("text", piiStrings));
+            pstmt.setString(9, interactionType);
             pstmt.executeUpdate();
-            
+
             JSONObject out = new JSONObject(); out.put("success", true); out.put("contract_id", id.toString());
             return out;
         } finally { pool.cleanup(null, pstmt, conn); }
@@ -306,6 +309,7 @@ public class DataContract implements Action {
                 c.put("contract_id", rs.getString("contract_id"));
                 c.put("name", rs.getString("name"));
                 c.put("status", rs.getString("status"));
+                c.put("interaction_type", rs.getString("interaction_type"));
                 c.put("sender_partner_id", rs.getString("sender_partner_id"));
                 c.put("receiver_partner_id", rs.getString("receiver_partner_id"));
                 c.put("local_node_id", rs.getString("local_node_id"));
@@ -332,6 +336,7 @@ public class DataContract implements Action {
                 c.put("sender_partner_id", rs.getString("sender_partner_id"));
                 c.put("receiver_partner_id", rs.getString("receiver_partner_id"));
                 c.put("status", rs.getString("status"));
+                c.put("interaction_type", rs.getString("interaction_type"));
                 c.put("created_at", rs.getTimestamp("created_at").toString());
                 JSONParser parser = new JSONParser();
                 try { c.put("schema_definition", parser.parse(rs.getString("schema_definition"))); } catch (Exception e) {}
@@ -383,6 +388,7 @@ public class DataContract implements Action {
                 payload.put("direction", rs.getString("direction"));
                 payload.put("sender_partner_id", rs.getString("sender_partner_id"));
                 payload.put("receiver_partner_id", rs.getString("receiver_partner_id"));
+                payload.put("interaction_type", rs.getString("interaction_type"));
                 payload.put("schema_definition", new JSONParser().parse(rs.getString("schema_definition")));
                 payload.put("metadata", new JSONParser().parse(rs.getString("metadata")));
                 java.sql.Array pii = rs.getArray("pii_fields");
@@ -408,10 +414,12 @@ public class DataContract implements Action {
 
     private JSONObject handleInboundProposal(JSONObject input) throws SQLException {
         Connection conn = null; PreparedStatement pstmt = null; PoolDB pool = new PoolDB();
+        String incomingType = getString(input, "interaction_type");
+        if (!incomingType.equals("sync") && !incomingType.equals("async")) incomingType = "async";
         String sql = "INSERT INTO data_contracts (contract_id, name, direction, sender_partner_id, receiver_partner_id, " +
-                     "schema_definition, metadata, pii_fields, status, updated_at) " +
-                     "VALUES (?, ?, ?, ?, (SELECT node_id FROM node_config LIMIT 1), ?::jsonb, ?::jsonb, ?, 'Proposed', NOW()) " +
-                     "ON CONFLICT (contract_id) DO UPDATE SET status = 'Proposed', updated_at = NOW()";
+                     "schema_definition, metadata, pii_fields, interaction_type, status, updated_at) " +
+                     "VALUES (?, ?, ?, ?, (SELECT node_id FROM node_config LIMIT 1), ?::jsonb, ?::jsonb, ?, ?, 'Proposed', NOW()) " +
+                     "ON CONFLICT (contract_id) DO UPDATE SET status = 'Proposed', interaction_type = EXCLUDED.interaction_type, updated_at = NOW()";
         try {
             conn = pool.getConnection();
             pstmt = conn.prepareStatement(sql);
@@ -425,6 +433,7 @@ public class DataContract implements Action {
             JSONArray piiArr = (JSONArray) input.get("pii_fields");
             String[] piiStrings = piiArr != null ? (String[]) piiArr.toArray(new String[0]) : new String[0];
             pstmt.setArray(7, conn.createArrayOf("text", piiStrings));
+            pstmt.setString(8, incomingType);
 
             pstmt.executeUpdate();
             return new JSONObject() {{ put("success", true); }};

@@ -19,6 +19,14 @@ import java.time.Duration;
  */
 public class P2PClient {
 
+    private static final java.util.concurrent.ConcurrentHashMap<String, HttpClient> POOL =
+            new java.util.concurrent.ConcurrentHashMap<>();
+
+    /** Returns a cached mTLS HttpClient for the given partner FQDN, creating one on first use. */
+    public static HttpClient buildPooled(String partnerFqdn, Duration timeout) {
+        return POOL.computeIfAbsent(partnerFqdn, k -> build(timeout, HttpClient.Redirect.NORMAL));
+    }
+
     public static HttpClient build(Duration timeout) {
         return build(timeout, HttpClient.Redirect.NEVER);
     }

@@ -1,6 +1,7 @@
 package org.tsicoop.dxnode.api.client;
 
 import org.tsicoop.dxnode.framework.*;
+import org.tsicoop.dxnode.framework.SyncEngine;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.json.simple.JSONArray;
@@ -59,6 +60,10 @@ public class DX implements Action {
 
                 case "view_forensic_payload":
                     OutputProcessor.send(res, 200, getForensicPayload(appId, extractUuid(input, "transfer_id"), req));
+                    break;
+
+                case "execute_sync_request":
+                    OutputProcessor.send(res, 200, executeSyncRequest(appId, input));
                     break;
 
                 default:
@@ -166,12 +171,43 @@ public class DX implements Action {
         } finally { pool.cleanup(rs, pstmt, conn); }
     }
 
+    /**
+     * Executes a synchronous governed request over a sync-type data contract.
+     * Validates RBAC via app_contracts, then delegates to SyncEngine.
+     */
+    private JSONObject executeSyncRequest(UUID appId, JSONObject input) throws Exception {
+        UUID contractId = extractUuid(input, "contract_id");
+        if (contractId == null) throw new IllegalArgumentException("contract_id required.");
+
+        JSONObject requestPayload = (JSONObject) input.get("request_payload");
+        if (requestPayload == null) throw new IllegalArgumentException("request_payload required.");
+
+        String idempotencyKey = input.get("idempotency_key") != null ? input.get("idempotency_key").toString() : null;
+
+        // RBAC: verify app is authorised for this contract and it is a sync contract
+        Connection conn = null; PreparedStatement pstmt = null; ResultSet rs = null; PoolDB pool = new PoolDB();
+        try {
+            conn = pool.getConnection();
+            String sql = "SELECT 1 FROM data_contracts c " +
+                         "JOIN app_contracts ac ON c.contract_id = ac.contract_id " +
+                         "WHERE ac.app_id = ? AND c.contract_id = ? AND c.status = 'Active' " +
+                         "AND c.interaction_type = 'sync'";
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setObject(1, appId);
+            pstmt.setObject(2, contractId);
+            rs = pstmt.executeQuery();
+            if (!rs.next()) throw new SecurityException("Unauthorized, inactive, or non-sync contract.");
+        } finally { pool.cleanup(rs, pstmt, conn); }
+
+        return SyncEngine.getInstance().executeSyncRequest(contractId, requestPayload, idempotencyKey);
+    }
+
     private JSONArray listAuthorizedContracts(UUID appId) throws SQLException {
         JSONArray arr = new JSONArray();
         Connection conn = null; PreparedStatement pstmt = null; ResultSet rs = null; PoolDB pool = new PoolDB();
         try {
             conn = pool.getConnection();
-            String sql = "SELECT c.contract_id, c.name, c.status, c.direction, c.metadata " +
+            String sql = "SELECT c.contract_id, c.name, c.status, c.direction, c.interaction_type, c.metadata " +
                          "FROM data_contracts c " +
                          "JOIN app_contracts ac ON c.contract_id = ac.contract_id " +
                          "WHERE ac.app_id = ? ORDER BY c.name ASC";
@@ -184,6 +220,7 @@ public class DX implements Action {
                 c.put("name", rs.getString("name"));
                 c.put("status", rs.getString("status"));
                 c.put("direction", rs.getString("direction"));
+                c.put("interaction_type", rs.getString("interaction_type"));
                 try { c.put("metadata", new JSONParser().parse(rs.getString("metadata"))); } catch (Exception e) {}
                 arr.add(c);
             }
@@ -196,7 +233,9 @@ public class DX implements Action {
         Connection conn = null; PreparedStatement pstmt = null; ResultSet rs = null; PoolDB pool = new PoolDB();
         try {
             conn = pool.getConnection();
-            String sql = "SELECT c.* FROM data_contracts c JOIN app_contracts ac ON c.contract_id = ac.contract_id " +
+            String sql = "SELECT c.*, " +
+                         "(c.receiver_partner_id = (SELECT node_id FROM node_config LIMIT 1)) AS is_receiver " +
+                         "FROM data_contracts c JOIN app_contracts ac ON c.contract_id = ac.contract_id " +
                          "WHERE ac.app_id = ? AND c.contract_id = ?";
             pstmt = conn.prepareStatement(sql);
             pstmt.setObject(1, appId);
@@ -206,9 +245,18 @@ public class DX implements Action {
                 JSONObject c = new JSONObject();
                 c.put("contract_id", rs.getString("contract_id"));
                 c.put("name", rs.getString("name"));
+                c.put("interaction_type", rs.getString("interaction_type"));
+                boolean isReceiver = rs.getBoolean("is_receiver");
                 JSONParser p = new JSONParser();
                 try { c.put("schema_definition", p.parse(rs.getString("schema_definition"))); } catch (Exception e) {}
-                try { c.put("metadata", p.parse(rs.getString("metadata"))); } catch (Exception e) {}
+                try {
+                    JSONObject meta = (JSONObject) p.parse(rs.getString("metadata"));
+                    // Mask sync_responder_url on sender view - it is the partner's internal address
+                    if ("sync".equalsIgnoreCase(rs.getString("interaction_type")) && !isReceiver) {
+                        meta.remove("sync_responder_url");
+                    }
+                    c.put("metadata", meta);
+                } catch (Exception e) {}
                 return c;
             }
             throw new SecurityException("Unauthorized access to contract details.");
