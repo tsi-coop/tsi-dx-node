@@ -27,10 +27,10 @@ services:
    
   # 2. Java Jetty Web Application Service
   server:
-    # Uses the IMAGE_NAME from .env, defaults to latest if not set
+    # PRODUCTION: use pre-built image by setting IMAGE_NAME in .env
     image: "${IMAGE_NAME:-tsicoop/tsi-dx-node:latest}"
-    
-    # DEVELOPERS: To build from local source, uncomment the block below
+
+    # Build from local source
     #build:
     #  context: .
     #  dockerfile: Dockerfile

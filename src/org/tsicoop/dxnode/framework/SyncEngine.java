@@ -65,7 +65,7 @@ public class SyncEngine {
         JSONObject contract   = loadSyncContract(contractId);
         String partnerFqdn    = (String) contract.get("fqdn");
         String senderNodeId   = (String) contract.get("local_node_id");
-        String receiverNodeId = (String) contract.get("receiver_partner_id");
+        String receiverNodeId = (String) contract.get("receiver_node_id");
         JSONObject schema     = (JSONObject) contract.get("schema_definition");
         JSONObject metadata   = (JSONObject) contract.get("metadata");
         String format         = metadata.get("format") != null ? metadata.get("format").toString().toLowerCase() : "json";
@@ -182,7 +182,7 @@ public class SyncEngine {
         long startTime  = System.currentTimeMillis();
 
         // 1. Load contract - validates interaction_type = 'sync' and status = 'Active'
-        JSONObject contract    = loadSyncContractReceiver(contractId);
+        JSONObject contract    = loadSyncContractReceiver(contractId, senderNodeId);
         String receiverNodeId  = (String) contract.get("local_node_id");
         JSONObject schema      = (JSONObject) contract.get("schema_definition");
         JSONObject metadata    = (JSONObject) contract.get("metadata");
@@ -276,16 +276,23 @@ public class SyncEngine {
         Connection conn = null; PreparedStatement pstmt = null; ResultSet rs = null;
         try {
             conn = pool.getConnection();
-            String sql = "SELECT c.receiver_partner_id, c.schema_definition, c.metadata, " +
-                         "c.interaction_type, c.status, p.fqdn, cfg.node_id AS local_node_id " +
-                         "FROM data_contracts c " +
-                         "JOIN partners p ON p.node_id = c.receiver_partner_id " +
-                         "CROSS JOIN (SELECT node_id FROM node_config LIMIT 1) cfg " +
-                         "WHERE c.contract_id = ?";
+            // Joins contract_participants to confirm local node is an active participant
+            String sql =
+                "SELECT c.receiver_node_id, c.schema_definition, c.metadata, " +
+                "c.interaction_type, c.status, p.fqdn, cfg.node_id AS local_node_id " +
+                "FROM data_contracts c " +
+                "JOIN partners p ON p.node_id = c.receiver_node_id " +
+                "JOIN contract_participants cp " +
+                "  ON cp.contract_id = c.contract_id " +
+                " AND cp.node_id = (SELECT node_id FROM node_config LIMIT 1) " +
+                " AND cp.status = 'Active' " +
+                "CROSS JOIN (SELECT node_id FROM node_config LIMIT 1) cfg " +
+                "WHERE c.contract_id = ?";
             pstmt = conn.prepareStatement(sql);
             pstmt.setObject(1, contractId);
             rs = pstmt.executeQuery();
-            if (!rs.next()) throw new IllegalArgumentException("Contract not found: " + contractId);
+            if (!rs.next()) throw new IllegalArgumentException(
+                "Contract not found, or local node is not an active participant: " + contractId);
 
             String interactionType = rs.getString("interaction_type");
             String status          = rs.getString("status");
@@ -296,29 +303,40 @@ public class SyncEngine {
 
             JSONParser parser = new JSONParser();
             JSONObject result = new JSONObject();
-            result.put("receiver_partner_id", rs.getString("receiver_partner_id"));
-            result.put("fqdn",                rs.getString("fqdn"));
-            result.put("local_node_id",       rs.getString("local_node_id"));
-            result.put("schema_definition",   parser.parse(rs.getString("schema_definition")));
-            result.put("metadata",            parser.parse(rs.getString("metadata")));
+            result.put("receiver_node_id",  rs.getString("receiver_node_id"));
+            result.put("fqdn",              rs.getString("fqdn"));
+            result.put("local_node_id",     rs.getString("local_node_id"));
+            result.put("schema_definition", parser.parse(rs.getString("schema_definition")));
+            result.put("metadata",          parser.parse(rs.getString("metadata")));
             return result;
         } finally { pool.cleanup(rs, pstmt, conn); }
     }
 
-    private JSONObject loadSyncContractReceiver(UUID contractId) throws Exception {
+    private JSONObject loadSyncContractReceiver(UUID contractId, String senderNodeId) throws Exception {
         PoolDB pool = new PoolDB();
         Connection conn = null; PreparedStatement pstmt = null; ResultSet rs = null;
         try {
             conn = pool.getConnection();
-            String sql = "SELECT c.schema_definition, c.metadata, c.interaction_type, c.status, " +
-                         "cfg.node_id AS local_node_id " +
-                         "FROM data_contracts c " +
-                         "CROSS JOIN (SELECT node_id FROM node_config LIMIT 1) cfg " +
-                         "WHERE c.contract_id = ?";
+            // Validates sender is an active participant; contract must be owned by local node
+            String sql =
+                "SELECT c.schema_definition, c.metadata, c.interaction_type, c.status, " +
+                "cfg.node_id AS local_node_id " +
+                "FROM data_contracts c " +
+                "CROSS JOIN (SELECT node_id FROM node_config LIMIT 1) cfg " +
+                "WHERE c.contract_id = ? " +
+                "  AND c.receiver_node_id = cfg.node_id " +
+                "  AND EXISTS ( " +
+                "    SELECT 1 FROM contract_participants cp " +
+                "    WHERE cp.contract_id = c.contract_id " +
+                "      AND cp.node_id = ? " +
+                "      AND cp.status = 'Active' " +
+                "  )";
             pstmt = conn.prepareStatement(sql);
             pstmt.setObject(1, contractId);
+            pstmt.setString(2, senderNodeId);
             rs = pstmt.executeQuery();
-            if (!rs.next()) throw new IllegalArgumentException("Contract not found: " + contractId);
+            if (!rs.next()) throw new IllegalStateException(
+                "Contract not found, sender is not an active participant, or this node is not the receiver: " + contractId);
 
             String interactionType = rs.getString("interaction_type");
             String status          = rs.getString("status");

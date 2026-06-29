@@ -135,9 +135,22 @@ public class DXManager implements Action {
             pstmt.close();
 
             String contractId = (String) input.get("contract_id");
-            String receiverNodeId = (String) input.get("receiver_node_id");
             String fileName = (String) input.get("file_name");
             String fileDataBase64 = (String) input.get("file_data");
+
+            // Derive receiver from contract (not from UI input)
+            String receiverNodeId;
+            pstmt = conn.prepareStatement(
+                "SELECT c.receiver_node_id FROM data_contracts c " +
+                "JOIN contract_participants cp ON cp.contract_id = c.contract_id " +
+                "WHERE c.contract_id = ? AND cp.node_id = ? AND cp.status = 'Active'");
+            pstmt.setObject(1, UUID.fromString(contractId));
+            pstmt.setString(2, localNodeId);
+            rs = pstmt.executeQuery();
+            if (!rs.next()) throw new IllegalArgumentException(
+                "Contract not found or local node is not an active participant.");
+            receiverNodeId = rs.getString("receiver_node_id");
+            pstmt.close();
 
             byte[] fileBytes = Base64.getDecoder().decode(fileDataBase64);
             File storageDir = new File(activePath);
@@ -188,12 +201,36 @@ public class DXManager implements Action {
             sequenceNumber = (long) input.get("sequence_number");
         }
 
+        // Participant authorisation check
+        {
+            Connection authConn = null; PreparedStatement authPs = null; ResultSet authRs = null;
+            PoolDB authPool = new PoolDB();
+            try {
+                authConn = authPool.getConnection();
+                authPs = authConn.prepareStatement(
+                    "SELECT 1 FROM contract_participants " +
+                    "WHERE contract_id = ? AND node_id = ? AND status = 'Active'");
+                authPs.setObject(1, UUID.fromString(contractId));
+                authPs.setString(2, senderNodeId);
+                authRs = authPs.executeQuery();
+                if (!authRs.next()) {
+                    JSONObject details = new JSONObject();
+                    details.put("sender", senderNodeId);
+                    details.put("contract_id", contractId);
+                    logAudit("SECURITY_UNAUTHORIZED_TRANSFER", "CRITICAL", senderNodeId, transferId, details, req);
+                    OutputProcessor.errorResponse(res, 403, "Forbidden",
+                        "Sender is not an authorised participant of this contract.", req.getRequestURI());
+                    return;
+                }
+            } finally { authPool.cleanup(authRs, authPs, authConn); }
+        }
+
         try {
             // Perform freshness and monotonicity checks
             TransferEngine.getInstance().verifyIncomingTransfer(
-                senderNodeId, 
-                UUID.fromString(contractId), 
-                sequenceNumber, 
+                senderNodeId,
+                UUID.fromString(contractId),
+                sequenceNumber,
                 messageTimestamp
             );
         } catch (SecurityException se) {

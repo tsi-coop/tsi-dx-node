@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Confirm Invitation",
+  "description": "P2P inbound: invited node has accepted the contract invitation.",
+  "type": "object",
+  "required": ["_func", "contract_id", "node_id"],
+  "properties": {
+    "_func": {
+      "type": "string",
+      "const": "confirm_invitation"
+    },
+    "contract_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "node_id": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}

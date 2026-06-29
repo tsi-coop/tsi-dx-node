@@ -1,79 +1,54 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Create Contract Request",
-  "description": "Simplified schema for registering JSON or CSV data exchange contracts. Governance rules and PII tags are embedded within the schema_definition and pii_fields array.",
+  "description": "Registers a new data contract. Only the receiver node creates contracts; senders are invited separately via invite_node.",
   "type": "object",
   "required": [
     "_func",
     "name",
-    "direction",
-    "sender_partner_id",
-    "receiver_partner_id",
     "schema_definition",
-    "metadata"
+    "metadata",
+    "interaction_type"
   ],
   "properties": {
     "_func": {
       "type": "string",
-      "const": "create_contract",
-      "description": "The internal function identifier for contract registration."
+      "const": "create_contract"
     },
     "name": {
       "type": "string",
-      "minLength": 1,
-      "description": "The administrative designation for the contract (e.g., Daily Mortgage Leads)."
-    },
-    "version": {
-      "type": "string",
-      "default": "1.0.0"
+      "minLength": 1
     },
     "description": {
       "type": "string"
-    },
-    "direction": {
-      "type": "string",
-      "enum": ["Outgoing", "Incoming", "Bidirectional"],
-      "description": "The logical flow of data relative to the local node."
-    },
-    "sender_partner_id": {
-      "type": "string",
-      "description": "The verified Node ID of the sending party."
-    },
-    "receiver_partner_id": {
-      "type": "string",
-      "description": "The verified Node ID of the receiving party."
-    },
-    "schema_definition": {
-      "type": "object",
-      "description": "For JSON: A valid Draft-07 JSON Schema. For CSV: An object containing a 'fields' array with column definitions.",
-      "additionalProperties": true
-    },
-    "metadata": {
-      "type": "object",
-      "description": "System-level metadata defining the data exchange type.",
-      "required": ["format"],
-      "properties": {
-        "format": {
-          "type": "string",
-          "enum": ["json", "csv"],
-          "description": "Determines the validation and inspection logic applied to the data stream."
-        }
-      }
-    },
-    "retention_policy_days": {
-      "type": "integer",
-      "default": 30,
-      "description": "Number of days the data remains in the active staging path before archiving/purging."
-    },
-    "pii_fields": {
-      "type": "array",
-      "items": { "type": "string" },
-      "description": "A flat list of field names or JSON paths flagged for PII masking/anonymization."
     },
     "interaction_type": {
       "type": "string",
       "enum": ["async", "sync"],
       "description": "Whether this contract governs async batch transfers or synchronous request/response exchanges."
+    },
+    "schema_definition": {
+      "type": "object",
+      "description": "For JSON: a valid Draft-07 JSON Schema. For CSV: an object containing a 'fields' array.",
+      "additionalProperties": true
+    },
+    "metadata": {
+      "type": "object",
+      "required": ["format"],
+      "properties": {
+        "format": {
+          "type": "string",
+          "enum": ["json", "csv"]
+        }
+      }
+    },
+    "retention_policy_days": {
+      "type": "integer",
+      "default": 30
+    },
+    "pii_fields": {
+      "type": "array",
+      "items": { "type": "string" }
     }
   },
   "additionalProperties": false

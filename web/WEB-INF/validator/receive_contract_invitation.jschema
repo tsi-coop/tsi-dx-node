@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Receive Contract Invitation",
+  "description": "P2P inbound: receiver node has invited this node to participate in a contract.",
+  "type": "object",
+  "required": ["_func", "contract_id", "name", "schema_definition", "metadata", "sender_node_id", "interaction_type"],
+  "properties": {
+    "_func": {
+      "type": "string",
+      "const": "receive_contract_invitation"
+    },
+    "contract_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "name": {
+      "type": "string"
+    },
+    "sender_node_id": {
+      "type": "string"
+    },
+    "interaction_type": {
+      "type": "string",
+      "enum": ["async", "sync"]
+    },
+    "schema_definition": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "metadata": {
+      "type": "object",
+      "required": ["format"]
+    },
+    "pii_fields": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "additionalProperties": false
+}

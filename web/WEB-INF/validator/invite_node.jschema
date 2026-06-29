@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Invite Node",
+  "description": "Invites a partner node to participate in an existing Draft contract.",
+  "type": "object",
+  "required": ["_func", "contract_id", "node_id"],
+  "properties": {
+    "_func": {
+      "type": "string",
+      "const": "invite_node"
+    },
+    "contract_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "node_id": {
+      "type": "string",
+      "description": "The node ID of the partner to invite."
+    }
+  },
+  "additionalProperties": false
+}
