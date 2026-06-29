@@ -15,6 +15,8 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.sql.*;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -116,6 +118,45 @@ public class DataContract implements Action {
                     if (contractId == null) throw new IllegalArgumentException("contract_id required.");
                     declineInvitation(contractId, getString(input, "node_id"));
                     logAudit("CONTRACT_PARTICIPANT_REJECTED", "INFO", "P2P_PROTOCOL",
+                            contractId.toString(), new JSONObject(), req);
+                    OutputProcessor.send(res, 200, ok());
+                    break;
+
+                case "notify_participant_suspended":
+                    // Inbound P2P: receiver has suspended this node on the contract
+                    if (contractId == null) throw new IllegalArgumentException("contract_id required.");
+                    applyParticipantSuspension(contractId);
+                    logAudit("CONTRACT_PARTICIPANT_SUSPENDED", "INFO", "P2P_PROTOCOL",
+                            contractId.toString(), new JSONObject(), req);
+                    OutputProcessor.send(res, 200, ok());
+                    break;
+
+                case "notify_contract_suspended":
+                    // Inbound P2P: receiver has suspended the contract
+                    if (contractId == null) throw new IllegalArgumentException("contract_id required.");
+                    applyContractSuspension(contractId);
+                    logAudit("CONTRACT_SUSPENDED", "INFO", "P2P_PROTOCOL",
+                            contractId.toString(), new JSONObject(), req);
+                    OutputProcessor.send(res, 200, ok());
+                    break;
+
+                case "deactivate_participant": {
+                    if (contractId == null) throw new IllegalArgumentException("contract_id required.");
+                    String nodeId = getString(input, "node_id");
+                    if (nodeId.isEmpty()) throw new IllegalArgumentException("node_id required.");
+                    deactivateParticipant(contractId, nodeId);
+                    JSONObject dpAudit = new JSONObject();
+                    dpAudit.put("suspended_node", nodeId);
+                    logAudit("CONTRACT_PARTICIPANT_SUSPENDED", "INFO", resolveActor(req),
+                            contractId.toString(), dpAudit, req);
+                    OutputProcessor.send(res, 200, ok());
+                    break;
+                }
+
+                case "deactivate_contract":
+                    if (contractId == null) throw new IllegalArgumentException("contract_id required.");
+                    deactivateContract(contractId);
+                    logAudit("CONTRACT_SUSPENDED", "INFO", resolveActor(req),
                             contractId.toString(), new JSONObject(), req);
                     OutputProcessor.send(res, 200, ok());
                     break;
@@ -467,6 +508,113 @@ public class DataContract implements Action {
             pstmt.setObject(1, contractId);
             pstmt.executeUpdate();
         } finally { pool.cleanup(null, pstmt, conn); }
+    }
+
+    private void deactivateParticipant(UUID contractId, String nodeId) throws Exception {
+        PoolDB pool = new PoolDB();
+        Connection conn = null; PreparedStatement pstmt = null; ResultSet rs = null;
+        try {
+            conn = pool.getConnection();
+            pstmt = conn.prepareStatement(
+                "UPDATE contract_participants SET status = 'Suspended' " +
+                "WHERE contract_id = ? AND node_id = ? " +
+                "AND (SELECT receiver_node_id FROM data_contracts WHERE contract_id = ?) = " +
+                "(SELECT node_id FROM node_config LIMIT 1)");
+            pstmt.setObject(1, contractId);
+            pstmt.setString(2, nodeId);
+            pstmt.setObject(3, contractId);
+            if (pstmt.executeUpdate() == 0)
+                throw new IllegalStateException("Not authorised or participant not found.");
+            pool.cleanup(null, pstmt, null);
+
+            // Notify the suspended sender so their local participant status updates
+            String fqdn = getFqdnForNode(conn, nodeId);
+            if (fqdn != null) {
+                JSONObject payload = new JSONObject();
+                payload.put("_func",       "notify_participant_suspended");
+                payload.put("contract_id", contractId.toString());
+                try { dispatch(fqdn, payload); }
+                catch (Exception e) { System.err.println("[DataContract] notify_participant_suspended failed for " + nodeId + ": " + e.getMessage()); }
+            }
+        } finally { pool.cleanup(rs, pstmt, conn); }
+    }
+
+    private void deactivateContract(UUID contractId) throws Exception {
+        PoolDB pool = new PoolDB();
+        Connection conn = null; PreparedStatement pstmt = null;
+        try {
+            conn = pool.getConnection();
+
+            // Collect active participants before suspending (while status is still 'Active')
+            List<String[]> participants = getActiveParticipantFqdns(conn, contractId);
+
+            pstmt = conn.prepareStatement(
+                "UPDATE data_contracts SET status = 'Suspended', updated_at = NOW() " +
+                "WHERE contract_id = ? AND receiver_node_id = (SELECT node_id FROM node_config LIMIT 1)");
+            pstmt.setObject(1, contractId);
+            if (pstmt.executeUpdate() == 0)
+                throw new IllegalStateException("Not authorised or contract not found.");
+            pool.cleanup(null, pstmt, null);
+
+            // Notify all active participants so their local contract status updates
+            JSONObject payload = new JSONObject();
+            payload.put("_func",       "notify_contract_suspended");
+            payload.put("contract_id", contractId.toString());
+            for (String[] p : participants) {
+                try { dispatch(p[1], payload); }
+                catch (Exception e) { System.err.println("[DataContract] notify_contract_suspended failed for " + p[0] + ": " + e.getMessage()); }
+            }
+        } finally { pool.cleanup(null, pstmt, conn); }
+    }
+
+    /** Updates the local participant row to Suspended — called on the sender side via P2P. */
+    private void applyParticipantSuspension(UUID contractId) throws SQLException {
+        PoolDB pool = new PoolDB();
+        Connection conn = null; PreparedStatement pstmt = null;
+        try {
+            conn = pool.getConnection();
+            pstmt = conn.prepareStatement(
+                "UPDATE contract_participants SET status = 'Suspended' " +
+                "WHERE contract_id = ? AND node_id = (SELECT node_id FROM node_config LIMIT 1)");
+            pstmt.setObject(1, contractId);
+            pstmt.executeUpdate();
+        } finally { pool.cleanup(null, pstmt, conn); }
+    }
+
+    /** Updates the local contract status to Suspended — called on sender nodes via P2P. */
+    private void applyContractSuspension(UUID contractId) throws SQLException {
+        PoolDB pool = new PoolDB();
+        Connection conn = null; PreparedStatement pstmt = null;
+        try {
+            conn = pool.getConnection();
+            pstmt = conn.prepareStatement(
+                "UPDATE data_contracts SET status = 'Suspended', updated_at = NOW() WHERE contract_id = ?");
+            pstmt.setObject(1, contractId);
+            pstmt.executeUpdate();
+        } finally { pool.cleanup(null, pstmt, conn); }
+    }
+
+    private String getFqdnForNode(Connection conn, String nodeId) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement("SELECT fqdn FROM partners WHERE node_id = ?")) {
+            ps.setString(1, nodeId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getString("fqdn") : null;
+            }
+        }
+    }
+
+    private List<String[]> getActiveParticipantFqdns(Connection conn, UUID contractId) throws SQLException {
+        List<String[]> result = new ArrayList<>();
+        try (PreparedStatement ps = conn.prepareStatement(
+                "SELECT cp.node_id, p.fqdn FROM contract_participants cp " +
+                "JOIN partners p ON p.node_id = cp.node_id " +
+                "WHERE cp.contract_id = ? AND cp.status = 'Active'")) {
+            ps.setObject(1, contractId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) result.add(new String[]{rs.getString("node_id"), rs.getString("fqdn")});
+            }
+        }
+        return result;
     }
 
     private void declineInvitation(UUID contractId, String nodeId) throws SQLException {

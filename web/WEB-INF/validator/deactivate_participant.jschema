@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Deactivate Participant",
+  "description": "Suspends a sender node from a contract. Only the receiver node may call this.",
+  "type": "object",
+  "required": ["_func", "contract_id", "node_id"],
+  "properties": {
+    "_func": {
+      "type": "string",
+      "const": "deactivate_participant"
+    },
+    "contract_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "node_id": {
+      "type": "string",
+      "description": "The node ID of the sender to suspend."
+    }
+  },
+  "additionalProperties": false
+}

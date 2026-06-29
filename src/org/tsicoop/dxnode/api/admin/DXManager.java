@@ -143,7 +143,7 @@ public class DXManager implements Action {
             pstmt = conn.prepareStatement(
                 "SELECT c.receiver_node_id FROM data_contracts c " +
                 "JOIN contract_participants cp ON cp.contract_id = c.contract_id " +
-                "WHERE c.contract_id = ? AND cp.node_id = ? AND cp.status = 'Active'");
+                "WHERE c.contract_id = ? AND cp.node_id = ? AND cp.status = 'Active' AND c.status = 'Active'");
             pstmt.setObject(1, UUID.fromString(contractId));
             pstmt.setString(2, localNodeId);
             rs = pstmt.executeQuery();
@@ -381,6 +381,10 @@ public class DXManager implements Action {
         Connection conn = null; PreparedStatement pstmt = null; ResultSet rs = null; PoolDB pool = new PoolDB();
         try {
             conn = pool.getConnection();
+            String localId = "";
+            try (ResultSet idRs = conn.prepareStatement("SELECT node_id FROM node_config LIMIT 1").executeQuery()) {
+                if (idRs.next()) localId = idRs.getString(1);
+            }
             String status     = (input != null && input.get("status") != null)      ? input.get("status").toString()      : null;
             String contractId = (input != null && input.get("contract_id") != null) ? input.get("contract_id").toString() : null;
             StringBuilder sql = new StringBuilder(
@@ -399,8 +403,11 @@ public class DXManager implements Action {
                 l.put("log_id",          rs.getString("log_id"));
                 l.put("contract_id",     rs.getString("contract_id"));
                 l.put("contract_name",   rs.getString("contract_name"));
-                l.put("sender_node_id",  rs.getString("sender_node_id"));
-                l.put("receiver_node_id",rs.getString("receiver_node_id"));
+                String senderNid   = rs.getString("sender_node_id");
+                String receiverNid = rs.getString("receiver_node_id");
+                l.put("sender_node_id",      senderNid);
+                l.put("receiver_node_id",    receiverNid);
+                l.put("counterparty_node_id", localId.equals(senderNid) ? receiverNid : senderNid);
                 l.put("duration_ms",     rs.getLong("duration_ms"));
                 l.put("status",          rs.getString("status"));
                 l.put("idempotency_key", rs.getString("idempotency_key"));

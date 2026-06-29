@@ -14,7 +14,7 @@ This guide walks through running two fully independent TSI DX Node instances (No
 | Node A DB | `node-a-database-1` · Host: `5434` |
 | Node B DB | `node-b-database-1` · Host: `5435` |
 
-> **Port note:** Both nodes run Jetty HTTPS on container port **8443**. The host exposes Node A's P2P port as `8443` and Node B's as `9443` to avoid collision. Container-to-container traffic always uses port `8443` directly — the host mapping is irrelevant for P2P.
+> **Port note:** Both nodes run Jetty HTTPS on container port **8443**. The host exposes Node A's P2P port as `8443` and Node B's as `9443` to avoid collision. Container-to-container traffic always uses port `8443` directly - the host mapping is irrelevant for P2P.
 
 ---
 
@@ -27,7 +27,7 @@ Jetty serves two connectors per container:
 | HTTP | 8080 | Plain HTTP | Browser UI (via APP_PORT_MAP) |
 | HTTPS | 8443 | TLS (dev self-signed cert) | P2P handshakes and mTLS |
 
-The dev keystore is baked into the image at build time (`keytool`, self-signed). It handles **transport encryption only** — it is not the node's identity cert. The identity cert (generated in step 6) is stored in the database and loaded at runtime by `Partners.java` for the application-layer mTLS validation.
+The dev keystore is baked into the image at build time (`keytool`, self-signed). It handles **transport encryption only** - it is not the node's identity cert. The identity cert (generated in step 6) is stored in the database and loaded at runtime by `Partners.java` for the application-layer mTLS validation.
 
 Partners.java's fallback client (trust-all) is used for the initial bootstrap handshake, so the self-signed transport cert does not block the first exchange. Once identity certs are registered, the genuine mTLS client takes over and validates peer certificates from the database trust store.
 
@@ -37,8 +37,8 @@ Partners.java's fallback client (trust-all) is used for the initial bootstrap ha
 
 | File | Purpose |
 |---|---|
-| `docker-compose.yml` | Base compose file (production) — no changes required |
-| `docker-compose.p2p.yml` | P2P overlay — adds shared network and HTTPS port |
+| `docker-compose.yml` | Base compose file (production) - no changes required |
+| `docker-compose.p2p.yml` | P2P overlay - adds shared network and HTTPS port |
 | `.env.node-a` | Environment variables for Node A |
 | `.env.node-b` | Environment variables for Node B |
 
@@ -50,16 +50,16 @@ Save this alongside `docker-compose.yml` in the project root. It is never used s
 
 ```yaml
 # docker-compose.p2p.yml
-# Local P2P testing overlay — combine with docker-compose.yml via -f flag.
+# Local P2P testing overlay - combine with docker-compose.yml via -f flag.
 #
 # PRE-REQUISITE:
 #   docker network create tsi-p2p-net
 #
-# USAGE — Node A:
+# USAGE - Node A:
 #   docker compose -f docker-compose.yml -f docker-compose.p2p.yml \
 #     --project-name node-a --env-file .env.node-a up --build -d
 #
-# USAGE — Node B:
+# USAGE - Node B:
 #   docker compose -f docker-compose.yml -f docker-compose.p2p.yml \
 #     --project-name node-b --env-file .env.node-b up --build -d
 
@@ -77,7 +77,7 @@ services:
       - tsi-p2p-net  # peer-to-peer discovery network
 
   database:
-    # Database stays on default network only — not exposed to the peer network
+    # Database stays on default network only - not exposed to the peer network
     networks:
       - default
 
@@ -192,7 +192,7 @@ Expected response:
 
 ## 5. Node Bootstrapping
 
-Initialize the identity for each node via the web UI. Use the Docker service hostname as the FQDN and **always use port `8443`** — that is the internal Jetty HTTPS port that all P2P traffic uses, regardless of what host port the node is exposed on.
+Initialize the identity for each node via the web UI. Use the Docker service hostname as the FQDN and **always use port `8443`** - that is the internal Jetty HTTPS port that all P2P traffic uses, regardless of what host port the node is exposed on.
 
 > **Warning:** When prompted for "Public FQDN", enter the Docker service hostname (e.g. `node-a-server-1`), NOT your machine's LAN IP or `localhost`. The P2P handshake resolves hostnames over `tsi-p2p-net`. Using `localhost` would make the node advertise itself as the partner's own loopback address.
 
@@ -220,7 +220,7 @@ Open `http://localhost:8083/init.html`
 
 Click **Establish Node Authority**.
 
-> **Why `8443` for both?** The mTLS port is the port *this node tells its partners to use* when calling back. Container-to-container, both nodes listen on `8443` (Jetty HTTPS). The host-side port `9443` for Node B is only for browser/curl access from your dev machine — it is not used in container-to-container handshakes.
+> **Why `8443` for both?** The mTLS port is the port *this node tells its partners to use* when calling back. Container-to-container, both nodes listen on `8443` (Jetty HTTPS). The host-side port `9443` for Node B is only for browser/curl access from your dev machine - it is not used in container-to-container handshakes.
 
 ---
 
@@ -238,7 +238,7 @@ openssl genrsa -out node_a_raw.key 2048
 openssl pkcs8 -topk8 -inform PEM -outform PEM -nocrypt \
   -in node_a_raw.key -out node_a.key
 
-# Self-signed certificate — use node-a-server-1 as Common Name when prompted
+# Self-signed certificate - use node-a-server-1 as Common Name when prompted
 openssl req -new -x509 -key node_a.key -out node_a.crt -days 365
 
 # Convert to PEM registry format
@@ -276,7 +276,7 @@ Click **Activate** on each node to bind the cryptographic identity to the protoc
 
 Both nodes must pre-register each other's public key before the P2P handshake will succeed.
 
-### Phase 1 — Register Node B in Node A
+### Phase 1 - Register Node B in Node A
 
 On Node A (`http://localhost:8082`): **Partner Nodes → Add Partner**
 
@@ -287,7 +287,7 @@ On Node A (`http://localhost:8082`): **Partner Nodes → Add Partner**
 | Port | `8443` |
 | Public Key | Upload `node_b.pem` |
 
-### Phase 2 — Register Node A in Node B
+### Phase 2 - Register Node A in Node B
 
 On Node B (`http://localhost:8083`): **Partner Nodes → Add Partner**
 
@@ -298,7 +298,7 @@ On Node B (`http://localhost:8083`): **Partner Nodes → Add Partner**
 | Port | `8443` |
 | Public Key | Upload `node_a.pem` |
 
-> **Important:** Use port `8443` for both registrations — not `9443`. The FQDN stored here (`node-b-server-1:8443`) is used directly for container-to-container calls. Port `9443` only exists on the host, not inside Node B's container.
+> **Important:** Use port `8443` for both registrations - not `9443`. The FQDN stored here (`node-b-server-1:8443`) is used directly for container-to-container calls. Port `9443` only exists on the host, not inside Node B's container.
 
 > **Tip:** After registration, click **Sync Identity** on each partner entry. Status should change from `Pending` → `Active` on both nodes.
 
@@ -306,13 +306,14 @@ On Node B (`http://localhost:8083`): **Partner Nodes → Add Partner**
 
 ## 8. Database Migrations
 
-The `docker-compose.yml` mounts the `db/` directory to `/docker-entrypoint-initdb.d`. On a clean database (empty volume), Postgres automatically runs all three files in order on first boot — no manual steps needed.
+The `docker-compose.yml` mounts the `db/` directory to `/docker-entrypoint-initdb.d`. On a clean database (empty volume), Postgres automatically runs all four files in order on first boot - no manual steps needed.
 
 | Migration | What it creates |
 |---|---|
-| `01_init.sql` | Core schema — nodes, partners, contracts, transfers, audit logs |
+| `01_init.sql` | Core schema - nodes, partners, contracts, transfers, audit logs |
 | `02_sync_schema_changes.sql` | `sync_nonces`, `sync_audit_log` tables for synchronous contracts |
 | `03_contract_participants.sql` | `contract_participants` table, `receiver_node_id` on `data_contracts`, removes legacy `direction`/`sender_partner_id`/`receiver_partner_id` columns |
+| `04_suspended_participant_status.sql` | Widens the `contract_participants.status` CHECK constraint to include `'Suspended'`, required for receiver-initiated sender deactivation |
 
 **Upgrading an existing node** (volume already has data): apply the new migrations manually instead of wiping the volume:
 
@@ -322,19 +323,25 @@ docker exec -i node-a-database-1 psql -U tsi_admin -d tsi_dx_node \
   < db/02_sync_schema_changes.sql
 docker exec -i node-a-database-1 psql -U tsi_admin -d tsi_dx_node \
   < db/03_contract_participants.sql
+docker exec -i node-a-database-1 psql -U tsi_admin -d tsi_dx_node \
+  < db/04_suspended_participant_status.sql
 
 # Node B
 docker exec -i node-b-database-1 psql -U tsi_admin -d tsi_dx_node \
   < db/02_sync_schema_changes.sql
 docker exec -i node-b-database-1 psql -U tsi_admin -d tsi_dx_node \
   < db/03_contract_participants.sql
+docker exec -i node-b-database-1 psql -U tsi_admin -d tsi_dx_node \
+  < db/04_suspended_participant_status.sql
 ```
 
 ---
 
-## 9. Contract Model — Receiver Authority
+## 9. Contract Model - Receiver Authority
 
-Only the **receiving node** creates contracts. The receiver invites one or more partner nodes to participate. Each invited node can Accept or Reject. Transfers — async or sync — can only be initiated by nodes with an `Active` participant row.
+Only the **receiving node** creates contracts. The receiver invites one or more partner nodes to participate. Each invited node can Accept or Reject. Transfers - async or sync - can only be initiated by nodes with an `Active` participant row.
+
+The receiver can also suspend individual senders or the entire contract at any time. A suspended sender is immediately blocked at the protocol layer - no new transfers are accepted under that contract.
 
 ```
 Node B (Receiver)          Node A (Participant)
@@ -353,6 +360,12 @@ New Contract (Draft)
                              ──────────────────────────►
                              async: receive_transfer_stream
                              sync:  receive_sync_request
+
+  [Receiver actions at any time]
+  Suspend Sender ──────────► participant status → Suspended
+                             (transfers rejected with HTTP 403)
+  Suspend Contract ────────► contract status → Suspended
+                             (all participants blocked)
 ```
 
 ---
@@ -441,9 +454,9 @@ Expected: `{ "success": true, "transfer_id": "..." }`
 |---|---|
 | Status: Delivered | Node A → Transfer Logs → All Exchanges |
 | Status: Received | Node B → Transfer Logs → All Exchanges |
-| PII fields transformed | Node B → Transfer Logs → View File — `applicant_id` and `mobile` anonymised |
+| PII fields transformed | Node B → Transfer Logs → View File - `applicant_id` and `mobile` anonymised |
 | TRANSFER audit events | Both nodes → Audit Trail |
-| Sequence increments | Send a second file — monotonicity enforced |
+| Sequence increments | Send a second file - monotonicity enforced |
 
 ---
 
@@ -467,7 +480,7 @@ docker exec node-b-server-1 wget -qO- --post-data='{"test":1}' \
 # Expected: {"result":"ok"}
 ```
 
-**What is the mock responder?** In a real deployment, `sync_responder_url` points to an internal service — a loan eligibility engine, a fraud scoring API, a CRM lookup. When Node B receives a sync request, it governs the payload and proxies it to that internal service, returning the response inline to Node A. The `mock-responder` service in `docker-compose.yml` (defined in `test/mock_responder.py`) provides a stand-in that accepts any POST and replies `{"result":"ok"}`.
+**What is the mock responder?** In a real deployment, `sync_responder_url` points to an internal service - a loan eligibility engine, a fraud scoring API, a CRM lookup. When Node B receives a sync request, it governs the payload and proxies it to that internal service, returning the response inline to Node A. The `mock-responder` service in `docker-compose.yml` (defined in `test/mock_responder.py`) provides a stand-in that accepts any POST and replies `{"result":"ok"}`.
 
 > **Why `mock-responder` and not `localhost`?** The mock runs as a separate Docker Compose service. From inside the `server` container, `localhost` refers only to that container. Docker Compose places all services in the same project network and makes them reachable by service name.
 
@@ -490,7 +503,7 @@ On **Node B** → **Data Contracts → New Contract**:
 - **Responder URL:** `http://mock-responder:8099/eligibility`
 - **Timeout:** `10000` ms
 
-Click **Register Contract**. The `sync_responder_url` is stored locally on Node B only — it is **never sent to participants** during the invite flow.
+Click **Register Contract**. The `sync_responder_url` is stored locally on Node B only - it is **never sent to participants** during the invite flow.
 
 **JSON Schema Definition:**
 
@@ -554,7 +567,7 @@ Expected: `{ "success": true, "response_payload": { "result": "ok" }, "duration_
 | Sync audit row (receiver) | Node B → Transfer Logs → Sync Calls tab |
 | Sync Calls (24h) counter | Dashboard stat card |
 | `interaction_type: sync` badge | Data Contracts list |
-| Participants column | Node B → Data Contracts — shows Node A as Active |
+| Participants column | Node B → Data Contracts - shows Node A as Active |
 | Contract Inspector | Participants section shows Node A with status Active |
 
 ---
@@ -570,6 +583,44 @@ Works identically for async and sync contracts. After Node A is Active:
 3. Node C → Initiate Transfer using the same contract
 
 Verify that audit logs on Node B attribute each transfer to its correct sender.
+
+### Receiver Deactivation
+
+**Suspend a sender (participant-level):**
+
+1. On **Node B** → Data Contracts → `Weekly Loan Applications` → **Inspect**
+2. In the Participants section, click **Suspend** next to Node A
+3. Node A's participant status changes from `Active` → `Suspended`
+
+Verify the block from Node A:
+
+```bash
+B64=$(base64 -w 0 test_payload.json)
+
+curl -s -X POST http://localhost:8082/api/admin/transfers \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <your-admin-token>" \
+  -d "{
+    \"_func\": \"initiate_transfer\",
+    \"contract_id\": \"<uuid-of-async-contract>\",
+    \"file_name\": \"blocked.json\",
+    \"file_data\": \"$B64\",
+    \"file_size\": $(wc -c < test_payload.json)
+  }"
+```
+
+Expected: HTTP 400 `Contract not found or local node is not an active participant.`
+
+Also confirm that `Weekly Loan Applications` no longer appears in Node A's transfer initiation dropdown - the UI filters on `participant_status === 'Active'`.
+
+**Suspend an entire contract (contract-level):**
+
+1. On **Node B** → Data Contracts → `Weekly Loan Applications` → **Suspend** (orange button in the table row)
+2. Contract status changes from `Active` → `Suspended`
+
+All participants - including any other active senders on that contract - are now blocked. The `Suspend` button is replaced by the `Inspect` button in the UI once the contract is no longer Active.
+
+Both deactivation actions are written to the Audit Trail on Node B (`CONTRACT_PARTICIPANT_SUSPENDED` and `CONTRACT_SUSPENDED`).
 
 ### Authorisation Rejection
 
@@ -594,7 +645,7 @@ curl -s -X POST http://localhost:8083/api/admin/transfers \
 Expected: HTTP 403 `Sender is not an authorised participant of this contract.`  
 An audit entry `SECURITY_UNAUTHORIZED_TRANSFER` (CRITICAL) is written on Node B.
 
-### Replay Protection — Async (Sequence Number)
+### Replay Protection - Async (Sequence Number)
 
 Reset Node B's transfer history for Node A, then re-send the same file:
 
@@ -605,9 +656,9 @@ docker exec -i node-b-database-1 psql -U tsi_admin -d tsi_dx_node -c \
 
 A second transfer with a non-monotonic sequence number must be rejected with HTTP 403.
 
-### Replay Protection — Sync (Nonce)
+### Replay Protection - Sync (Nonce)
 
-Send the same `idempotency_key` twice within the nonce TTL window — the second call must be rejected. After the TTL expires (~30 s), a call with a fresh nonce succeeds.
+Send the same `idempotency_key` twice within the nonce TTL window - the second call must be rejected. After the TTL expires (~30 s), a call with a fresh nonce succeeds.
 
 ### Circuit Breaker (Sync Only)
 
@@ -631,7 +682,7 @@ docker compose -p node-b start mock-responder
 | Transfer payload | File (JSON or CSV) | JSON object |
 | Response | None (queued, polled) | Inline HTTP 200 |
 | Governance on send | L1 schema + L2 PII | L1 schema + L2 PII |
-| Governance on receive | — | L2 PII only (response schema differs) |
+| Governance on receive | - | L2 PII only (response schema differs) |
 | Audit table | `data_transfers` | `sync_audit_log` |
 | Replay protection | Sequence number monotonicity | Nonce TTL (`sync_nonces` table) |
 | Circuit breaker | None | Opens after 5 consecutive failures |
@@ -667,14 +718,14 @@ docker network rm tsi-p2p-net
 
 ## 15. Troubleshooting
 
-**Server and database logs — Node A**
+**Server and database logs - Node A**
 
 ```bash
 docker compose -p node-a logs -f server
 docker compose -p node-a logs -f database
 ```
 
-**Server and database logs — Node B**
+**Server and database logs - Node B**
 
 ```bash
 docker compose -p node-b logs -f server

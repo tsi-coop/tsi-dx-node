@@ -464,7 +464,7 @@
                     const statusColor = l.status === 'SUCCESS' ? 'text-green-600' : (l.status === 'TIMEOUT' ? 'text-orange-500' : 'text-red-600');
                     row.innerHTML = `
                         <td class="px-6 py-4 text-[10px] font-bold text-slate-600">${formatTimestamp(l.timestamp)}</td>
-                        <td class="px-6 py-4 font-bold text-slate-900 uppercase text-xs">${l.receiver_node_id || l.sender_node_id || '---'}</td>
+                        <td class="px-6 py-4 font-bold text-slate-900 uppercase text-xs">${l.counterparty_node_id || '---'}</td>
                         <td class="px-6 py-4 text-xs text-slate-600">${l.contract_name || (l.contract_id ? l.contract_id.substring(0, 8) + '...' : '---')}</td>
                         <td class="px-6 py-4 text-xs font-mono text-slate-700">${l.duration_ms} ms</td>
                         <td class="px-6 py-4 text-[10px] font-bold ${statusColor} uppercase">${l.status}</td>

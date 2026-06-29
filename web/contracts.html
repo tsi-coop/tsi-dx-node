@@ -264,6 +264,7 @@
                                 <th class="p-3 font-black text-slate-500 border-b tracking-widest uppercase">Name</th>
                                 <th class="p-3 font-black text-slate-500 border-b text-center tracking-widest uppercase">Status</th>
                                 <th class="p-3 font-black text-slate-500 border-b tracking-widest uppercase">Invited</th>
+                                <th id="ins-participants-actions-hdr" class="p-3 font-black text-slate-500 border-b text-right tracking-widest uppercase hidden">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="ins-participants-body" class="divide-y divide-slate-100"></tbody>
@@ -302,6 +303,8 @@
         let currentWizStep = 1;
         let inviteContractId = null;
         let inviteContractParticipants = [];
+        let inspectorContractId = null;
+        let inspectorIsReceiver = false;
 
         document.addEventListener('DOMContentLoaded', async () => {
             initIdentity();
@@ -347,11 +350,12 @@
                     const activeCount = c.active_participant_count || 0;
                     const totalCount  = c.total_invited || 0;
 
-                    let roleLabel = isReceiver ? 'Receiver' : (pStatus || 'Observer');
+                    let roleLabel = isReceiver ? 'Receiver' : (pStatus === 'Suspended' ? 'Suspended' : 'Sender');
                     let roleBadge = isReceiver
                         ? 'bg-indigo-100 text-indigo-700'
                         : (pStatus === 'Active' ? 'bg-green-100 text-green-700'
                            : pStatus === 'Invited' ? 'bg-yellow-100 text-yellow-700'
+                           : pStatus === 'Suspended' ? 'bg-orange-100 text-orange-700'
                            : 'bg-slate-100 text-slate-500');
 
                     let participantsSummary = isReceiver
@@ -362,6 +366,9 @@
 
                     if (isReceiver && (c.status === 'Draft' || c.status === 'Active')) {
                         actions = `<button onclick="openInviteModal('${c.contract_id}', '${escHtml(c.name)}')" class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-[9px] font-black uppercase hover:bg-blue-700 shadow-sm">Invite</button> ` + actions;
+                    }
+                    if (isReceiver && c.status === 'Active') {
+                        actions += ` <button onclick="handleSuspendContract('${c.contract_id}')" class="px-3 py-1.5 bg-orange-100 text-orange-700 rounded-lg text-[9px] font-black uppercase hover:bg-orange-200">Suspend</button>`;
                     }
                     if (!isReceiver && pStatus === 'Invited') {
                         actions = `
@@ -484,6 +491,8 @@
         async function handleViewDetails(id) {
             const res = await callApi(API, { _func: "get_contract", contract_id: id });
             if (!res) return;
+            inspectorContractId = id;
+            inspectorIsReceiver = res.is_receiver === true;
 
             document.getElementById('ins-name').innerText = res.name;
             document.getElementById('ins-id').innerText = `UUID: ${res.contract_id}`;
@@ -510,19 +519,34 @@
             // Participants table
             const ptbody = document.getElementById('ins-participants-body');
             const noP = document.getElementById('ins-no-participants');
+            const actionsHdr = document.getElementById('ins-participants-actions-hdr');
             ptbody.innerHTML = '';
+            actionsHdr.classList.toggle('hidden', !inspectorIsReceiver);
             const participants = res.participants || [];
             if (participants.length === 0) {
                 noP.classList.remove('hidden');
             } else {
                 noP.classList.add('hidden');
                 participants.forEach(p => {
-                    const statusColor = p.status === 'Active' ? 'bg-green-100 text-green-700' : p.status === 'Invited' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700';
+                    const statusColor = p.status === 'Active' ? 'bg-green-100 text-green-700'
+                        : p.status === 'Invited' ? 'bg-yellow-100 text-yellow-700'
+                        : p.status === 'Suspended' ? 'bg-orange-100 text-orange-700'
+                        : 'bg-red-100 text-red-700';
+                    const actionCell = inspectorIsReceiver
+                        ? `<td class="p-3 text-right">${
+                            p.status === 'Active'
+                                ? `<button onclick="handleSuspendParticipant('${escHtml(p.node_id)}')" class="px-2 py-1 bg-orange-100 text-orange-700 rounded text-[9px] font-black uppercase hover:bg-orange-200 no-print">Suspend</button>`
+                                : p.status === 'Suspended'
+                                    ? `<span class="px-2 py-1 bg-orange-100 text-orange-700 rounded text-[9px] font-black uppercase">Suspended</span>`
+                                    : '—'
+                          }</td>`
+                        : '';
                     ptbody.innerHTML += `<tr>
                         <td class="p-3 font-mono text-slate-700 text-[11px]">${escHtml(p.node_id)}</td>
                         <td class="p-3 font-bold text-slate-900">${escHtml(p.partner_name || '—')}</td>
                         <td class="p-3 text-center"><span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${statusColor}">${p.status}</span></td>
                         <td class="p-3 text-slate-500 text-[11px]">${p.invited_at?.split('.')[0] || '—'}</td>
+                        ${actionCell}
                     </tr>`;
                 });
             }
@@ -545,6 +569,22 @@
                 });
             }
             document.getElementById('contractInspector').classList.remove('hidden');
+        }
+
+        // -------------------------------------------------------------------------
+        // DEACTIVATION (RECEIVER ONLY)
+        // -------------------------------------------------------------------------
+
+        async function handleSuspendContract(id) {
+            if (!confirm("Suspend this contract? All active participants will be blocked from sending transfers.")) return;
+            const res = await callApi(API, { _func: "deactivate_contract", contract_id: id });
+            if (res) { showToast("Contract Suspended", "No further transfers will be accepted under this contract.", "warning"); fetchContracts(); }
+        }
+
+        async function handleSuspendParticipant(nodeId) {
+            if (!confirm(`Suspend sender ${nodeId}? They will no longer be able to transfer data under this contract.`)) return;
+            const res = await callApi(API, { _func: "deactivate_participant", contract_id: inspectorContractId, node_id: nodeId });
+            if (res) { showToast("Sender Suspended", `${nodeId} has been suspended from this contract.`, "warning"); handleViewDetails(inspectorContractId); }
         }
 
         // -------------------------------------------------------------------------

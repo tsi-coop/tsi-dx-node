@@ -96,7 +96,7 @@ public class DX implements Action {
             conn = pool.getConnection();
             
             // 1. Resolve Contract Metadata and Active Storage Path
-            String sql = "SELECT c.receiver_partner_id, c.metadata, cfg.node_id, cfg.storage_active_path " +
+            String sql = "SELECT c.receiver_node_id, c.metadata, cfg.node_id, cfg.storage_active_path " +
                          "FROM data_contracts c " +
                          "JOIN app_contracts ac ON c.contract_id = ac.contract_id " +
                          "CROSS JOIN (SELECT node_id, storage_active_path FROM node_config LIMIT 1) cfg " +
@@ -109,7 +109,7 @@ public class DX implements Action {
 
             if (!rs.next()) throw new SecurityException("Unauthorized or inactive data contract.");
 
-            String receiverId = rs.getString("receiver_partner_id");
+            String receiverId = rs.getString("receiver_node_id");
             String senderId = rs.getString("node_id");
             String activePath = rs.getString("storage_active_path");
             String contractMetadataRaw = rs.getString("metadata");
@@ -207,7 +207,7 @@ public class DX implements Action {
         Connection conn = null; PreparedStatement pstmt = null; ResultSet rs = null; PoolDB pool = new PoolDB();
         try {
             conn = pool.getConnection();
-            String sql = "SELECT c.contract_id, c.name, c.status, c.direction, c.interaction_type, c.metadata " +
+            String sql = "SELECT c.contract_id, c.name, c.status, c.interaction_type, c.metadata " +
                          "FROM data_contracts c " +
                          "JOIN app_contracts ac ON c.contract_id = ac.contract_id " +
                          "WHERE ac.app_id = ? ORDER BY c.name ASC";
@@ -219,7 +219,6 @@ public class DX implements Action {
                 c.put("contract_id", rs.getString("contract_id"));
                 c.put("name", rs.getString("name"));
                 c.put("status", rs.getString("status"));
-                c.put("direction", rs.getString("direction"));
                 c.put("interaction_type", rs.getString("interaction_type"));
                 try { c.put("metadata", new JSONParser().parse(rs.getString("metadata"))); } catch (Exception e) {}
                 arr.add(c);
@@ -234,7 +233,7 @@ public class DX implements Action {
         try {
             conn = pool.getConnection();
             String sql = "SELECT c.*, " +
-                         "(c.receiver_partner_id = (SELECT node_id FROM node_config LIMIT 1)) AS is_receiver " +
+                         "(c.receiver_node_id = (SELECT node_id FROM node_config LIMIT 1)) AS is_receiver " +
                          "FROM data_contracts c JOIN app_contracts ac ON c.contract_id = ac.contract_id " +
                          "WHERE ac.app_id = ? AND c.contract_id = ?";
             pstmt = conn.prepareStatement(sql);
