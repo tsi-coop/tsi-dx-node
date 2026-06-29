@@ -28,9 +28,9 @@ services:
   # 2. Java Jetty Web Application Service
   server:
     # Build from local source
-    # build:
-    #  context: .
-    #  dockerfile: Dockerfile
+    build:
+      context: .
+      dockerfile: Dockerfile
 
     # PRODUCTION: override with a pre-built image by setting IMAGE_NAME in .env
     image: "${IMAGE_NAME:-tsicoop/tsi-dx-node:latest}"
