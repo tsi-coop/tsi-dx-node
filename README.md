@@ -27,6 +27,14 @@ Explore the core capabilities of the TSI DX Node through this step-by-step techn
 | 04 | **Transfer Service** | Executing the 'Single Package' routing. Monitoring sequences, message timestamps, and forensic mirroring of the transmitted data payloads. | [Watch Video](https://youtu.be/5Lu0wGrjoIM) |
 | 05 | **API Integration** | Bridging internal systems. Registering applications (CRM/ERP), generating Client API credentials, and restricting access to specific authorized data contracts. | [Watch Video](https://youtu.be/MNuQCFofpdc) |
 
+## Use Cases
+
+Real-world scenarios showing how TSI DX Node solves data exchange challenges across industries.
+
+| Use Case | Description |
+|----------|-------------|
+| [LSP-Lender Data Exchange](usecases/lsp-bank-data-exchange.md) | How a loan service provider (LSP) and a bank use TSI DX Node to govern origination and servicing data across the loan lifecycle - lead intake, application, underwriting, booking, disbursement, and repayment. |
+
 ## License & Contributions
 
 This project is fully open-source and distributed under the **Apache 2.0 License**. You are completely free to fork, modify, and customize the codebase to fit your specific technical or enterprise needs without any restriction.
