@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Receive Contract Update",
+  "description": "P2P inbound: the contract's receiving node changed operational settings (name, retention, sync timeout).",
+  "type": "object",
+  "required": ["_func", "contract_id"],
+  "properties": {
+    "_func": { "type": "string", "const": "receive_contract_update" },
+    "contract_id": { "type": "string", "format": "uuid" },
+    "name": { "type": "string" },
+    "retention_policy_days": { "type": ["integer", "null"], "minimum": 0 },
+    "sync_timeout_ms": { "type": "integer", "minimum": 100, "maximum": 600000 }
+  },
+  "additionalProperties": false
+}

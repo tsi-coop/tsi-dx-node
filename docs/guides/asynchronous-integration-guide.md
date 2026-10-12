@@ -21,6 +21,8 @@ Created on the receiving node:
 | `metadata.governance_rules.pii_anonymization` | Map of field/column name → `MASK`, `HASH`, `TOKENIZE` or `NONE` |
 | `retention_policy_days` | Days a finished payload is kept before the purge deletes it. Omit to keep indefinitely; `0` purges at the next maintenance run |
 
+The receiver can change a contract's name and retention later with **Edit**. Schema and anonymisation rules can only be edited while the contract is a Draft nobody has been invited to.
+
 `MASK` keeps the last four characters (`****1234`), `HASH` is SHA-256 hex, `TOKENIZE` is a deterministic token. CSV contracts require the header row to match the schema's field list exactly.
 
 ## 3. Submit a package
@@ -61,7 +63,7 @@ The call returns as soon as the package is staged. Governance, sequencing and de
 | `get_transfer_status` | Status and failure reason for a `transfer_id` |
 | `view_forensic_payload` | The governed payload as sent or received; the access is audit-logged |
 
-Administrators can do the same in the console under **Transfer Logs**, where each transfer shows direction, counterparty, status and failure reason and its governed payload can be inspected.
+Administrators can do the same in the console under **Transfer Logs → Async**, with All / Pending / Completed / Failed filters and counts (Pending includes in-flight and retrying transfers; Completed includes `Delivered` on the sender and `Received` on the receiver), where each transfer shows direction, counterparty, status and failure reason and its governed payload can be inspected.
 
 ## 5. Track it
 

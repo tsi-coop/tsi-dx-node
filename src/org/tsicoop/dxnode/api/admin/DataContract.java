@@ -107,6 +107,7 @@ public class DataContract implements Action {
                 case "confirm_invitation":
                     // Inbound P2P: invitee has accepted — activate their participant row
                     if (contractId == null) throw new IllegalArgumentException("contract_id required.");
+                    requirePeerIs(req, getString(input, "node_id"));
                     confirmInvitation(contractId, getString(input, "node_id"));
                     logAudit("CONTRACT_PARTICIPANT_ACTIVATED", "INFO", "P2P_PROTOCOL",
                             contractId.toString(), new JSONObject(), req);
@@ -116,6 +117,7 @@ public class DataContract implements Action {
                 case "decline_invitation":
                     // Inbound P2P: invitee has rejected
                     if (contractId == null) throw new IllegalArgumentException("contract_id required.");
+                    requirePeerIs(req, getString(input, "node_id"));
                     declineInvitation(contractId, getString(input, "node_id"));
                     logAudit("CONTRACT_PARTICIPANT_REJECTED", "INFO", "P2P_PROTOCOL",
                             contractId.toString(), new JSONObject(), req);
@@ -125,6 +127,7 @@ public class DataContract implements Action {
                 case "notify_participant_suspended":
                     // Inbound P2P: receiver has suspended this node on the contract
                     if (contractId == null) throw new IllegalArgumentException("contract_id required.");
+                    requirePeerIsReceiver(contractId, req);
                     applyParticipantSuspension(contractId);
                     logAudit("CONTRACT_PARTICIPANT_SUSPENDED", "INFO", "P2P_PROTOCOL",
                             contractId.toString(), new JSONObject(), req);
@@ -134,9 +137,29 @@ public class DataContract implements Action {
                 case "notify_contract_suspended":
                     // Inbound P2P: receiver has suspended the contract
                     if (contractId == null) throw new IllegalArgumentException("contract_id required.");
+                    requirePeerIsReceiver(contractId, req);
                     applyContractSuspension(contractId);
                     logAudit("CONTRACT_SUSPENDED", "INFO", "P2P_PROTOCOL",
                             contractId.toString(), new JSONObject(), req);
+                    OutputProcessor.send(res, 200, ok());
+                    break;
+
+                case "update_contract": {
+                    if (contractId == null) throw new IllegalArgumentException("contract_id required.");
+                    JSONObject updated = updateContract(contractId, input);
+                    JSONObject auditDetails = new JSONObject();
+                    auditDetails.put("changed", updated.get("changed"));
+                    logAudit("CONTRACT_UPDATED", "INFO", resolveActor(req), contractId.toString(), auditDetails, req);
+                    OutputProcessor.send(res, 200, updated);
+                    break;
+                }
+
+                case "receive_contract_update":
+                    // Inbound P2P: the receiver changed operational settings of a contract we participate in
+                    if (contractId == null) throw new IllegalArgumentException("contract_id required.");
+                    requirePeerIsReceiver(contractId, req);
+                    applyContractUpdate(contractId, input);
+                    logAudit("CONTRACT_UPDATED", "INFO", "P2P_PROTOCOL", contractId.toString(), new JSONObject(), req);
                     OutputProcessor.send(res, 200, ok());
                     break;
 
@@ -169,6 +192,8 @@ public class DataContract implements Action {
         } catch (NoRouteToHostException | ConnectException e) {
             OutputProcessor.errorResponse(res, 502, "P2P Connectivity Error",
                     "Target node unreachable.", req.getRequestURI());
+        } catch (IllegalArgumentException e) {
+            OutputProcessor.errorResponse(res, 400, "Validation Error", e.getMessage(), req.getRequestURI());
         } catch (IllegalStateException e) {
             OutputProcessor.errorResponse(res, 403, "Forbidden", e.getMessage(), req.getRequestURI());
         } catch (Exception e) {
@@ -185,6 +210,18 @@ public class DataContract implements Action {
         UUID id = UUID.randomUUID();
         String interactionType = getString(input, "interaction_type");
         if (!interactionType.equals("sync") && !interactionType.equals("async")) interactionType = "async";
+
+        // A sync contract without a responder can never answer a call, so refuse it up front rather than
+        // letting it become Active and fail every request with 503.
+        if (interactionType.equals("sync")) {
+            Object meta = input.get("metadata");
+            Object url = meta instanceof JSONObject ? ((JSONObject) meta).get("sync_responder_url") : null;
+            String u = url == null ? "" : url.toString().trim();
+            if (u.isEmpty()) throw new IllegalArgumentException(
+                "A sync contract requires metadata.sync_responder_url: the internal service this node forwards requests to.");
+            if (!u.startsWith("http://") && !u.startsWith("https://")) throw new IllegalArgumentException(
+                "sync_responder_url must be an http:// or https:// URL.");
+        }
 
         String sql = "INSERT INTO data_contracts " +
                      "(contract_id, name, receiver_node_id, schema_definition, metadata, " +
@@ -284,6 +321,8 @@ public class DataContract implements Action {
             c.put("interaction_type", rs.getString("interaction_type"));
             c.put("is_receiver",      rs.getBoolean("is_receiver"));
             c.put("created_at",       rs.getTimestamp("created_at").toString());
+            int retentionDays = rs.getInt("retention_policy_days");
+            if (!rs.wasNull()) c.put("retention_policy_days", retentionDays);
             JSONParser parser = new JSONParser();
             try { c.put("schema_definition", parser.parse(rs.getString("schema_definition"))); } catch (Exception ignored) {}
             try { c.put("metadata",          parser.parse(rs.getString("metadata"))); }          catch (Exception ignored) {}
@@ -573,6 +612,220 @@ public class DataContract implements Action {
                 catch (Exception e) { System.err.println("[DataContract] notify_contract_suspended failed for " + p[0] + ": " + e.getMessage()); }
             }
         } finally { pool.cleanup(null, pstmt, conn); }
+    }
+
+    // -------------------------------------------------------------------------
+    // EDIT CONTRACT
+    // -------------------------------------------------------------------------
+
+    private static final java.util.Set<String> ANON_METHODS =
+            new java.util.HashSet<>(java.util.Arrays.asList("MASK", "HASH", "TOKENIZE", "NONE"));
+
+    /**
+     * Edits a contract on the receiving node.
+     *
+     * Operational settings (name, retention_policy_days, and for sync contracts sync_responder_url and
+     * sync_timeout_ms) can be changed while the contract is Draft or Active. The contract's terms
+     * (schema_definition, governance_rules, pii_fields) are what participants agreed to, so they can only
+     * be changed while the contract is still a Draft that nobody has been invited to; afterwards create a
+     * new contract instead. interaction_type and format never change.
+     */
+    private JSONObject updateContract(UUID contractId, JSONObject input) throws Exception {
+        PoolDB pool = new PoolDB();
+        Connection conn = null; PreparedStatement pstmt = null; ResultSet rs = null;
+        try {
+            conn = pool.getConnection();
+            pstmt = conn.prepareStatement(
+                "SELECT dc.name, dc.status, dc.interaction_type, dc.metadata, dc.schema_definition, dc.pii_fields, " +
+                "dc.retention_policy_days, (dc.receiver_node_id = cfg.node_id) AS is_receiver, " +
+                "(SELECT COUNT(*) FROM contract_participants cp WHERE cp.contract_id = dc.contract_id) AS participants " +
+                "FROM data_contracts dc CROSS JOIN (SELECT node_id FROM node_config LIMIT 1) cfg " +
+                "WHERE dc.contract_id = ?");
+            pstmt.setObject(1, contractId);
+            rs = pstmt.executeQuery();
+            if (!rs.next()) throw new IllegalArgumentException("Contract not found.");
+            if (!rs.getBoolean("is_receiver"))
+                throw new IllegalStateException("Only the receiving node may edit a contract.");
+            String status = rs.getString("status");
+            if (!"Draft".equals(status) && !"Active".equals(status))
+                throw new IllegalStateException("A " + status + " contract cannot be edited.");
+
+            boolean isSync = "sync".equals(rs.getString("interaction_type"));
+            boolean termsLocked = !"Draft".equals(status) || rs.getLong("participants") > 0;
+            JSONParser parser = new JSONParser();
+            JSONObject metadata = (JSONObject) parser.parse(rs.getString("metadata"));
+            String name = rs.getString("name");
+            Object schemaDef = null;
+            JSONArray changed = new JSONArray();
+            boolean shared = false;   // a change participants need to know about
+
+            Object nameIn = input.get("name");
+            if (nameIn != null) {
+                String n = nameIn.toString().trim();
+                if (n.isEmpty()) throw new IllegalArgumentException("name cannot be empty.");
+                if (!n.equals(name)) { name = n; changed.add("name"); shared = true; }
+            }
+
+            Integer retention = null; boolean retentionSet = false;
+            if (input.containsKey("retention_policy_days")) {
+                Object r = input.get("retention_policy_days");
+                if (r instanceof Number && ((Number) r).longValue() >= 0) {
+                    retention = ((Number) r).intValue(); retentionSet = true;
+                    changed.add("retention_policy_days"); shared = true;
+                } else if (r == null) {
+                    retentionSet = true; changed.add("retention_policy_days"); shared = true;   // keep indefinitely
+                } else throw new IllegalArgumentException("retention_policy_days must be a number of days (0 or more).");
+            }
+
+            boolean wantsResponder = input.containsKey("sync_responder_url"), wantsTimeout = input.containsKey("sync_timeout_ms");
+            if ((wantsResponder || wantsTimeout) && !isSync)
+                throw new IllegalArgumentException("sync_responder_url and sync_timeout_ms apply to sync contracts only.");
+            if (wantsResponder) {
+                String u = getString(input, "sync_responder_url").trim();
+                if (!u.startsWith("http://") && !u.startsWith("https://"))
+                    throw new IllegalArgumentException("sync_responder_url must be an http:// or https:// URL.");
+                metadata.put("sync_responder_url", u); changed.add("sync_responder_url");
+            }
+            if (wantsTimeout) {
+                Object t = input.get("sync_timeout_ms");
+                if (!(t instanceof Number) || ((Number) t).longValue() < 100 || ((Number) t).longValue() > 600000)
+                    throw new IllegalArgumentException("sync_timeout_ms must be between 100 and 600000.");
+                metadata.put("sync_timeout_ms", ((Number) t).longValue()); changed.add("sync_timeout_ms"); shared = true;
+            }
+
+            boolean wantsSchema = input.containsKey("schema_definition"), wantsRules = input.containsKey("pii_anonymization"),
+                    wantsPii = input.containsKey("pii_fields");
+            String[] piiFields = null;
+            if (wantsSchema || wantsRules || wantsPii) {
+                if (termsLocked) throw new IllegalStateException(
+                    "The contract's terms (schema, governance rules, PII fields) cannot change once the contract is active or " +
+                    "partners have been invited. Create a new contract instead.");
+                if (wantsSchema) {
+                    if (!(input.get("schema_definition") instanceof JSONObject))
+                        throw new IllegalArgumentException("schema_definition must be an object.");
+                    schemaDef = input.get("schema_definition"); changed.add("schema_definition");
+                }
+                if (wantsRules) {
+                    if (!(input.get("pii_anonymization") instanceof JSONObject))
+                        throw new IllegalArgumentException("pii_anonymization must be an object of field -> MASK|HASH|TOKENIZE|NONE.");
+                    JSONObject rules = (JSONObject) input.get("pii_anonymization");
+                    for (Object k : rules.keySet()) {
+                        if (!ANON_METHODS.contains(String.valueOf(rules.get(k)).toUpperCase()))
+                            throw new IllegalArgumentException("Unknown anonymisation method for field '" + k + "'.");
+                    }
+                    JSONObject gr = metadata.get("governance_rules") instanceof JSONObject
+                            ? (JSONObject) metadata.get("governance_rules") : new JSONObject();
+                    gr.put("pii_anonymization", rules);
+                    metadata.put("governance_rules", gr); changed.add("pii_anonymization");
+                }
+                if (wantsPii) {
+                    if (!(input.get("pii_fields") instanceof JSONArray))
+                        throw new IllegalArgumentException("pii_fields must be an array.");
+                    piiFields = (String[]) ((JSONArray) input.get("pii_fields")).toArray(new String[0]); changed.add("pii_fields");
+                }
+            }
+
+            if (changed.isEmpty()) throw new IllegalArgumentException("Nothing to change.");
+            if (isSync) {
+                Object u = metadata.get("sync_responder_url");
+                if (u == null || u.toString().trim().isEmpty())
+                    throw new IllegalArgumentException("A sync contract requires sync_responder_url.");
+            }
+
+            rs.close(); pstmt.close();
+            pstmt = conn.prepareStatement(
+                "UPDATE data_contracts SET name = ?, metadata = ?::jsonb, " +
+                "schema_definition = COALESCE(?::jsonb, schema_definition), " +
+                "pii_fields = COALESCE(?, pii_fields), " +
+                "retention_policy_days = CASE WHEN ? THEN ? ELSE retention_policy_days END, updated_at = NOW() " +
+                "WHERE contract_id = ? AND receiver_node_id = (SELECT node_id FROM node_config LIMIT 1)");
+            pstmt.setString(1, name);
+            pstmt.setString(2, metadata.toJSONString());
+            pstmt.setString(3, schemaDef == null ? null : ((JSONObject) schemaDef).toJSONString());
+            if (piiFields == null) pstmt.setNull(4, java.sql.Types.ARRAY); else pstmt.setArray(4, conn.createArrayOf("text", piiFields));
+            pstmt.setBoolean(5, retentionSet);
+            pstmt.setObject(6, retention, java.sql.Types.INTEGER);
+            pstmt.setObject(7, contractId);
+            pstmt.executeUpdate();
+            pool.cleanup(null, pstmt, null);
+
+            int notified = 0;
+            if (shared) {
+                JSONObject payload = new JSONObject();
+                payload.put("_func",       "receive_contract_update");
+                payload.put("contract_id", contractId.toString());
+                payload.put("name",        name);
+                if (retentionSet) payload.put("retention_policy_days", retention);
+                if (metadata.get("sync_timeout_ms") != null) payload.put("sync_timeout_ms", metadata.get("sync_timeout_ms"));
+                try (PreparedStatement ps = conn.prepareStatement(
+                        "SELECT p.node_id, p.fqdn FROM contract_participants cp JOIN partners p ON p.node_id = cp.node_id " +
+                        "WHERE cp.contract_id = ? AND cp.status IN ('Invited','Active')")) {
+                    ps.setObject(1, contractId);
+                    try (ResultSet prs = ps.executeQuery()) {
+                        while (prs.next()) {
+                            try { dispatch(prs.getString(2), payload); notified++; }
+                            catch (Exception e) { System.err.println("[DataContract] receive_contract_update failed for "
+                                    + prs.getString(1) + ": " + e.getMessage()); }
+                        }
+                    }
+                }
+            }
+            JSONObject out = ok();
+            out.put("contract_id", contractId.toString());
+            out.put("changed", changed);
+            out.put("participants_notified", notified);
+            return out;
+        } finally { pool.cleanup(rs, pstmt, conn); }
+    }
+
+    /** Participant side: applies the receiver's operational changes (name, retention, sync timeout). */
+    private void applyContractUpdate(UUID contractId, JSONObject input) throws Exception {
+        PoolDB pool = new PoolDB();
+        Connection conn = null; PreparedStatement pstmt = null;
+        try {
+            conn = pool.getConnection();
+            Object retention = input.get("retention_policy_days");
+            Object timeout = input.get("sync_timeout_ms");
+            String name = getString(input, "name").trim();
+            pstmt = conn.prepareStatement(
+                "UPDATE data_contracts SET " +
+                "name = CASE WHEN ? <> '' THEN ? ELSE name END, " +
+                "retention_policy_days = CASE WHEN ? THEN ? ELSE retention_policy_days END, " +
+                "metadata = CASE WHEN ? THEN jsonb_set(metadata, '{sync_timeout_ms}', to_jsonb(?::bigint)) ELSE metadata END, " +
+                "updated_at = NOW() " +
+                "WHERE contract_id = ? AND receiver_node_id <> (SELECT node_id FROM node_config LIMIT 1)");
+            pstmt.setString(1, name);
+            pstmt.setString(2, name);
+            pstmt.setBoolean(3, input.containsKey("retention_policy_days"));
+            pstmt.setObject(4, retention instanceof Number ? Integer.valueOf(((Number) retention).intValue()) : null, java.sql.Types.INTEGER);
+            pstmt.setBoolean(5, timeout instanceof Number);
+            pstmt.setLong(6, timeout instanceof Number ? ((Number) timeout).longValue() : 0L);
+            pstmt.setObject(7, contractId);
+            pstmt.executeUpdate();
+        } finally { pool.cleanup(null, pstmt, conn); }
+    }
+
+    /** The signed peer must be the node that owns (receives on) this contract. */
+    private void requirePeerIsReceiver(UUID contractId, HttpServletRequest req) throws SQLException {
+        Object peer = req.getAttribute(PeerAuth.ATTR_PEER);
+        if (peer == null) return;   // unsigned traffic is only reachable in TSI_DX_NODE_P2P_SIGNATURES=optional mode
+        PoolDB pool = new PoolDB();
+        Connection conn = null; PreparedStatement pstmt = null; ResultSet rs = null;
+        try {
+            conn = pool.getConnection();
+            pstmt = conn.prepareStatement("SELECT receiver_node_id FROM data_contracts WHERE contract_id = ?");
+            pstmt.setObject(1, contractId);
+            rs = pstmt.executeQuery();
+            if (!rs.next() || !peer.equals(rs.getString(1)))
+                throw new IllegalStateException("Only the contract's receiving node may send this notification.");
+        } finally { pool.cleanup(rs, pstmt, conn); }
+    }
+
+    /** The signed peer must be the node named in the request body. */
+    private void requirePeerIs(HttpServletRequest req, String nodeId) {
+        Object peer = req.getAttribute(PeerAuth.ATTR_PEER);
+        if (peer != null && !peer.equals(nodeId))
+            throw new IllegalStateException("The signing node does not match the node this message speaks for.");
     }
 
     /** Updates the local participant row to Suspended — called on the sender side via P2P. */

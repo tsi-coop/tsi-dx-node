@@ -111,11 +111,11 @@ NODE_A_URL=http://localhost:18082 NODE_B_URL=http://localhost:18083 ./run-all.sh
 
 ## Negative test scenarios (`06-negative-tests.sh`)
 
-80 scenarios (77 by default, 3 more with `--circuit-breaker`). Each one sends something that must be refused (or a control that must still work) and checks the HTTP status and, where it matters, the error text. The run ends with a PASS/FAIL table and exits non-zero on any surprise.
+95 scenarios (92 by default, 3 more with `--circuit-breaker`). Each one sends something that must be refused (or a control that must still work) and checks the HTTP status and, where it matters, the error text. The run ends with a PASS/FAIL table and exits non-zero on any surprise.
 
 How the script works:
 
-- **Your example contracts are left alone.** It creates eight extra contracts (`Negative Test ... <timestamp>`) and two throw-away applications on every run, because some scenarios suspend a contract, purge a payload or point a contract at a broken responder.
+- **Your example contracts are left alone.** It creates nine or more extra contracts (`Negative Test ... <timestamp>`) and two throw-away applications on every run, because some scenarios suspend a contract, purge a payload or point a contract at a broken responder.
 - **Peer scenarios (*peer*)** call the receiver's own endpoint the way a partner node would: handshake header plus a signature made with Node A's identity key from `.state/`. They test the receiver's checks rather than what the sender would let through.
 - **Slow case.** `--circuit-breaker` adds S20-S22 (about 70 s, because of the 60 s cooldown).
 - **Timezone.** Replay checks write timestamps in `NODE_TZ` (default `Asia/Kolkata`, the image's `TZ`).
@@ -207,6 +207,26 @@ How the script works:
 | R14 | Handshake header but no signature | `401` |
 | R15 | Request breaks the receiver's schema | `400` |
 | R16 | `mobile` sent in clear: the caller skipped the mask | `400` |
+
+### Editing contracts
+
+| ID | Scenario | Expected |
+|---|---|---|
+| E01 | Receiver edits name, timeout and retention of an Active sync contract | `200` |
+| E02 | The participant's copy follows (name, timeout, retention) | copy updated |
+| E03 | Receiver changes the responder URL of an Active contract | `200` |
+| E04 | The responder URL is never sent to the participant | absent on Node A |
+| E05 | Responder URL that is not `http(s)` | `400` |
+| E06 | Responder URL cleared on a sync contract | `400` |
+| E07 | Sync settings (`sync_timeout_ms`) on an async contract | `400` |
+| E08 | Anonymisation rules of an Active, invited contract are frozen | `403` |
+| E09 | Edit with nothing to change | `400` |
+| E10 | A participant (not the receiver) tries to edit | `403` |
+| E11 | A Suspended contract is edited | `403` |
+| E12 | A Draft nobody was invited to: anonymisation rules can still change | `200` |
+| E13 | *peer:* a partner that does not own the contract tells this node to suspend it | `403` |
+| E14 | *peer:* a partner that does not own the contract pushes an update | `403` |
+| E15 | *peer:* a partner confirms an invitation on behalf of another node | `403` |
 
 ### Node security
 

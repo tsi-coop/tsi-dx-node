@@ -38,7 +38,7 @@ The setup page (`init.html`) has a **Setup Token** field for this value.
 The admin console pages (`dashboard`, `contracts`, `partners`, `transfers`, `apikeys`, `users`, `audit`, `settings`) are only served to a request that carries a valid session:
 
 - `ConsoleAuthFilter` runs before the page is served and redirects to `/index.html` when there is no valid session.
-- Login sets an `HttpOnly; SameSite=Strict` cookie (`console_session`, plus `Secure` outside development) carrying the admin token, so ordinary browser navigation can present it. Logout (`DELETE /api/admin/login`) expires it.
+- Login sets an `HttpOnly; SameSite=Lax` cookie (`console_session_<node tag>`, plus `Secure` outside development; the tag is derived from the node's signing key so nodes on the same host do not overwrite each other's session) carrying the admin token, so ordinary browser navigation can present it. Logout (`DELETE /api/admin/login`) expires it. `Lax` rather than `Strict` so that following a link to the console from another application (an email, a document, another site) keeps the session instead of landing on the login page; cookies are still withheld from cross-site `POST`s, and every state-changing API call needs the `Authorization` header regardless.
 - This is in addition to, not instead of, API authentication: every `/api/admin/*` call is still authenticated on its own via the `Authorization: Bearer` header.
 - Public pages are `index.html` (login), `init.html` (setup), `password_reset.html`, and `/tour/`.
 
@@ -53,7 +53,7 @@ Node-to-node calls carry the `X-DX-P2P-HANDSHAKE` header instead of an admin tok
 | Route | Functions accepted with the handshake header |
 |---|---|
 | `/api/admin/partners` | `probe`, `receive_partnership_proposal`, `receive_termination_request`, `receive_termination_finalization` |
-| `/api/admin/contracts` | `receive_contract_invitation`, `confirm_invitation`, `decline_invitation`, `notify_participant_suspended`, `notify_contract_suspended` |
+| `/api/admin/contracts` | `receive_contract_invitation`, `confirm_invitation`, `decline_invitation`, `notify_participant_suspended`, `notify_contract_suspended`, `receive_contract_update` |
 | `/api/admin/transfers` | `receive_transfer_stream`, `receive_sync_request` |
 
 Every other function, on any route, needs an admin token even when the header is present. The check covers both the `X-DX-FUNCTION` header and the body `_func`, because different handlers honour different ones. If you add a new peer-to-peer function, add it to `P2P_ALLOWED_FUNCS` in `InterceptingFilter`.

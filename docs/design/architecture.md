@@ -74,7 +74,7 @@ Principles the rest of the design follows:
 - **Node identity.** Each node has a node id, a public FQDN and an identity key pair with a certificate, generated and activated through the console. The private key never leaves the node.
 - **Partner registry.** A node trusts another node only after the partner is registered with its public key and a handshake has completed. Only registered partners can be invited to contracts.
 - **Applications.** Systems on the organisation's side authenticate to their own node with an API key and secret, scoped to the contracts bound to that application.
-- **Administrators.** Console users authenticate with a password and receive a signed session token, held in an `HttpOnly`, `SameSite=Strict` cookie.
+- **Administrators.** Console users authenticate with a password and receive a signed session token, held in an `HttpOnly`, `SameSite=Lax` cookie.
 
 ### 3.2 Peer authentication: signed messages
 
@@ -106,7 +106,7 @@ The filter in front of every `/api/admin/*` route admits a request only through 
 | Route | Peer functions (anything else needs an administrator) |
 |---|---|
 | `/api/admin/partners` | `probe`, `receive_partnership_proposal`, `receive_termination_request`, `receive_termination_finalization` |
-| `/api/admin/contracts` | `receive_contract_invitation`, `confirm_invitation`, `decline_invitation`, `notify_participant_suspended`, `notify_contract_suspended` |
+| `/api/admin/contracts` | `receive_contract_invitation`, `confirm_invitation`, `decline_invitation`, `notify_participant_suspended`, `notify_contract_suspended`, `receive_contract_update` |
 | `/api/admin/transfers` | `receive_transfer_stream`, `receive_sync_request` |
 
 Both the `X-DX-FUNCTION` header and the body `_func` must name an allowed function, because handlers differ in which they honour.
@@ -164,7 +164,21 @@ Receiver creates contract (Draft)
 
 Invitations are independent: Node C declining does not affect Node A, and further nodes can be invited at any time. Suspension is not reversible; a new contract is created instead.
 
-### 4.3 Authorisation
+### 4.3 Editing a contract
+
+Only the receiving node can edit a contract, and only while it is `Draft` or `Active`.
+
+| What | When it can change | Propagated to participants |
+|---|---|---|
+| Name, `retention_policy_days` | Draft or Active | Yes (`receive_contract_update`) |
+| `sync_timeout_ms` (sync) | Draft or Active | Yes |
+| `sync_responder_url` (sync) | Draft or Active | No: it is the receiver's internal address |
+| `schema_definition`, anonymisation rules, `pii_fields` | Only while Draft and no partner has been invited | Not needed: frozen once invited |
+| `interaction_type`, `format` | Never | n/a |
+
+The terms are what participants agreed to, so they are frozen from the first invitation; changing them means a new contract. Peer notifications about a contract (`receive_contract_update`, `notify_*_suspended`) are accepted only from the node that owns it, and `confirm_invitation` / `decline_invitation` only from the invitee they name.
+
+### 4.4 Authorisation
 
 On the sender, the contract must be `Active`, of the right `interaction_type`, the local node an `Active` participant, and (for the Client API) the application bound to the contract. On the receiver the same is re-checked against its own copy: the contract must be Active, its `receiver_node_id` must be this node, the type must match the lane, and the signer must be an Active participant.
 

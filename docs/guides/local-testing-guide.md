@@ -458,8 +458,8 @@ Expected: `{ "success": true, "transfer_id": "..." }`
 
 | Check | Where |
 |---|---|
-| Status: Delivered | Node A → Transfer Logs → All Exchanges |
-| Status: Received | Node B → Transfer Logs → All Exchanges |
+| Status: Delivered | Node A → Transfer Logs → Async → Completed |
+| Status: Received | Node B → Transfer Logs → Async → Completed |
 | PII fields transformed | Node B → Transfer Logs → View File - `applicant_id` and `mobile` anonymised |
 | TRANSFER audit events | Both nodes → Audit Trail |
 | Sequence increments | Send a second file - monotonicity enforced |
@@ -570,8 +570,8 @@ Expected: `{ "success": true, "response_payload": { "result": "ok" }, "duration_
 
 | Check | Where |
 |---|---|
-| Sync audit row (caller) | Node A → Transfer Logs → Sync Calls tab |
-| Sync audit row (receiver) | Node B → Transfer Logs → Sync Calls tab |
+| Sync audit row (caller) | Node A → Transfer Logs → Sync |
+| Sync audit row (receiver) | Node B → Transfer Logs → Sync |
 | Sync Calls (24h) counter | Dashboard stat card |
 | `interaction_type: sync` badge | Data Contracts list |
 | Participants column | Node B → Data Contracts - shows Node A as Active |

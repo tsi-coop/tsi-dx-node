@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Update Contract",
+  "description": "Edits a contract on the receiving node. Operational settings can change while the contract is Draft or Active; schema, governance rules and PII fields only while it is a Draft nobody has been invited to.",
+  "type": "object",
+  "required": ["_func", "contract_id"],
+  "properties": {
+    "_func": { "type": "string", "const": "update_contract" },
+    "contract_id": { "type": "string", "format": "uuid" },
+    "name": { "type": "string", "minLength": 1 },
+    "retention_policy_days": { "type": ["integer", "null"], "minimum": 0 },
+    "sync_responder_url": { "type": "string" },
+    "sync_timeout_ms": { "type": "integer", "minimum": 100, "maximum": 600000 },
+    "schema_definition": { "type": "object" },
+    "pii_anonymization": {
+      "type": "object",
+      "additionalProperties": { "type": "string", "enum": ["MASK", "HASH", "TOKENIZE", "NONE"] }
+    },
+    "pii_fields": { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": false
+}

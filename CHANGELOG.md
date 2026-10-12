@@ -23,8 +23,9 @@ Read these before upgrading a running node.
 ### Security
 
 - **Signed peer messages.** Every node-to-node request carries a signature made with the sender's identity key, verified against the registered partner key, with a 5-minute window, single-use request ids, target binding and a check that `sender_node_id` matches the signer. `probe` and `receive_partnership_proposal` remain unsigned bootstrap calls. The fixed `X-DX-P2P-HANDSHAKE` header is now only a routing marker.
+- **Contract notifications are authorised against the signer.** `notify_contract_suspended`, `notify_participant_suspended` and `receive_contract_update` are accepted only from the node that owns the contract, and `confirm_invitation` / `decline_invitation` only from the invitee they speak for. Previously any registered partner could send them for a contract it did not own.
 - **Peer allow-list.** The handshake header bypasses admin authentication only for the inbound peer functions of each route; every other admin function always requires a token.
-- **Console gating.** The eight console pages are served only to authenticated sessions (server-side filter, redirect to login, `Cache-Control: no-store`). Login sets an `HttpOnly`, `SameSite=Strict` cookie; `DELETE /api/admin/login` logs out and clears it.
+- **Console gating.** The eight console pages are served only to authenticated sessions (server-side filter, redirect to login, `Cache-Control: no-store`). Login sets an `HttpOnly`, `SameSite=Lax` cookie; `DELETE /api/admin/login` logs out and clears it.
 - **First-time setup protection.** Requires the setup token (constant-time comparison, checked before the database), runs serialisably so racing setups cannot both succeed, and returns generic errors.
 - **Path traversal fixed.** `file_name` must be a single plain name and the resolved path must stay inside the storage directory, on the Client API, the console upload, the receiver's inbound handler and every read of a stored file.
 - **JWT signing key.** The built-in fallback secret is removed.
@@ -36,7 +37,8 @@ Read these before upgrading a running node.
 - **Async retry.** Transport failures, `5xx`, `408` and `429` are retried with backoff (30 s, 2 min, 8 min, 32 min; five attempts). Retries never re-apply governance, and duplicate deliveries are acknowledged rather than stored twice.
 - **Retention purge.** A maintenance job (default hourly, `TSI_DX_NODE_MAINTENANCE_SECONDS`) deletes payloads older than the contract's `retention_policy_days` and marks the transfer `Purged`; also removes expired sync nonces. `run_maintenance` on `/api/admin/transfers` runs it on demand.
 - **Sync idempotency.** An `idempotency_key` that already succeeded within 24 hours returns the recorded response with `idempotent_replay: true`; the same key with a different request is `400`.
-- **Example scripts** (`examples/scripts/`): node setup, identity and partner handshake, contract definition, async transfer, sync call, and `06-negative-tests.sh` with 80 scenarios (77 by default, 3 more with `--circuit-breaker`); `run-all.sh`; teardown instructions.
+- **Edit contract.** The receiving node can edit a contract (`update_contract`, and an **Edit** action in the console). Name, retention, and for sync contracts the responder URL and timeout can change while the contract is Draft or Active; participants are told of the shared ones (`receive_contract_update`, never the responder URL). Schema, anonymisation rules and PII fields can change only while the contract is a Draft nobody has been invited to, because partners agree to those; after that, create a new contract. `GET get_contract` now returns `retention_policy_days`.
+- **Example scripts** (`examples/scripts/`): node setup, identity and partner handshake, contract definition, async transfer, sync call, and `06-negative-tests.sh` with 95 scenarios (92 by default, 3 more with `--circuit-breaker`); `run-all.sh`; teardown instructions.
 - `SECURITY.md` and `docs/guides/security-hardening-guide.md`.
 
 ### Changed
@@ -53,6 +55,11 @@ Read these before upgrading a running node.
 - An async transfer could be initiated on a `sync` contract.
 - A sequence-number collision could fail the second of two simultaneous transfers as a replay.
 - Sync responses with `HASH` rules were hashed twice.
+- A sync contract could be created without a responder URL, become Active, and then fail every call with `503`. `create_contract` now refuses it with `400`, the console wizard requires the field, and the receiver records the `503` in its `sync_audit_log` instead of leaving no trace.
+- Validation errors from contract functions returned `500`; they now return `400` with the message.
+- **Transfer Logs** is organised by lane: **Async** (with All / Pending / Completed / Failed filters and counts) and **Sync**. The Completed filter now includes `Received` transfers, so a receiving node no longer shows an empty Completed list, and Pending includes `Processing` and retrying transfers.
+- The console session cookie is `SameSite=Lax` (was `Strict`): opening a console link from another application no longer drops you on the login page although the session was still valid.
+- Console sessions of two nodes on the same host (for example `localhost:8082` and `localhost:8083`) overwrote each other's cookie and logged you out. The session cookie is now named per node (`console_session_<tag>`). Everyone signs in once more after upgrading.
 
 ### Documentation
 

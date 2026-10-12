@@ -60,6 +60,24 @@ public class JWTUtil {
 
     private static final Key SECRET_KEY = getSigningKey();
 
+    /**
+     * Short, stable, non-reversible tag derived from this node's signing key. Used to name the console
+     * session cookie so two nodes served from the same host (for example localhost:8082 and
+     * localhost:8083, which browsers treat as one cookie jar) do not overwrite each other's session.
+     */
+    public static String cookieScope() {
+        try {
+            java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+            md.update("dx-console-cookie:".getBytes(StandardCharsets.UTF_8));
+            byte[] h = md.digest(SECRET_KEY.getEncoded());
+            StringBuilder hex = new StringBuilder();
+            for (int i = 0; i < 4; i++) hex.append(String.format("%02x", h[i]));
+            return hex.toString();
+        } catch (Exception e) {
+            return "node";
+        }
+    }
+
     /** Forces the signing key to be resolved now, so a misconfigured node fails at start-up. */
     public static void assertConfigured() {
         if (SECRET_KEY == null) throw new IllegalStateException("JWT signing key unavailable.");

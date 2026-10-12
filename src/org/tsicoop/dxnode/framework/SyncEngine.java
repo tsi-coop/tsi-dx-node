@@ -221,6 +221,8 @@ public class SyncEngine {
                                  ? metadata.get("sync_responder_url").toString() : null;
 
         if (responderUrl == null || responderUrl.isEmpty()) {
+            persistSyncAuditLog(contractId, idempotencyKey, null, null, senderNodeId, receiverNodeId,
+                    System.currentTimeMillis() - startTime, "ERROR", "sync_responder_url is not configured for this contract");
             OutputProcessor.errorResponse(res, 503, "Misconfigured Contract",
                     "sync_responder_url is not configured for this contract.", req.getRequestURI());
             return;

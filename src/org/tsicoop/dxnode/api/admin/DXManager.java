@@ -363,13 +363,25 @@ public class DXManager implements Action {
             if (idRs.next()) localId = idRs.getString(1);
             idRs.close();
 
+            // Console groups: Pending = waiting or in flight, Completed = delivered (outgoing) or received
+            // (incoming), Failed. An exact status is still accepted.
             String status = (input != null) ? (String) input.get("status") : "";
+            String[] statuses;
+            if (status == null || status.isEmpty()) statuses = null;
+            else if ("Pending".equals(status)) statuses = new String[]{"Pending", "Processing"};
+            else if ("Completed".equals(status)) statuses = new String[]{"Delivered", "Received"};
+            else statuses = new String[]{status};
+
             StringBuilder sql = new StringBuilder("SELECT t.*, c.name as contract_name FROM data_transfers t LEFT JOIN data_contracts c ON t.contract_id = c.contract_id WHERE 1=1");
-            if (status != null && !status.isEmpty()) sql.append(" AND t.status = ?");
+            if (statuses != null) {
+                sql.append(" AND t.status IN (");
+                for (int i = 0; i < statuses.length; i++) sql.append(i == 0 ? "?" : ",?");
+                sql.append(")");
+            }
             sql.append(" ORDER BY t.start_time DESC LIMIT 50");
 
             pstmt = conn.prepareStatement(sql.toString());
-            if (status != null && !status.isEmpty()) pstmt.setString(1, status);
+            if (statuses != null) for (int i = 0; i < statuses.length; i++) pstmt.setString(i + 1, statuses[i]);
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 JSONObject t = new JSONObject();
@@ -384,7 +396,23 @@ public class DXManager implements Action {
                 t.put("start_time", rs.getTimestamp("start_time").toString());
                 arr.add(t);
             }
-            response.put("success", true); response.put("data", arr);
+            rs.close(); pstmt.close();
+
+            // Totals for the console's filter badges (independent of the filter and the 50-row page)
+            JSONObject counts = new JSONObject();
+            long pending = 0, completed = 0, failed = 0;
+            pstmt = conn.prepareStatement("SELECT status, COUNT(*) FROM data_transfers GROUP BY status");
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                String st = rs.getString(1); long n = rs.getLong(2);
+                if ("Pending".equals(st) || "Processing".equals(st)) pending += n;
+                else if ("Delivered".equals(st) || "Received".equals(st)) completed += n;
+                else if ("Failed".equals(st)) failed += n;
+            }
+            counts.put("all", pending + completed + failed);
+            counts.put("pending", pending); counts.put("completed", completed); counts.put("failed", failed);
+
+            response.put("success", true); response.put("data", arr); response.put("counts", counts);
         } finally { pool.cleanup(rs, pstmt, conn); }
         return response;
     }

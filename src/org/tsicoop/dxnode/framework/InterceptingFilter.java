@@ -35,7 +35,7 @@ public class InterceptingFilter implements Filter {
                 "receive_termination_request", "receive_termination_finalization")));
         P2P_ALLOWED_FUNCS.put("/api/admin/contracts", new HashSet<>(Arrays.asList(
                 "receive_contract_invitation", "confirm_invitation", "decline_invitation",
-                "notify_participant_suspended", "notify_contract_suspended")));
+                "notify_participant_suspended", "notify_contract_suspended", "receive_contract_update")));
         P2P_ALLOWED_FUNCS.put("/api/admin/transfers", new HashSet<>(Arrays.asList(
                 "receive_transfer_stream", "receive_sync_request")));
     }

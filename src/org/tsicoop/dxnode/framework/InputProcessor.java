@@ -16,8 +16,16 @@ public class InputProcessor {
     public final static String REQUEST_DATA = "input_json";
     public final static String AUTH_TOKEN = "auth_token";
 
-    /** Name of the HttpOnly cookie that carries the admin JWT for static console pages. */
+    /** Prefix of the HttpOnly cookie that carries the admin JWT for static console pages. */
     public final static String CONSOLE_SESSION_COOKIE = "console_session";
+
+    /**
+     * Cookie name for this node. Cookies are scoped by host, not port, so nodes on the same host share a
+     * jar; a per-node suffix keeps each node's session separate.
+     */
+    public static String consoleSessionCookieName() {
+        return CONSOLE_SESSION_COOKIE + "_" + JWTUtil.cookieScope();
+    }
     private static final long CONSOLE_SESSION_MAX_AGE_SECONDS = 864000L; // 10 days, matches JWTUtil expiry
 
     /**
@@ -27,9 +35,9 @@ public class InputProcessor {
      */
     public static void setConsoleSessionCookie(HttpServletResponse res, String token) {
         StringBuilder cookie = new StringBuilder();
-        cookie.append(CONSOLE_SESSION_COOKIE).append('=').append(token)
+        cookie.append(consoleSessionCookieName()).append('=').append(token)
                 .append("; Path=/; Max-Age=").append(CONSOLE_SESSION_MAX_AGE_SECONDS)
-                .append("; HttpOnly; SameSite=Strict");
+                .append("; HttpOnly; SameSite=Lax");
         if (isSecureCookieEnv()) cookie.append("; Secure");
         res.addHeader("Set-Cookie", cookie.toString());
     }
@@ -37,7 +45,7 @@ public class InputProcessor {
     /** Expires the console session cookie. Used on logout. */
     public static void clearConsoleSessionCookie(HttpServletResponse res) {
         StringBuilder cookie = new StringBuilder();
-        cookie.append(CONSOLE_SESSION_COOKIE).append("=; Path=/; Max-Age=0; HttpOnly; SameSite=Strict");
+        cookie.append(consoleSessionCookieName()).append("=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax");
         if (isSecureCookieEnv()) cookie.append("; Secure");
         res.addHeader("Set-Cookie", cookie.toString());
     }
@@ -45,8 +53,9 @@ public class InputProcessor {
     public static String readConsoleSessionCookie(HttpServletRequest req) {
         jakarta.servlet.http.Cookie[] cookies = req.getCookies();
         if (cookies == null) return null;
+        String name = consoleSessionCookieName();
         for (jakarta.servlet.http.Cookie c : cookies) {
-            if (CONSOLE_SESSION_COOKIE.equals(c.getName())) return c.getValue();
+            if (name.equals(c.getName())) return c.getValue();
         }
         return null;
     }

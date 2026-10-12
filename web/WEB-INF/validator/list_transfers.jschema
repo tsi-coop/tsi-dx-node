@@ -12,8 +12,8 @@
     },
     "status": {
       "type": "string",
-      "enum": ["Pending", "Processing", "Delivered", "Failed", "Sent", "Received", ""],
-      "description": "Optional filter to retrieve transfers with a specific status."
+      "enum": ["Pending", "Processing", "Completed", "Delivered", "Failed", "Sent", "Received", ""],
+      "description": "Optional filter. Pending covers Pending and Processing; Completed covers Delivered and Received; the others match exactly."
     },
     "search": {
       "type": "string",

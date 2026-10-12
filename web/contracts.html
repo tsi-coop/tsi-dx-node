@@ -230,6 +230,35 @@
         </div>
     </div>
 
+    <!-- Edit Contract Modal -->
+    <div id="editModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop no-print">
+        <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh]">
+            <div class="px-8 py-6 bg-slate-900 flex justify-between items-center">
+                <div><h3 class="text-xl font-black text-white uppercase tracking-tight">Edit Contract</h3><p class="text-[10px] text-blue-400 font-bold uppercase tracking-widest mt-1" id="edit-contract-sub">...</p></div>
+                <button onclick="closeEditModal()" class="text-slate-400 hover:text-white transition-colors text-2xl leading-none">&times;</button>
+            </div>
+            <div class="p-8 space-y-5 overflow-y-auto">
+                <div><label class="block text-[10px] font-black text-slate-500 uppercase mb-2">Name</label><input id="edit-name" type="text" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none"></div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div><label class="block text-[10px] font-black text-slate-500 uppercase mb-2">Retention (Days)</label><input id="edit-retention" type="number" min="0" placeholder="blank = keep" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none"></div>
+                    <div id="edit-timeout-wrap" class="hidden"><label class="block text-[10px] font-black text-slate-500 uppercase mb-2">Timeout (ms)</label><input id="edit-timeout" type="number" min="100" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none"></div>
+                </div>
+                <div id="edit-responder-wrap" class="hidden"><label class="block text-[10px] font-black text-slate-500 uppercase mb-2">Responder URL <span class="text-blue-600 font-medium normal-case text-[9px]">&mdash; internal service this node proxies inbound sync requests to; never shared with partners</span></label><input id="edit-responder" type="text" placeholder="http://internal-service:8080/api/endpoint" class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm outline-none"></div>
+                <div id="edit-terms-wrap" class="space-y-4 border-t border-slate-100 pt-5">
+                    <p id="edit-terms-note" class="text-[10px] text-slate-500 leading-relaxed"></p>
+                    <div id="edit-terms-fields">
+                        <div><label class="block text-[10px] font-black text-slate-500 uppercase mb-2">Schema (JSON)</label><textarea id="edit-schema" rows="8" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono outline-none"></textarea></div>
+                        <div class="mt-4"><label class="block text-[10px] font-black text-slate-500 uppercase mb-2">Anonymisation rules (JSON: field &rarr; MASK | HASH | TOKENIZE | NONE)</label><textarea id="edit-rules" rows="4" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono outline-none"></textarea></div>
+                    </div>
+                </div>
+            </div>
+            <div class="px-8 py-6 bg-slate-50 border-t flex justify-between">
+                <button onclick="closeEditModal()" class="text-xs font-black uppercase text-slate-400">Cancel</button>
+                <button onclick="submitEdit()" class="px-8 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-black uppercase shadow-lg hover:bg-blue-700 transition-all">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Inspector Modal -->
     <div id="contractInspector" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop">
         <div class="bg-white w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh] modal-content">
@@ -365,7 +394,7 @@
                     let actions = `<button onclick="handleViewDetails('${c.contract_id}')" class="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-[9px] font-black uppercase hover:bg-slate-200">Inspect</button>`;
 
                     if (isReceiver && (c.status === 'Draft' || c.status === 'Active')) {
-                        actions = `<button onclick="openInviteModal('${c.contract_id}', '${escHtml(c.name)}')" class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-[9px] font-black uppercase hover:bg-blue-700 shadow-sm">Invite</button> ` + actions;
+                        actions = `<button onclick="openInviteModal('${c.contract_id}', '${escHtml(c.name)}')" class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-[9px] font-black uppercase hover:bg-blue-700 shadow-sm">Invite</button> <button onclick="openEditModal('${c.contract_id}')" class="px-3 py-1.5 bg-slate-800 text-white rounded-lg text-[9px] font-black uppercase hover:bg-slate-700 shadow-sm">Edit</button> ` + actions;
                     }
                     if (isReceiver && c.status === 'Active') {
                         actions += ` <button onclick="handleSuspendContract('${c.contract_id}')" class="px-3 py-1.5 bg-orange-100 text-orange-700 rounded-lg text-[9px] font-black uppercase hover:bg-orange-200">Suspend</button>`;
@@ -445,6 +474,87 @@
                 });
             }
             document.getElementById('inviteModal').classList.remove('hidden');
+        }
+
+        // -------------------------------------------------------------------------
+        // EDIT CONTRACT (receiver only)
+        // -------------------------------------------------------------------------
+        let editState = null;
+
+        async function openEditModal(contractId) {
+            const c = await callApi(API, { _func: "get_contract", contract_id: contractId });
+            if (!c) return;
+            const isSync = c.interaction_type === 'sync';
+            const termsEditable = c.status === 'Draft' && (c.participants || []).length === 0;
+            editState = { id: contractId, c, isSync, termsEditable };
+
+            document.getElementById('edit-contract-sub').innerText = `${c.name} - ${c.interaction_type.toUpperCase()} - ${c.status}`;
+            document.getElementById('edit-name').value = c.name;
+            document.getElementById('edit-retention').value = c.retention_policy_days ?? '';
+            document.getElementById('edit-timeout-wrap').classList.toggle('hidden', !isSync);
+            document.getElementById('edit-responder-wrap').classList.toggle('hidden', !isSync);
+            document.getElementById('edit-timeout').value = c.metadata?.sync_timeout_ms ?? '';
+            document.getElementById('edit-responder').value = c.metadata?.sync_responder_url ?? '';
+
+            document.getElementById('edit-terms-fields').classList.toggle('hidden', !termsEditable);
+            document.getElementById('edit-terms-note').innerText = termsEditable
+                ? 'This contract is still a draft and nobody has been invited, so its terms can be changed. They are frozen as soon as you invite a partner.'
+                : 'Schema, anonymisation rules and PII fields are what partners agreed to, so they cannot change once the contract is active or partners are invited. To change them, create a new contract. Name, retention' + (isSync ? ', responder URL and timeout' : '') + ' can still be edited.';
+            if (termsEditable) {
+                document.getElementById('edit-schema').value = JSON.stringify(c.schema_definition || {}, null, 2);
+                document.getElementById('edit-rules').value = JSON.stringify(c.metadata?.governance_rules?.pii_anonymization || {}, null, 2);
+            }
+            document.getElementById('editModal').classList.remove('hidden');
+        }
+
+        function closeEditModal() { document.getElementById('editModal').classList.add('hidden'); editState = null; }
+
+        async function submitEdit() {
+            if (!editState) return;
+            const { id, c, isSync, termsEditable } = editState;
+            const payload = { _func: "update_contract", contract_id: id };
+
+            const name = document.getElementById('edit-name').value.trim();
+            if (!name) { showToast("Validation Error", "Name cannot be empty.", "error"); return; }
+            if (name !== c.name) payload.name = name;
+
+            const retRaw = document.getElementById('edit-retention').value.trim();
+            const retNew = retRaw === '' ? null : parseInt(retRaw);
+            if (retRaw !== '' && (isNaN(retNew) || retNew < 0)) { showToast("Validation Error", "Retention must be 0 or more days.", "error"); return; }
+            if (retNew !== (c.retention_policy_days ?? null)) payload.retention_policy_days = retNew;
+
+            if (isSync) {
+                const url = document.getElementById('edit-responder').value.trim();
+                if (!url) { showToast("Validation Error", "A sync contract needs a Responder URL.", "error"); return; }
+                if (url !== (c.metadata?.sync_responder_url ?? '')) payload.sync_responder_url = url;
+                const tRaw = document.getElementById('edit-timeout').value.trim();
+                if (tRaw !== '') {
+                    const t = parseInt(tRaw);
+                    if (isNaN(t) || t < 100) { showToast("Validation Error", "Timeout must be at least 100 ms.", "error"); return; }
+                    if (t !== (c.metadata?.sync_timeout_ms ?? null)) payload.sync_timeout_ms = t;
+                }
+            }
+
+            if (termsEditable) {
+                try {
+                    const schema = JSON.parse(document.getElementById('edit-schema').value);
+                    const rules = JSON.parse(document.getElementById('edit-rules').value || '{}');
+                    if (JSON.stringify(schema) !== JSON.stringify(c.schema_definition || {})) payload.schema_definition = schema;
+                    if (JSON.stringify(rules) !== JSON.stringify(c.metadata?.governance_rules?.pii_anonymization || {})) {
+                        payload.pii_anonymization = rules;
+                        payload.pii_fields = Object.keys(rules).filter(k => String(rules[k]).toUpperCase() !== 'NONE');
+                    }
+                } catch (e) { showToast("Validation Error", "Schema and rules must be valid JSON.", "error"); return; }
+            }
+
+            if (Object.keys(payload).length === 2) { showToast("Nothing to change", "No fields were modified.", "warning"); return; }
+            const res = await callApi(API, payload);
+            if (res) {
+                closeEditModal();
+                const n = res.participants_notified || 0;
+                showToast("Contract Updated", `Changed: ${(res.changed || []).join(', ')}.` + (n ? ` ${n} partner(s) notified.` : ''), "success");
+                fetchContracts();
+            }
         }
 
         function closeInviteModal() {
@@ -627,7 +737,8 @@
             if (interactionType === 'sync') {
                 const respUrl = document.getElementById('wiz-responder-url').value.trim();
                 const timeout = parseInt(document.getElementById('wiz-timeout').value);
-                if (respUrl) extraMeta.sync_responder_url = respUrl;
+                if (!respUrl) { showToast("Validation Error", "A sync contract needs a Responder URL: the internal service this node forwards requests to.", "error"); return; }
+                extraMeta.sync_responder_url = respUrl;
                 if (timeout) extraMeta.sync_timeout_ms = timeout;
             }
 

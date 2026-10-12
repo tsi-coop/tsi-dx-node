@@ -18,6 +18,8 @@ On the **receiving** node (the one that hosts the service), create a contract wi
 | `metadata.sync_responder_url` | contract, receiver only | Internal endpoint the request is forwarded to |
 | `metadata.sync_timeout_ms` | contract | Per-call budget in milliseconds. Default `10000` |
 
+The responder URL is mandatory: a sync contract without one is refused at creation. You can change it later, and the timeout, with **Edit** on the contract (receiver only); the URL is never sent to callers.
+
 Then invite the calling node(s), have them accept, and bind the calling application to the contract under **Applications** so its API key is authorised for it. `sync_responder_url` is never sent to the caller.
 
 ## 2. What the responder must do
@@ -86,4 +88,4 @@ On the peer hop the receiving node answers `401` for a bad signature, `403` for 
 
 ## 6. Audit trail
 
-Both nodes write one `sync_audit_log` row per call: `contract_id`, `idempotency_key`, governed `request_payload`, governed `response_payload`, `sender_node_id`, `receiver_node_id`, `duration_ms`, `status` (`SUCCESS` / `TIMEOUT` / `ERROR`), `error_detail`, `timestamp`. Payloads are stored post-anonymisation; the log never holds the raw PII the contract masks. View them under **Transfer Logs → Sync Calls**; the dashboard shows a 24-hour counter.
+Both nodes write one `sync_audit_log` row per call: `contract_id`, `idempotency_key`, governed `request_payload`, governed `response_payload`, `sender_node_id`, `receiver_node_id`, `duration_ms`, `status` (`SUCCESS` / `TIMEOUT` / `ERROR`), `error_detail`, `timestamp`. Payloads are stored post-anonymisation; the log never holds the raw PII the contract masks. View them under **Transfer Logs → Sync**; the dashboard shows a 24-hour counter.

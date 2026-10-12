@@ -20,6 +20,9 @@
         .card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; }
         .modal-backdrop { background-color: rgba(15, 23, 42, 0.7); backdrop-filter: blur(4px); }
         .tab-btn.active { color: var(--dx-accent); border-bottom: 2px solid var(--dx-accent); }
+        .flt-btn { background: #f1f5f9; color: #64748b; }
+        .flt-btn:hover { background: #e2e8f0; }
+        .flt-btn.active { background: var(--dx-accent); color: white; }
         .payload-viewer { background-color: #0f172a; color: #38bdf8; font-family: 'JetBrains Mono', monospace; font-size: 11px; line-height: 1.6; }
     </style>
 </head>
@@ -119,12 +122,15 @@
                 <button onclick="openTransferModal()" class="px-4 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-black uppercase shadow-lg shadow-blue-500/20 transition-all hover:bg-blue-700">Initiate Transfer</button>
             </div>
 
-            <div class="mb-6 border-b border-slate-200 flex gap-8">
-                <button onclick="fetchTransfers('')" id="tab-all" class="tab-btn active px-1 py-4 text-xs font-black uppercase">All Exchanges</button>
-                <button onclick="fetchTransfers('Pending')" id="tab-pending" class="tab-btn px-1 py-4 text-xs font-black uppercase text-slate-400">Pending</button>
-                <button onclick="fetchTransfers('Delivered')" id="tab-completed" class="tab-btn px-1 py-4 text-xs font-black uppercase text-slate-400">Completed</button>
-                <button onclick="fetchTransfers('Failed')" id="tab-failed" class="tab-btn px-1 py-4 text-xs font-black uppercase text-slate-400">Failed</button>
-                <button onclick="fetchSyncCalls()" id="tab-sync" class="tab-btn px-1 py-4 text-xs font-black uppercase text-slate-400">Sync Calls</button>
+            <div class="mb-2 border-b border-slate-200 flex gap-8">
+                <button onclick="fetchTransfers(currentFilter)" id="lane-async" class="tab-btn active px-1 py-4 text-xs font-black uppercase">Async</button>
+                <button onclick="fetchSyncCalls()" id="lane-sync" class="tab-btn px-1 py-4 text-xs font-black uppercase text-slate-400">Sync</button>
+            </div>
+            <div id="async-filters" class="mb-6 flex items-center gap-2 flex-wrap">
+                <button onclick="fetchTransfers('')" id="flt-all" class="flt-btn px-3 py-1.5 rounded-lg text-[10px] font-black uppercase">All <span id="cnt-all" class="ml-1 opacity-70"></span></button>
+                <button onclick="fetchTransfers('Pending')" id="flt-pending" class="flt-btn px-3 py-1.5 rounded-lg text-[10px] font-black uppercase">Pending <span id="cnt-pending" class="ml-1 opacity-70"></span></button>
+                <button onclick="fetchTransfers('Completed')" id="flt-completed" class="flt-btn px-3 py-1.5 rounded-lg text-[10px] font-black uppercase">Completed <span id="cnt-completed" class="ml-1 opacity-70"></span></button>
+                <button onclick="fetchTransfers('Failed')" id="flt-failed" class="flt-btn px-3 py-1.5 rounded-lg text-[10px] font-black uppercase">Failed <span id="cnt-failed" class="ml-1 opacity-70"></span></button>
             </div>
 
             <div id="transfers-table-card" class="card overflow-hidden">
@@ -282,11 +288,42 @@
             document.getElementById('header-avatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user)}&background=0f172a&color=fff`;
         }
 
+        let currentFilter = '';
+
+        // Like callApi, but keeps the whole envelope (the transfer list carries filter counts beside `data`).
+        async function callApiFull(url, data) {
+            try {
+                const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('dx_token')}` }, body: JSON.stringify(data) });
+                return await r.json();
+            } catch (e) { return null; }
+        }
+
+        function showLane(lane) {
+            const isAsync = lane === 'async';
+            document.getElementById('lane-async').classList.toggle('active', isAsync);
+            document.getElementById('lane-async').classList.toggle('text-slate-400', !isAsync);
+            document.getElementById('lane-sync').classList.toggle('active', !isAsync);
+            document.getElementById('lane-sync').classList.toggle('text-slate-400', isAsync);
+            document.getElementById('async-filters').classList.toggle('hidden', !isAsync);
+            document.getElementById('transfers-table-card').classList.toggle('hidden', !isAsync);
+            document.getElementById('sync-calls-panel').classList.toggle('hidden', isAsync);
+        }
+
+        function showFilter(status) {
+            const id = { '': 'all', Pending: 'pending', Completed: 'completed', Failed: 'failed' }[status] || 'all';
+            document.querySelectorAll('.flt-btn').forEach(b => b.classList.toggle('active', b.id === 'flt-' + id));
+        }
+
         async function fetchTransfers(status = '') {
-            updateTabs(status);
-            document.getElementById('transfers-table-card').classList.remove('hidden');
-            document.getElementById('sync-calls-panel').classList.add('hidden');
-            const res = await callApi(API, { _func: "list_transfers", status: status });
+            currentFilter = status;
+            showLane('async');
+            showFilter(status);
+            const res = await callApiFull(API, { _func: "list_transfers", status: status });
+            if (res && res.counts) {
+                ['all', 'pending', 'completed', 'failed'].forEach(k => {
+                    document.getElementById('cnt-' + k).innerText = '(' + (res.counts[k] ?? 0) + ')';
+                });
+            }
             const tbody = document.getElementById('transfer-table-body');
             tbody.innerHTML = '';
             
@@ -327,7 +364,7 @@
                 });
             } else {
                 const row = document.createElement('tr');
-                row.innerHTML = `<td colspan="7" class="px-6 py-24 text-center"><p class="text-[10px] text-slate-400 font-black uppercase italic tracking-widest">No matching transfers in registry</p></td>`;
+                row.innerHTML = `<td colspan="7" class="px-6 py-24 text-center"><p class="text-[10px] text-slate-400 font-black uppercase italic tracking-widest">No async transfers match this filter</p></td>`;
                 tbody.appendChild(row);
             }
         }
@@ -430,14 +467,6 @@
             } catch (e) { return null; }
         }
 
-        function updateTabs(status) {
-            document.querySelectorAll('.tab-btn').forEach(b => {
-                const isActive = b.id.includes(status.toLowerCase() || 'all');
-                b.classList.toggle('active', isActive);
-                if (!isActive) b.classList.add('text-slate-400'); else b.classList.remove('text-slate-400');
-            });
-        }
-
         function onContractChange() {
             const contractId = document.getElementById('m-contract').value;
             const contract = contractsMap[contractId];
@@ -450,9 +479,7 @@
         }
 
         async function fetchSyncCalls() {
-            updateTabs('sync');
-            document.getElementById('transfers-table-card').classList.add('hidden');
-            document.getElementById('sync-calls-panel').classList.remove('hidden');
+            showLane('sync');
             const res = await callApi(API, { _func: "list_sync_audit_logs" });
             const tbody = document.getElementById('sync-calls-body');
             tbody.innerHTML = '';

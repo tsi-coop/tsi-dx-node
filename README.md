@@ -96,7 +96,7 @@ Explore the core capabilities of the TSI DX Node through this step-by-step techn
 | [Synchronous Integration Guide](docs/guides/synchronous-integration-guide.md) | Real-time calls: contract setup, responder requirements, Client API, idempotency, errors |
 | [Security Hardening Guide](docs/guides/security-hardening-guide.md) | Setup token, JWT secret, peer signatures, deployment checklist |
 | [Changelog](CHANGELOG.md) | What changed in each release, with upgrade notes |
-| [Example Scripts](examples/scripts/README.md) | Runnable scripts for node setup, partner handshake, contracts, async transfer, sync call, 80 negative test scenarios, teardown |
+| [Example Scripts](examples/scripts/README.md) | Runnable scripts for node setup, partner handshake, contracts, async transfer, sync call, 95 negative test scenarios, teardown |
 
 ## Use Cases
 
