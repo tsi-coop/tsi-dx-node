@@ -1,6 +1,8 @@
-# TSI DX Node: Open Source B2B Data Exchange Solution
+# TSI DX Node
 
-TSI DX Node is an open-source solution designed for peer-to-peer data exchange among business partners. It eliminates the need for centralized intermediaries by allowing direct, secure, and governed data flows between independent nodes.
+**A peer-to-peer node for governed data exchange between organisations.**
+
+TSI DX Node is open source. It eliminates the need for centralized intermediaries by allowing direct, secure, and governed data flows between independent nodes. Every exchange runs under a contract the receiver defines and both ends enforce.
 
 For a high-level functional overview and the rationale behind this architecture, read our [soft launch post](https://techadvisory.substack.com/p/tsi-dx-node-open-source-b2b-data).
 
