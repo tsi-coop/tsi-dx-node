@@ -8,6 +8,7 @@ Concepts behind each step: [Architecture](../../docs/design/architecture.md), [A
 
 - `curl`, `jq`, `openssl`, `base64`
 - **Two running nodes** (see "Start Node A and Node B" below). The scripts only talk to the nodes' HTTP APIs; they do not start them. If a node is down, `01-node-setup.sh` fails with `Cannot reach http://localhost:8082/... - is the node running?`
+- **The nodes' setup tokens.** The scripts send `SETUP_TOKEN_A` / `SETUP_TOKEN_B` (defaults `dev-node-a-setup-token`, `dev-node-b-setup-token`, matching `.env.node-a` / `.env.node-b`) to initialise each node. If you started the nodes with different `TSI_DX_NODE_BOOTSTRAP_TOKEN` values, export the matching ones first. If you removed the token after initialising the nodes, step 01 gets `503` (setup disabled) instead of `409`; skip step 01 or set the token again.
 - Fresh databases, or nodes you are happy to add example data to. The scripts are re-runnable, but they create contracts, applications and API keys.
 
 ## Start Node A and Node B

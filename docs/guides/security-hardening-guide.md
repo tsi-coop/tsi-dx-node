@@ -6,7 +6,7 @@ Security controls built into TSI DX Node, and the deployment settings that make 
 
 | Setting | Purpose | Required |
 |---|---|---|
-| `TSI_DX_NODE_BOOTSTRAP_TOKEN` | Authorises first-time node setup (`init.html`). Unset = setup refused. | Yes, for first setup |
+| `TSI_DX_NODE_BOOTSTRAP_TOKEN` | Authorises first-time node setup (`init.html`). **No built-in default**: unset = setup refused (`503`). Generate with `openssl rand -hex 32`. | Yes, for first setup |
 | `TSI_DX_NODE_JWT_SECRET` | Signing key for admin session tokens: a unique random value of 32+ characters. There is **no built-in default**: outside `local`/`development`/`dev` the node refuses to start without it, and in those modes a random per-process key is used (sessions end on restart). Sample placeholder values are rejected. | Yes, in production |
 | `TSI_DX_NODE_ENV` | `development` / `local` / `dev` omit the `Secure` cookie flag so plain-http testing works. Any other value (default `production`) sets it. | Recommended |
 | `TSI_DX_NODE_P2P_SIGNATURES` | Leave unset. `optional` accepts unsigned peer calls and exists only for rolling upgrades between versions. | No |
@@ -14,6 +14,8 @@ Security controls built into TSI DX Node, and the deployment settings that make 
 | Network placement | Keep the node's P2P port reachable only from partner nodes, and any `sync_responder_url` reachable only from the node. | Yes |
 
 Generate secrets with `openssl rand -hex 32`.
+
+**Setup token lifecycle.** `TSI_DX_NODE_BOOTSTRAP_TOKEN` is only needed while a node is being initialised. Set it, initialise the node (enter the token in the **Setup Token** field of `init.html`), then remove it from the environment and restart. With no token configured, first-time setup is refused outright (`503`), so an unattended node cannot be taken over through the setup endpoint. The token is checked before anything else: a wrong token is `401`, and only a correct token on an already-initialised node reaches the `409`. Never reuse the token across nodes or commit it; the `dev-node-*-setup-token` values in the sample `.env.node-*` files are for local testing only.
 
 > `docker-compose.yml` passes `TSI_DX_NODE_JWT_SECRET` to the node, taking it from your `.env` (the older `TSI_PRIVACY_VAULT_JWT_SECRET` name is still read as a fallback). There is no compose default.
 

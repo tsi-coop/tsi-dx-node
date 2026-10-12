@@ -57,6 +57,6 @@ Read these before upgrading a running node.
 ### Documentation
 
 - `docs/` reorganised into `design/` (single `architecture.md`, replacing the transfer, sync and async design documents and the two historical plans) and `guides/` (local testing, security hardening, asynchronous and synchronous integration). `Local_Testing_Guide.md` moved to `docs/guides/local-testing-guide.md`.
-- README: two exchange lanes, getting started with prerequisites, documentation table, security section.
+- README: two exchange lanes, getting started with prerequisites and a setup-token step, documentation table, security section. The security guide documents the setup token's lifecycle (set, initialise, remove).
 
 [0.2.1]: https://github.com/tsi-coop/tsi-dx-node/releases/tag/v0.2.1

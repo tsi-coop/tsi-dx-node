@@ -33,7 +33,22 @@ The real-time lane is synchronous request/response between two nodes: the callin
 - `curl`, `jq`, `openssl` and `base64` on the host, for the example scripts
 - Free host ports `8082`, `8083`, `8443`, `9443`, `5434` and `5435` (the two local nodes and their databases)
 
-### 2. Start two nodes
+### 2. Set the setup token
+
+First-time node setup (creating the node identity and the first administrator) is refused unless the request carries the value of `TSI_DX_NODE_BOOTSTRAP_TOKEN`. There is no built-in default. The repository ships development values in `.env.node-a` and `.env.node-b` (`dev-node-a-setup-token`, `dev-node-b-setup-token`), which is what the example scripts use, so a local trial needs no change.
+
+For any node beyond a local trial, generate a different token per node and keep it out of version control. Each node reads its own `--env-file`:
+
+```bash
+sed -i "s/^TSI_DX_NODE_BOOTSTRAP_TOKEN=.*/TSI_DX_NODE_BOOTSTRAP_TOKEN=$(openssl rand -hex 32)/" .env.node-a
+sed -i "s/^TSI_DX_NODE_BOOTSTRAP_TOKEN=.*/TSI_DX_NODE_BOOTSTRAP_TOKEN=$(openssl rand -hex 32)/" .env.node-b
+# the example scripts must then be told the new values:
+export SETUP_TOKEN_A=<value from .env.node-a> SETUP_TOKEN_B=<value from .env.node-b>
+```
+
+(For a single node started with a plain `docker compose up`, put the line in `.env` instead.) You enter that value in the **Setup Token** field of `/init.html` when you initialise the node, or pass it as `setup_token` to `registeradmin`. Once the node is initialised the token is no longer needed and can be removed from the environment; setup is then refused until it is set again. See the [Security Hardening Guide](docs/guides/security-hardening-guide.md).
+
+### 3. Start two nodes
 
 From the repository root:
 
@@ -49,7 +64,7 @@ docker compose -f docker-compose.yml -f docker-compose.p2p.yml \
 
 Always pass `--project-name` and `--env-file`; a plain `docker compose up` uses the default ports and collides with these. Node A is then on `http://localhost:8082` and Node B on `http://localhost:8083`. The first build takes a few minutes; both URLs should return `200` for `/index.html` when ready. Details: [Local Testing Guide](docs/guides/local-testing-guide.md) sections 1-4.
 
-### 3. Run the exchange
+### 4. Run the exchange
 
 Either run the [example scripts](examples/scripts/README.md), which take two fresh nodes through setup, partner handshake, a data contract, an async transfer and a sync call:
 
@@ -57,7 +72,7 @@ Either run the [example scripts](examples/scripts/README.md), which take two fre
 cd examples/scripts && ./run-all.sh
 ```
 
-or follow the [**Local Testing Guide**](docs/guides/local-testing-guide.md) step by step through the console. The video tutorials below cover each stage in depth.
+or follow the [**Local Testing Guide**](docs/guides/local-testing-guide.md) step by step through the console (use the setup token from step 2 on the setup page). The video tutorials below cover each stage in depth.
 
 ## Guided Tour
 
