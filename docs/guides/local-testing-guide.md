@@ -101,6 +101,7 @@ APP_PORT_MAP=8082:8080
 P2P_PORT_MAP=8443:8443
 TSI_DX_NODE_ENV=development
 TSI_PRIVACY_VAULT_JWT_SECRET=node_a_secret_32_chars_long_here_
+TSI_DX_NODE_BOOTSTRAP_TOKEN=dev-node-a-setup-token
 ```
 
 **.env.node-b**
@@ -114,11 +115,14 @@ APP_PORT_MAP=8083:8080
 P2P_PORT_MAP=9443:8443
 TSI_DX_NODE_ENV=development
 TSI_PRIVACY_VAULT_JWT_SECRET=node_b_secret_32_chars_long_here_
+TSI_DX_NODE_BOOTSTRAP_TOKEN=dev-node-b-setup-token
 ```
 
 > **Note:** Both nodes use the same `POSTGRES_DB` name. Because each runs under a different `--project-name`, their volumes are automatically isolated as `node-a_postgres_data` and `node-b_postgres_data`.
 
 ---
+
+> **Prefer scripts?** Everything in sections 5-11 is also available as runnable shell scripts in [`examples/scripts/`](../../examples/scripts/README.md) - `./run-all.sh` performs setup, handshake, contracts, an async transfer and a sync call against the two nodes below.
 
 ## 4. Environment Setup
 
@@ -205,6 +209,7 @@ Open `http://localhost:8082/init.html`
 | Node ID | `NODE-A-SOUTH` |
 | Public FQDN | `node-a-server-1` |
 | mTLS Port | `8443` |
+| Setup Token | `dev-node-a-setup-token` (the `TSI_DX_NODE_BOOTSTRAP_TOKEN` from `.env.node-a`) |
 
 Click **Establish Node Authority**.
 
@@ -217,6 +222,7 @@ Open `http://localhost:8083/init.html`
 | Node ID | `NODE-B-NORTH` |
 | Public FQDN | `node-b-server-1` |
 | mTLS Port | `8443` |
+| Setup Token | `dev-node-b-setup-token` (the `TSI_DX_NODE_BOOTSTRAP_TOKEN` from `.env.node-b`) |
 
 Click **Establish Node Authority**.
 
@@ -549,6 +555,7 @@ The governed response appears inline in the modal on success.
 curl -s -X POST http://localhost:8082/api/client/dx \
   -H "Content-Type: application/json" \
   -H "X-API-Key: <your-app-api-key>" \
+  -H "X-API-Secret: <your-app-api-secret>" \
   -d '{
     "_func": "execute_sync_request",
     "contract_id": "<uuid-of-sync-contract>",
@@ -624,41 +631,40 @@ Both deactivation actions are written to the Audit Trail on Node B (`CONTRACT_PA
 
 ### Authorisation Rejection
 
-Attempt a direct P2P call from a node that has not been invited:
+Peer-to-peer calls are signed with the sending node's identity key, so a hand-written `curl` with only the handshake header is refused before it reaches the contract checks:
 
 ```bash
 curl -s -X POST http://localhost:8083/api/admin/transfers \
   -H "Content-Type: application/json" \
   -H "X-DX-P2P-HANDSHAKE: DX-P2P-PROTOCOL-V1" \
-  -d '{
-    "_func": "receive_transfer_stream",
-    "contract_id": "<uuid-of-contract>",
-    "sender_node_id": "UNINVITED-NODE",
-    "transfer_id": "00000000-0000-0000-0000-000000000000",
-    "file_name": "test.json",
-    "file_data": "e30=",
-    "sequence_number": 1,
-    "message_timestamp": "2026-01-01 00:00:00.0"
-  }'
+  -d '{"_func":"receive_transfer_stream","contract_id":"<uuid-of-contract>","sender_node_id":"UNINVITED-NODE",
+       "transfer_id":"00000000-0000-0000-0000-000000000000","file_name":"test.json","file_data":"e30=",
+       "sequence_number":1,"message_timestamp":"2026-01-01 00:00:00.0"}'
 ```
 
-Expected: HTTP 403 `Sender is not an authorised participant of this contract.`  
-An audit entry `SECURITY_UNAUTHORIZED_TRANSFER` (CRITICAL) is written on Node B.
+Expected: HTTP 401 `Peer request is not signed.`
+
+To exercise the receiver's own checks (signature, participant, replay, schema, anonymisation) use `examples/scripts/06-negative-tests.sh`, which signs peer calls with Node A's key the way a partner does. The scenarios and their expected statuses are listed in [examples/scripts/README.md](../../examples/scripts/README.md#negative-test-scenarios-06-negative-testssh).
 
 ### Replay Protection - Async (Sequence Number)
 
-Reset Node B's transfer history for Node A, then re-send the same file:
-
-```bash
-docker exec -i node-b-database-1 psql -U tsi_admin -d tsi_dx_node -c \
-  "DELETE FROM data_transfers WHERE sender_node_id = 'NODE-A-SOUTH';"
-```
-
-A second transfer with a non-monotonic sequence number must be rejected with HTTP 403.
+A transfer whose sequence number is not greater than the last one received from that sender on the contract, or whose timestamp is more than 5 minutes off, is refused with HTTP 403. The sending node never reuses a number because transfers on one contract are dispatched one at a time. Scenarios R03 and R04 in `06-negative-tests.sh` replay a signed call to show both rejections.
 
 ### Replay Protection - Sync (Nonce)
 
-Send the same `idempotency_key` twice within the nonce TTL window - the second call must be rejected. After the TTL expires (~30 s), a call with a fresh nonce succeeds.
+Every call carries a fresh nonce. A request that arrives at the receiver with a nonce it has already consumed is refused with HTTP 403 (scenario R11). Sending the same `idempotency_key` twice from the application is different: the second call is **not** an error, it returns the first call's recorded response with `"idempotent_replay": true` and the partner is not called again (scenario S15b).
+
+### Automatic Retry (Async)
+
+Stop Node B's server, initiate a transfer from Node A, and watch its status:
+
+```bash
+docker stop node-b-server-1
+# initiate a transfer on Node A, then poll get_transfer_status
+docker start node-b-server-1
+```
+
+The transfer returns to `Pending` with an error message such as `Peer unreachable ... attempt 1 of 5, retrying in 30s`, and becomes `Delivered` once Node B is back. Node B holds one copy.
 
 ### Circuit Breaker (Sync Only)
 

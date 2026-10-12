@@ -175,7 +175,7 @@ public class PKIUtil {
      *
      *   3. PrivateKey          — rare; only if something already handed us a Java object.
      */
-    private static PrivateKey parsePrivateKeyPem(String privateKeyPem) throws Exception {
+    public static PrivateKey parsePrivateKeyPem(String privateKeyPem) throws Exception {
         JcaPEMKeyConverter converter = new JcaPEMKeyConverter().setProvider("BC");
 
         try (PEMParser pemParser = new PEMParser(new StringReader(privateKeyPem))) {

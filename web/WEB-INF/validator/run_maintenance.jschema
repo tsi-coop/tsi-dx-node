@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Run Maintenance Request",
+  "description": "Runs the retention purge and nonce clean-up now instead of waiting for the scheduled run.",
+  "type": "object",
+  "required": ["_func"],
+  "properties": {
+    "_func": {
+      "type": "string",
+      "const": "run_maintenance",
+      "description": "The internal function identifier for running maintenance."
+    }
+  },
+  "additionalProperties": false
+}

@@ -188,9 +188,9 @@ public class DataContract implements Action {
 
         String sql = "INSERT INTO data_contracts " +
                      "(contract_id, name, receiver_node_id, schema_definition, metadata, " +
-                     "pii_fields, interaction_type, status, updated_at) " +
+                     "pii_fields, interaction_type, retention_policy_days, status, updated_at) " +
                      "VALUES (?, ?, (SELECT node_id FROM node_config LIMIT 1), " +
-                     "?::jsonb, ?::jsonb, ?, ?, 'Draft', NOW())";
+                     "?::jsonb, ?::jsonb, ?, ?, ?, 'Draft', NOW())";
 
         PoolDB pool = new PoolDB();
         Connection conn = null; PreparedStatement pstmt = null;
@@ -205,6 +205,9 @@ public class DataContract implements Action {
             String[] pii = piiArr != null ? (String[]) piiArr.toArray(new String[0]) : new String[0];
             pstmt.setArray(5, conn.createArrayOf("text", pii));
             pstmt.setString(6, interactionType);
+            Object retention = input.get("retention_policy_days");
+            pstmt.setObject(7, retention instanceof Number && ((Number) retention).longValue() >= 0
+                    ? Integer.valueOf(((Number) retention).intValue()) : null, java.sql.Types.INTEGER);
             pstmt.executeUpdate();
         } finally { pool.cleanup(null, pstmt, conn); }
 
@@ -359,6 +362,8 @@ public class DataContract implements Action {
             payload.put("contract_id",      rs.getString("contract_id"));
             payload.put("name",             rs.getString("name"));
             payload.put("interaction_type", rs.getString("interaction_type"));
+            int retentionDays = rs.getInt("retention_policy_days");
+            if (!rs.wasNull()) payload.put("retention_policy_days", retentionDays);
             payload.put("sender_node_id",   localNodeId);
             payload.put("schema_definition", new JSONParser().parse(rs.getString("schema_definition")));
 
@@ -386,8 +391,8 @@ public class DataContract implements Action {
             // Upsert contract
             String sql = "INSERT INTO data_contracts " +
                          "(contract_id, name, receiver_node_id, schema_definition, metadata, " +
-                         "pii_fields, interaction_type, status, updated_at) " +
-                         "VALUES (?, ?, ?, ?::jsonb, ?::jsonb, ?, ?, 'Draft', NOW()) " +
+                         "pii_fields, interaction_type, retention_policy_days, status, updated_at) " +
+                         "VALUES (?, ?, ?, ?::jsonb, ?::jsonb, ?, ?, ?, 'Draft', NOW()) " +
                          "ON CONFLICT (contract_id) DO UPDATE " +
                          "SET name = EXCLUDED.name, updated_at = NOW()";
             pstmt = conn.prepareStatement(sql);
@@ -400,6 +405,9 @@ public class DataContract implements Action {
             String[] pii = piiArr != null ? (String[]) piiArr.toArray(new String[0]) : new String[0];
             pstmt.setArray(6, conn.createArrayOf("text", pii));
             pstmt.setString(7, getString(input, "interaction_type"));
+            Object invRetention = input.get("retention_policy_days");
+            pstmt.setObject(8, invRetention instanceof Number ? Integer.valueOf(((Number) invRetention).intValue()) : null,
+                    java.sql.Types.INTEGER);
             pstmt.executeUpdate();
             pool.cleanup(null, pstmt, null);
 
@@ -638,11 +646,11 @@ public class DataContract implements Action {
     private void dispatch(String fqdn, JSONObject payload) throws Exception {
         String protocol  = (fqdn.contains(":443") || fqdn.contains(":8443")) ? "https://" : "http://";
         String targetUrl = (fqdn.startsWith("http") ? fqdn : protocol + fqdn) + "/api/admin/contracts";
-        HttpRequest request = HttpRequest.newBuilder()
+        HttpRequest request = PeerAuth.sign(HttpRequest.newBuilder()
                 .uri(URI.create(targetUrl))
                 .header("Content-Type", "application/json")
                 .header("X-DX-P2P-HANDSHAKE", P2P_HANDSHAKE_TOKEN)
-                .POST(HttpRequest.BodyPublishers.ofString(payload.toJSONString()))
+                .POST(HttpRequest.BodyPublishers.ofString(payload.toJSONString())), payload.toJSONString(), null)
                 .build();
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
         if (response.statusCode() >= 400)

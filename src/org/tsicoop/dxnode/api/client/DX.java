@@ -90,6 +90,7 @@ public class DX implements Action {
         if (contractId == null || fileName == null || fileDataBase64 == null) {
             throw new IllegalArgumentException("contract_id, file_name, and file_data (Base64 string) are required.");
         }
+        SafeFilePath.requireSafeName(fileName);
 
         Connection conn = null; PreparedStatement pstmt = null; ResultSet rs = null; PoolDB pool = new PoolDB();
         try {
@@ -100,14 +101,15 @@ public class DX implements Action {
                          "FROM data_contracts c " +
                          "JOIN app_contracts ac ON c.contract_id = ac.contract_id " +
                          "CROSS JOIN (SELECT node_id, storage_active_path FROM node_config LIMIT 1) cfg " +
-                         "WHERE ac.app_id = ? AND c.contract_id = ? AND c.status = 'Active'";
+                         "WHERE ac.app_id = ? AND c.contract_id = ? AND c.status = 'Active' " +
+                         "AND c.interaction_type = 'async'";
             
             pstmt = conn.prepareStatement(sql);
             pstmt.setObject(1, appId);
             pstmt.setObject(2, contractId);
             rs = pstmt.executeQuery();
 
-            if (!rs.next()) throw new SecurityException("Unauthorized or inactive data contract.");
+            if (!rs.next()) throw new SecurityException("Unauthorized, inactive, or non-async data contract.");
 
             String receiverId = rs.getString("receiver_node_id");
             String senderId = rs.getString("node_id");
@@ -128,7 +130,7 @@ public class DX implements Action {
             }
             
             // Fail-Fast Check for JSON Contracts
-            if (contractMetadataRaw != null && contractMetadataRaw.contains("\"format\":\"json\"")) {
+            if (isJsonFormat(contractMetadataRaw)) {
                 try {
                     new JSONParser().parse(new String(fileBytes, StandardCharsets.UTF_8));
                 } catch (Exception pe) {
@@ -140,7 +142,7 @@ public class DX implements Action {
             File storageDir = new File(activePath);
             if (!storageDir.exists()) storageDir.mkdirs();
             
-            File targetFile = new File(storageDir, fileName);
+            File targetFile = SafeFilePath.resolve(activePath, fileName).toFile();
             try (FileOutputStream fos = new FileOutputStream(targetFile)) { 
                 fos.write(fileBytes); 
             }
@@ -169,6 +171,18 @@ public class DX implements Action {
                 put("message", "Single-package payload accepted for processing.");
             }};
         } finally { pool.cleanup(rs, pstmt, conn); }
+    }
+
+    /** True when the contract metadata declares format=json (metadata is JSONB, so spacing varies). */
+    private static boolean isJsonFormat(String metadataRaw) {
+        if (metadataRaw == null) return false;
+        try {
+            Object meta = new JSONParser().parse(metadataRaw);
+            return meta instanceof JSONObject
+                    && "json".equalsIgnoreCase(String.valueOf(((JSONObject) meta).get("format")));
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     /**
@@ -299,7 +313,7 @@ public class DX implements Action {
             pstmt.setObject(2, tid);
             rs = pstmt.executeQuery();
             if (rs.next()) {
-                Path p = Path.of(rs.getString("storage_active_path"), rs.getString("file_name"));
+                Path p = SafeFilePath.resolve(rs.getString("storage_active_path"), rs.getString("file_name"));
                 if (Files.exists(p)) {
                     JSONObject out = new JSONObject();
                     out.put("success", true);

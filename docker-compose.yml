@@ -28,9 +28,9 @@ services:
   # 2. Java Jetty Web Application Service
   server:
     # Build from local source
-    build:
-      context: .
-      dockerfile: Dockerfile
+    #build:
+    #  context: .
+    #  dockerfile: Dockerfile
 
     # PRODUCTION: override with a pre-built image by setting IMAGE_NAME in .env
     image: "${IMAGE_NAME:-tsicoop/tsi-dx-node:latest}"
@@ -49,7 +49,10 @@ services:
       POSTGRES_USER: "${POSTGRES_USER:-tsi_admin}"
       POSTGRES_PASSWD: "${POSTGRES_PASSWD:-secure_dev_password}"
       TSI_DX_NODE_ENV: "${TSI_DX_NODE_ENV:-production}"
-      TSI_DX_NODE_JWT_SECRET: "${TSI_PRIVACY_VAULT_JWT_SECRET:-your_32_character_long_secure_secret_here}"
+      TSI_DX_NODE_JWT_SECRET: "${TSI_DX_NODE_JWT_SECRET:-${TSI_PRIVACY_VAULT_JWT_SECRET:-}}"
+      # Required to complete first-time node setup (init.html). No default: if unset,
+      # setup is refused. Generate with: openssl rand -hex 32
+      TSI_DX_NODE_BOOTSTRAP_TOKEN: "${TSI_DX_NODE_BOOTSTRAP_TOKEN:-}"
       TSI_EXPORT_PATH: "${TSI_EXPORT_PATH:-/var/lib/tsi/exports/}"
     
     volumes:

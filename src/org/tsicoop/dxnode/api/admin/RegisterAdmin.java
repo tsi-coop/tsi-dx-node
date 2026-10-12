@@ -10,6 +10,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
@@ -19,6 +21,8 @@ import java.util.regex.Pattern;
  * Aligned with the latest init.html and init.sql requirements.
  */
 public class RegisterAdmin implements Action {
+
+    private static final String BOOTSTRAP_TOKEN_ENV = "TSI_DX_NODE_BOOTSTRAP_TOKEN";
 
     private final PasswordHasher passwordHasher = new PasswordHasher();
     private static final UUID NODE_CONFIG_SINGLETON_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
@@ -39,13 +43,35 @@ public class RegisterAdmin implements Action {
         JSONObject output = null;
 
         try {
+            input = InputProcessor.getInput(req);
+            if (input == null) {
+                OutputProcessor.errorResponse(res, HttpServletResponse.SC_BAD_REQUEST, "Bad Request", "Invalid request body.", req.getRequestURI());
+                return;
+            }
+
+            // 0. Setup token gate. Runs before any database access so a caller without
+            // the token learns nothing about whether the node is already initialized.
+            // Fails closed: with no token configured on the server, setup is refused.
+            String configuredToken = System.getenv(BOOTSTRAP_TOKEN_ENV);
+            if (configuredToken == null || configuredToken.trim().isEmpty()) {
+                OutputProcessor.errorResponse(res, HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Service Unavailable",
+                        "Node setup is disabled: " + BOOTSTRAP_TOKEN_ENV + " is not configured on the server.", req.getRequestURI());
+                return;
+            }
+            Object suppliedToken = input.get("setup_token");
+            if (!(suppliedToken instanceof String) || !MessageDigest.isEqual(
+                    configuredToken.getBytes(StandardCharsets.UTF_8),
+                    ((String) suppliedToken).getBytes(StandardCharsets.UTF_8))) {
+                OutputProcessor.errorResponse(res, HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized",
+                        "Invalid setup token.", req.getRequestURI());
+                return;
+            }
+
             // 1. Check if the node has already been initialized
             if (isNodeInitialized()) {
                 OutputProcessor.errorResponse(res, HttpServletResponse.SC_CONFLICT, "Conflict", "The TSI DX Node has already been initialized. Please use the login gateway.", req.getRequestURI());
                 return;
             }
-
-            input = InputProcessor.getInput(req);
 
             // Extract Node Identity parameters
             String nodeId = (String) input.get("node_id");
@@ -82,16 +108,25 @@ public class RegisterAdmin implements Action {
 
             // 5. Initialize Node Config and Save Admin User (Transaction)
             output = bootstrapNode(nodeId, fqdn, networkPort, username, email, hashedPassword, adminRoleId);
+            if (Boolean.TRUE.equals(output.get("already_initialized"))) {
+                OutputProcessor.errorResponse(res, HttpServletResponse.SC_CONFLICT, "Conflict", "The TSI DX Node has already been initialized. Please use the login gateway.", req.getRequestURI());
+                return;
+            }
 
             // 6. Return success response
             OutputProcessor.send(res, HttpServletResponse.SC_CREATED, output);
 
         } catch (SQLException e) {
             e.printStackTrace();
-            OutputProcessor.errorResponse(res, 500, "Database Error", e.getMessage(), req.getRequestURI());
+            if ("40001".equals(e.getSQLState()) || "23505".equals(e.getSQLState())) {
+                // Lost a concurrent setup race: another request initialized the node first.
+                OutputProcessor.errorResponse(res, HttpServletResponse.SC_CONFLICT, "Conflict", "The TSI DX Node has already been initialized. Please use the login gateway.", req.getRequestURI());
+            } else {
+                OutputProcessor.errorResponse(res, 500, "Database Error", "Database error during node setup.", req.getRequestURI());
+            }
         } catch (Exception e) {
             e.printStackTrace();
-            OutputProcessor.errorResponse(res, 500, "Internal Server Error", e.getMessage(), req.getRequestURI());
+            OutputProcessor.errorResponse(res, 500, "Internal Server Error", "Unexpected error during node setup.", req.getRequestURI());
         }
     }
 
@@ -116,6 +151,7 @@ public class RegisterAdmin implements Action {
         if (port < 1 || port > 65535) return "Invalid network port (1-65535).";
         if (username == null || username.trim().isEmpty()) return "Admin user name is required.";
         if (email == null || !EMAIL_PATTERN.matcher(email).matches()) return "Valid email is required.";
+        if (password == null || confirmPassword == null) return "Password and confirmation are required.";
         if (!password.equals(confirmPassword)) return "Passwords do not match.";
         if (!PASSWORD_PATTERN.matcher(password).matches()) {
             return "Password must be at least 8 characters with uppercase, lowercase, digit, and special char.";
@@ -184,6 +220,18 @@ public class RegisterAdmin implements Action {
         try {
             conn = pool.getConnection();
             conn.setAutoCommit(false);
+            // The initialized-check and the inserts must be one serializable unit: if two
+            // setup requests both see an empty users table, Postgres aborts the loser
+            // (SQLState 40001) instead of letting both create an administrator.
+            conn.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
+            try (PreparedStatement check = conn.prepareStatement("SELECT COUNT(*) FROM users");
+                 ResultSet cr = check.executeQuery()) {
+                if (cr.next() && cr.getInt(1) > 0) {
+                    conn.rollback();
+                    output.put("already_initialized", true);
+                    return output;
+                }
+            }
 
             // 1. Initialize Node Configuration
             pstmtConfig = conn.prepareStatement(configSql);
@@ -224,6 +272,9 @@ public class RegisterAdmin implements Action {
             if (conn != null) conn.rollback();
             throw e;
         } finally {
+            if (conn != null) {
+                try { conn.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED); } catch (SQLException ignored) {}
+            }
             if (pstmtConfig != null) pstmtConfig.close();
             pool.cleanup(rs, pstmtUser, conn);
         }

@@ -16,7 +16,49 @@ public class InputProcessor {
     public final static String REQUEST_DATA = "input_json";
     public final static String AUTH_TOKEN = "auth_token";
 
+    /** Name of the HttpOnly cookie that carries the admin JWT for static console pages. */
+    public final static String CONSOLE_SESSION_COOKIE = "console_session";
+    private static final long CONSOLE_SESSION_MAX_AGE_SECONDS = 864000L; // 10 days, matches JWTUtil expiry
+
+    /**
+     * Sets the console session cookie issued at login. Built as a raw Set-Cookie header
+     * because Servlet 5.0's Cookie API has no SameSite support. Secure is omitted only
+     * for local/development environments so plain-http testing keeps working.
+     */
+    public static void setConsoleSessionCookie(HttpServletResponse res, String token) {
+        StringBuilder cookie = new StringBuilder();
+        cookie.append(CONSOLE_SESSION_COOKIE).append('=').append(token)
+                .append("; Path=/; Max-Age=").append(CONSOLE_SESSION_MAX_AGE_SECONDS)
+                .append("; HttpOnly; SameSite=Strict");
+        if (isSecureCookieEnv()) cookie.append("; Secure");
+        res.addHeader("Set-Cookie", cookie.toString());
+    }
+
+    /** Expires the console session cookie. Used on logout. */
+    public static void clearConsoleSessionCookie(HttpServletResponse res) {
+        StringBuilder cookie = new StringBuilder();
+        cookie.append(CONSOLE_SESSION_COOKIE).append("=; Path=/; Max-Age=0; HttpOnly; SameSite=Strict");
+        if (isSecureCookieEnv()) cookie.append("; Secure");
+        res.addHeader("Set-Cookie", cookie.toString());
+    }
+
+    public static String readConsoleSessionCookie(HttpServletRequest req) {
+        jakarta.servlet.http.Cookie[] cookies = req.getCookies();
+        if (cookies == null) return null;
+        for (jakarta.servlet.http.Cookie c : cookies) {
+            if (CONSOLE_SESSION_COOKIE.equals(c.getName())) return c.getValue();
+        }
+        return null;
+    }
+
+    private static boolean isSecureCookieEnv() {
+        String env = System.getenv("TSI_DX_NODE_ENV");
+        return !("local".equalsIgnoreCase(env) || "development".equalsIgnoreCase(env) || "dev".equalsIgnoreCase(env));
+    }
+
     public static void processInput(HttpServletRequest request, HttpServletResponse response){
+        // Idempotent: the filter may need to read the body early (P2P allow-list check).
+        if (request.getAttribute(REQUEST_DATA) != null) return;
         String contentType = request.getContentType();
         StringBuilder buffer = new StringBuilder();
         try {

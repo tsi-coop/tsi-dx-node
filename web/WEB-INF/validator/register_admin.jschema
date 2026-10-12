@@ -17,6 +17,9 @@
     },
     "confirm_password": {
       "type": "string"
+    },
+    "setup_token": {
+      "type": "string"
     }
   },
   "required": [

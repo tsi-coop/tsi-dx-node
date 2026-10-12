@@ -1,0 +1,12 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["applicant_id", "mobile", "product", "amount"],
+  "properties": {
+    "applicant_id": { "type": "string" },
+    "mobile":       { "type": "string" },
+    "product":      { "type": "string", "enum": ["loan", "credit_card", "insurance"] },
+    "amount":       { "type": "number" },
+    "pincode":      { "type": "string" }
+  }
+}

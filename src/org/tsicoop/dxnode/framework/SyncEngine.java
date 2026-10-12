@@ -73,13 +73,32 @@ public class SyncEngine {
                                 ? Long.parseLong(metadata.get("sync_timeout_ms").toString())
                                 : DEFAULT_TIMEOUT_MS;
 
-        // 2. Circuit breaker check - fail fast if partner has been unreachable
-        checkCircuitBreaker(partnerFqdn);
-
-        // 3. Apply L1/L2 governance to the outbound request payload
+        // 2. Apply L1/L2 governance to the outbound request payload
         byte[] reqBytes         = requestPayload.toJSONString().getBytes(StandardCharsets.UTF_8);
         byte[] governedReqBytes = TransferEngine.getInstance().applyGovernance(reqBytes, format, schema, metadata);
         JSONObject governedRequest = (JSONObject) new JSONParser().parse(new String(governedReqBytes, StandardCharsets.UTF_8));
+
+        // 3. Idempotency: a key that already completed successfully returns the recorded answer
+        //    instead of calling the partner again. The same key with a different request is an error.
+        if (idempotencyKey != null && !idempotencyKey.isEmpty()) {
+            JSONObject earlier = findCompletedCall(contractId, senderNodeId, idempotencyKey);
+            if (earlier != null) {
+                JSONObject storedReq = (JSONObject) earlier.get("request");
+                if (storedReq != null && !storedReq.equals(governedRequest)) {   // map equality: jsonb reorders keys
+                    throw new IllegalArgumentException(
+                        "idempotency_key '" + idempotencyKey + "' was already used with a different request.");
+                }
+                JSONObject replay = new JSONObject();
+                replay.put("success",           true);
+                replay.put("response_payload",  earlier.get("response"));
+                replay.put("duration_ms",       0L);
+                replay.put("idempotent_replay", true);
+                return replay;
+            }
+        }
+
+        // 3b. Circuit breaker check - fail fast if partner has been unreachable
+        checkCircuitBreaker(partnerFqdn);
 
         // 4. Generate nonce; persist to sync_nonces for tracking and idempotency
         String nonce = UUID.randomUUID().toString();
@@ -104,12 +123,14 @@ public class SyncEngine {
         String errorDetail = null;
 
         try {
-            HttpRequest request = HttpRequest.newBuilder()
+            HttpRequest request = PeerAuth.sign(HttpRequest.newBuilder()
                     .uri(URI.create(targetUrl))
                     .header("Content-Type", "application/json")
                     .header("X-DX-P2P-HANDSHAKE", P2P_HANDSHAKE_TOKEN)
+                    .header("X-DX-FUNCTION", "receive_sync_request")
                     .timeout(Duration.ofMillis(timeoutMs))
-                    .POST(HttpRequest.BodyPublishers.ofString(p2pPayload.toJSONString()))
+                    .POST(HttpRequest.BodyPublishers.ofString(p2pPayload.toJSONString())),
+                    p2pPayload.toJSONString(), receiverNodeId)
                     .build();
 
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
@@ -119,10 +140,16 @@ public class SyncEngine {
                 JSONObject rawResponse  = (JSONObject) responseBody.get("response_payload");
                 if (rawResponse == null) rawResponse = new JSONObject();
 
-                // 6. Apply L2 PII governance to the inbound response payload (no schema validation — response structure differs from request)
-                byte[] respBytes         = rawResponse.toJSONString().getBytes(StandardCharsets.UTF_8);
-                byte[] governedRespBytes = TransferEngine.getInstance().applyPiiOnly(respBytes, metadata);
-                governedResponse = (JSONObject) new JSONParser().parse(new String(governedRespBytes, StandardCharsets.UTF_8));
+                // 6. The receiver already applied L2 to its response. Verify it did (no schema validation -
+                //    the response structure differs from the request) rather than transforming it a second time.
+                try {
+                    TransferEngine.getInstance().requireAnonymisedFields(rawResponse, metadata);
+                } catch (IllegalArgumentException v) {
+                    errorDetail = "Partner response violates the contract: " + v.getMessage();
+                    logStatus   = "ERROR";
+                    throw new Exception(errorDetail);
+                }
+                governedResponse = rawResponse;
 
                 resetCircuitBreaker(partnerFqdn);
                 logStatus = "SUCCESS";
@@ -214,10 +241,18 @@ public class SyncEngine {
         String errorDetail = null;
 
         try {
-            // 3. Apply L1/L2 governance to inbound request
-            byte[] reqBytes         = rawRequest.toJSONString().getBytes(StandardCharsets.UTF_8);
-            byte[] governedReqBytes = TransferEngine.getInstance().applyGovernance(reqBytes, format, schema, metadata);
-            governedRequest = (JSONObject) new JSONParser().parse(new String(governedReqBytes, StandardCharsets.UTF_8));
+            // 3. The receiver is the authority on its contract: validate the request as received (L1) and
+            //    check the sender anonymised what the contract says (L2). It is not transformed again.
+            byte[] reqBytes = rawRequest.toJSONString().getBytes(StandardCharsets.UTF_8);
+            try {
+                TransferEngine.getInstance().validateInbound(reqBytes, format, schema, metadata);
+            } catch (IllegalArgumentException violation) {
+                errorDetail = violation.getMessage();
+                logStatus   = "ERROR";
+                OutputProcessor.errorResponse(res, 400, "Contract Violation", errorDetail, req.getRequestURI());
+                return;
+            }
+            governedRequest = rawRequest;
 
             // 4. Forward governed payload to the partner's internal responder service
             HttpClient internalClient = HttpClient.newBuilder()
@@ -395,6 +430,34 @@ public class SyncEngine {
             return false;
         } finally {
             if (pool != null) try { pool.cleanup(null, pstmt, conn); } catch (Exception ignored) {}
+        }
+    }
+
+    /** Most recent successful call from this node with the given idempotency key, within 24 hours. */
+    private JSONObject findCompletedCall(UUID contractId, String localNodeId, String idempotencyKey) {
+        Connection conn = null; PreparedStatement pstmt = null; ResultSet rs = null; PoolDB pool = null;
+        try {
+            pool = new PoolDB();
+            conn = pool.getConnection();
+            pstmt = conn.prepareStatement(
+                "SELECT request_payload::text, response_payload::text FROM sync_audit_log " +
+                "WHERE contract_id = ? AND idempotency_key = ? AND sender_node_id = ? AND status = 'SUCCESS' " +
+                "AND timestamp > NOW() - INTERVAL '24 hours' ORDER BY timestamp DESC LIMIT 1");
+            pstmt.setObject(1, contractId);
+            pstmt.setString(2, idempotencyKey);
+            pstmt.setString(3, localNodeId);
+            rs = pstmt.executeQuery();
+            if (!rs.next()) return null;
+            JSONParser p = new JSONParser();
+            JSONObject out = new JSONObject();
+            if (rs.getString(1) != null) out.put("request", p.parse(rs.getString(1)));
+            if (rs.getString(2) != null) out.put("response", p.parse(rs.getString(2)));
+            return out;
+        } catch (Exception e) {
+            System.err.println("[SyncEngine] Idempotency lookup failed: " + e.getMessage());
+            return null;
+        } finally {
+            if (pool != null) try { pool.cleanup(rs, pstmt, conn); } catch (Exception ignored) {}
         }
     }
 

@@ -44,7 +44,9 @@
     },
     "retention_policy_days": {
       "type": "integer",
-      "default": 30
+      "minimum": 0,
+      "default": 30,
+      "description": "Days a finished transfer's payload is kept before the retention purge deletes it. 0 purges at the next maintenance run."
     },
     "pii_fields": {
       "type": "array",

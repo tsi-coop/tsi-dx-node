@@ -219,10 +219,10 @@ public class Partners implements Action {
                 payload.put("sender_fqdn", rs.getString("local_fqdn") + ":" + rs.getInt("network_port"));
                 payload.put("sender_public_key", rs.getString("certificate_pem"));
 
-                HttpRequest request = HttpRequest.newBuilder().uri(URI.create(normalizeUrl(targetFqdn)))
+                HttpRequest request = PeerAuth.sign(HttpRequest.newBuilder().uri(URI.create(normalizeUrl(targetFqdn)))
                         .header("Content-Type", "application/json").header("X-DX-P2P-HANDSHAKE", P2P_HANDSHAKE_TOKEN)
                         .header("X-DX-FUNCTION", "receive_partnership_proposal")
-                        .POST(HttpRequest.BodyPublishers.ofString(payload.toJSONString())).build();
+                        .POST(HttpRequest.BodyPublishers.ofString(payload.toJSONString())), payload.toJSONString(), null).build();
                 
                 HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
@@ -384,10 +384,10 @@ public class Partners implements Action {
         payload.put("_func", "receive_termination_finalization");
         payload.put("accepted", accepted);
         payload.put("sender_node_id", getLocalNodeId());
-        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(normalizeUrl(peerFqdn)))
+        HttpRequest request = PeerAuth.sign(HttpRequest.newBuilder().uri(URI.create(normalizeUrl(peerFqdn)))
                 .header("Content-Type", "application/json").header("X-DX-P2P-HANDSHAKE", P2P_HANDSHAKE_TOKEN)
                 .header("X-DX-FUNCTION", "receive_termination_finalization")
-                .POST(HttpRequest.BodyPublishers.ofString(payload.toJSONString())).build();
+                .POST(HttpRequest.BodyPublishers.ofString(payload.toJSONString())), payload.toJSONString(), null).build();
         httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString());
     }
 
@@ -406,10 +406,10 @@ public class Partners implements Action {
         try {
             JSONObject payload = new JSONObject();
             payload.put("_func", function); payload.put("sender_node_id", getLocalNodeId());
-            HttpRequest request = HttpRequest.newBuilder().uri(URI.create(normalizeUrl(peerFqdn)))
+            HttpRequest request = PeerAuth.sign(HttpRequest.newBuilder().uri(URI.create(normalizeUrl(peerFqdn)))
                     .header("Content-Type", "application/json").header("X-DX-P2P-HANDSHAKE", P2P_HANDSHAKE_TOKEN)
                     .header("X-DX-FUNCTION", function)
-                    .POST(HttpRequest.BodyPublishers.ofString(payload.toJSONString())).build();
+                    .POST(HttpRequest.BodyPublishers.ofString(payload.toJSONString())), payload.toJSONString(), null).build();
             httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString());
         } catch (Exception ignored) {}
     }
@@ -446,9 +446,9 @@ public class Partners implements Action {
             pstmt = conn.prepareStatement("SELECT fqdn FROM partners WHERE partner_id = ?");
             pstmt.setObject(1, partnerId); rs = pstmt.executeQuery();
             if (rs.next()) {
-                HttpRequest request = HttpRequest.newBuilder().uri(URI.create(normalizeUrl(rs.getString(1))))
+                HttpRequest request = PeerAuth.sign(HttpRequest.newBuilder().uri(URI.create(normalizeUrl(rs.getString(1))))
                         .header("X-DX-P2P-HANDSHAKE", P2P_HANDSHAKE_TOKEN).header("X-DX-FUNCTION", "probe").timeout(Duration.ofSeconds(5))
-                        .POST(HttpRequest.BodyPublishers.ofString("{\"_func\":\"probe\"}")).build();
+                        .POST(HttpRequest.BodyPublishers.ofString("{\"_func\":\"probe\"}")), "{\"_func\":\"probe\"}", null).build();
                 try {
                     HttpResponse<String> res = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
                     return new JSONObject() {{ put("success", true); put("online", res.statusCode() == 200); }};

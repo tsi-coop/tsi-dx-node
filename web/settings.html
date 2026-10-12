@@ -300,7 +300,10 @@
             document.getElementById('import-cert-pem').value = ''; document.getElementById('import-key-pem').value = '';
             document.getElementById('cert-status').innerText = 'Select identity cert file'; document.getElementById('key-status').innerText = 'Select private key file';
         }
-        function logout() { localStorage.clear(); window.location.href = 'index.html'; }
+        function logout() {
+            // Expire the server-side session cookie, then drop client state.
+            fetch('/api/admin/login', { method: 'DELETE' }).catch(() => {}).finally(() => { localStorage.clear(); window.location.href = 'index.html'; });
+        }
     </script>
 </body>
 </html>

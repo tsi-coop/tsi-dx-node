@@ -35,7 +35,12 @@ public class Login implements Action {
 
     @Override
     public void delete(HttpServletRequest req, HttpServletResponse res) {
-        OutputProcessor.errorResponse(res, HttpServletResponse.SC_METHOD_NOT_ALLOWED, "Method Not Allowed", "DELETE method is not used directly. Use POST for login.", req.getRequestURI());
+        // Logout: expire the server-side console session cookie.
+        InputProcessor.clearConsoleSessionCookie(res);
+        JSONObject output = new JSONObject();
+        output.put("success", true);
+        output.put("message", "Logged out");
+        OutputProcessor.send(res, HttpServletResponse.SC_OK, output);
     }
 
     @Override
@@ -117,6 +122,8 @@ public class Login implements Action {
             output.put("nodeId", nodeId);
             output.put("user_id", userId);
 
+            // Session cookie lets the server gate static console pages (see ConsoleAuthFilter)
+            InputProcessor.setConsoleSessionCookie(res, generatedToken);
             OutputProcessor.send(res, HttpServletResponse.SC_OK, output);
 
         } catch (SQLException e) {
@@ -167,8 +174,9 @@ public class Login implements Action {
 
     @Override
     public boolean validate(String method, HttpServletRequest req, HttpServletResponse res) {
+        if ("DELETE".equalsIgnoreCase(method)) return true; // logout, no payload
         if (!"POST".equalsIgnoreCase(method)) {
-            OutputProcessor.errorResponse(res, 405, "Method Not Allowed", "Only POST supported.", req.getRequestURI());
+            OutputProcessor.errorResponse(res, 405, "Method Not Allowed", "Only POST and DELETE supported.", req.getRequestURI());
             return false;
         }
         return InputProcessor.validate(req, res);

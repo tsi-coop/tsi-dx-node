@@ -67,6 +67,10 @@ public class DXManager implements Action {
                     OutputProcessor.send(res, 200, listSyncAuditLogs(input));
                     break;
 
+                case "run_maintenance":
+                    OutputProcessor.send(res, 200, TransferEngine.getInstance().runMaintenance());
+                    break;
+
                 case "get_transfer_payload":
                     OutputProcessor.send(res, 200, getTransferPayload(input, req));
                     break;
@@ -101,7 +105,7 @@ public class DXManager implements Action {
             
             if (rs.next()) {
                 String fileName = rs.getString("file_name");
-                Path filePath = Path.of(activePath, fileName);
+                Path filePath = SafeFilePath.resolve(activePath, fileName);
                 
                 if (Files.exists(filePath)) {
                     String content = Files.readString(filePath, StandardCharsets.UTF_8);
@@ -137,18 +141,20 @@ public class DXManager implements Action {
             String contractId = (String) input.get("contract_id");
             String fileName = (String) input.get("file_name");
             String fileDataBase64 = (String) input.get("file_data");
+            SafeFilePath.requireSafeName(fileName);
 
             // Derive receiver from contract (not from UI input)
             String receiverNodeId;
             pstmt = conn.prepareStatement(
                 "SELECT c.receiver_node_id FROM data_contracts c " +
                 "JOIN contract_participants cp ON cp.contract_id = c.contract_id " +
-                "WHERE c.contract_id = ? AND cp.node_id = ? AND cp.status = 'Active' AND c.status = 'Active'");
+                "WHERE c.contract_id = ? AND cp.node_id = ? AND cp.status = 'Active' AND c.status = 'Active' " +
+                "AND c.interaction_type = 'async'");
             pstmt.setObject(1, UUID.fromString(contractId));
             pstmt.setString(2, localNodeId);
             rs = pstmt.executeQuery();
             if (!rs.next()) throw new IllegalArgumentException(
-                "Contract not found or local node is not an active participant.");
+                "Contract not found, not an async contract, or local node is not an active participant.");
             receiverNodeId = rs.getString("receiver_node_id");
             pstmt.close();
 
@@ -156,7 +162,7 @@ public class DXManager implements Action {
             File storageDir = new File(activePath);
             if (!storageDir.exists()) storageDir.mkdirs();
             
-            File targetFile = new File(storageDir, fileName);
+            File targetFile = SafeFilePath.resolve(activePath, fileName).toFile();
             try (FileOutputStream fos = new FileOutputStream(targetFile)) { fos.write(fileBytes); }
 
             UUID tid = UUID.randomUUID();
@@ -194,6 +200,9 @@ public class DXManager implements Action {
         String fileName = (String) input.get("file_name");
         String fileDataBase64 = (String) input.get("file_data");
         String messageTimestamp = (String) input.get("message_timestamp");
+
+        // Reject unsafe names before any state (sequence numbers, registry) is touched.
+        SafeFilePath.requireSafeName(fileName);
         
         // 1. Extract and Verify Protocol Metadata for Replay Protection
         long sequenceNumber = 0;
@@ -223,6 +232,24 @@ public class DXManager implements Action {
                     return;
                 }
             } finally { authPool.cleanup(authRs, authPs, authConn); }
+        }
+
+        // A retry of a transfer we already hold (the sender missed our answer) is acknowledged, not re-processed.
+        {
+            Connection dupConn = null; PreparedStatement dupPs = null; ResultSet dupRs = null; PoolDB dupPool = new PoolDB();
+            try {
+                dupConn = dupPool.getConnection();
+                dupPs = dupConn.prepareStatement(
+                    "SELECT 1 FROM data_transfers WHERE transfer_id = ? AND sender_node_id = ? AND contract_id = ? AND status = 'Received'");
+                dupPs.setObject(1, UUID.fromString(transferId));
+                dupPs.setString(2, senderNodeId);
+                dupPs.setObject(3, UUID.fromString(contractId));
+                dupRs = dupPs.executeQuery();
+                if (dupRs.next()) {
+                    OutputProcessor.send(res, 200, new JSONObject() {{ put("success", true); put("duplicate", true); }});
+                    return;
+                }
+            } finally { dupPool.cleanup(dupRs, dupPs, dupConn); }
         }
 
         try {
@@ -257,13 +284,49 @@ public class DXManager implements Action {
             }
             pstmt.close();
 
-            // 2. Persist Payload
-            byte[] data = Base64.getDecoder().decode(fileDataBase64);
-            Path targetFile = Path.of(activePath, fileName);
+            // 2. The receiver is the authority on its contract: it must be the contract's receiver, the
+            //    contract must be an Active async one, and the payload must satisfy L1 and L2 as received.
+            byte[] data;
+            try {
+                data = Base64.getDecoder().decode(fileDataBase64);
+            } catch (IllegalArgumentException be) {
+                OutputProcessor.errorResponse(res, 400, "Bad Request", "file_data is not valid Base64.", req.getRequestURI());
+                return;
+            }
+            pstmt = conn.prepareStatement(
+                "SELECT receiver_node_id, status, interaction_type, schema_definition, metadata " +
+                "FROM data_contracts WHERE contract_id = ?");
+            pstmt.setObject(1, UUID.fromString(contractId));
+            rs = pstmt.executeQuery();
+            if (!rs.next() || !localNodeId.equals(rs.getString("receiver_node_id"))
+                    || !"Active".equalsIgnoreCase(rs.getString("status"))
+                    || !"async".equalsIgnoreCase(rs.getString("interaction_type"))) {
+                OutputProcessor.errorResponse(res, 403, "Forbidden",
+                    "Contract is not an Active async contract received by this node.", req.getRequestURI());
+                return;
+            }
+            JSONObject contractSchema = (JSONObject) new org.json.simple.parser.JSONParser().parse(rs.getString("schema_definition"));
+            JSONObject contractMeta = (JSONObject) new org.json.simple.parser.JSONParser().parse(rs.getString("metadata"));
+            rs.close(); pstmt.close();
+            String contractFormat = contractMeta.get("format") != null ? contractMeta.get("format").toString().toLowerCase() : "json";
+            try {
+                TransferEngine.getInstance().validateInbound(data, contractFormat, contractSchema, contractMeta);
+            } catch (IllegalArgumentException violation) {
+                JSONObject details = new JSONObject();
+                details.put("sender", senderNodeId);
+                details.put("file", fileName);
+                details.put("error", violation.getMessage());
+                logAudit("SECURITY_CONTRACT_VIOLATION", "WARN", senderNodeId, transferId, details, req);
+                OutputProcessor.errorResponse(res, 400, "Contract Violation", violation.getMessage(), req.getRequestURI());
+                return;
+            }
+
+            // 3. Persist Payload
+            Path targetFile = SafeFilePath.resolve(activePath, fileName);
             Files.createDirectories(targetFile.getParent());
             Files.write(targetFile, data);
 
-            // 3. Update Registry with validated sequence and timestamp
+            // 4. Update Registry with validated sequence and timestamp
             String sql = "INSERT INTO data_transfers (transfer_id, contract_id, sender_node_id, receiver_node_id, " +
                          "file_name, file_size_bytes, file_checksum, sequence_number, message_timestamp, status, start_time, end_time) " +
                          "VALUES (?, ?, ?, ?, ?, ?, 'RECEPTION_VERIFIED', ?, ?, 'Received', NOW(), NOW()) " +

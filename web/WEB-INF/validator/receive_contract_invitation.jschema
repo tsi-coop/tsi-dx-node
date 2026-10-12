@@ -34,6 +34,10 @@
     "pii_fields": {
       "type": "array",
       "items": { "type": "string" }
+    },
+    "retention_policy_days": {
+      "type": "integer",
+      "minimum": 0
     }
   },
   "additionalProperties": false

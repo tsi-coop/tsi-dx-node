@@ -20,36 +20,50 @@ public class JWTUtil {
 
     private static final long EXPIRATION_TIME = 864000000; // 10 days
     
-    /**
-     * STABLE SIGNING KEY:
-     * To ensure tokens remain valid after a server reboot, the signing key must be deterministic.
-     * We look for 'DX_JWT_SECRET' in System Properties or Environment Variables.
-     * A fallback is provided, but a unique 32-character string should be used in production.
-     */
-    private static final String FALLBACK_SECRET = "tsi-dx-node-identity-governance-stable-key-2026";
-    
-    private static Key getSigningKey() {
-        // 1. Look for a configured secret in Environment Variable (DX_JWT_SECRET)
-        String secret = System.getenv("TSI_DX_NODE_JWT_SECRET");
-        
-        // 3. Final Fallback to a stable hardcoded string
-        if (secret == null || secret.trim().isEmpty()) {
-            secret = FALLBACK_SECRET;
-        }
+    private static final int MIN_SECRET_BYTES = 32;
 
-        byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
-        
-        // HMAC-SHA256 requires a key of at least 256 bits (32 bytes)
-        if (keyBytes.length < 32) {
-            byte[] padded = new byte[32];
-            System.arraycopy(keyBytes, 0, padded, 0, Math.min(keyBytes.length, 32));
-            return Keys.hmacShaKeyFor(padded);
+    /** Values shipped in sample configuration; never acceptable as a real secret. */
+    private static boolean isPlaceholder(String secret) {
+        String s = secret.toLowerCase();
+        return s.startsWith("your_32_character") || s.contains("change_me") || s.contains("changeme");
+    }
+
+    private static boolean isDevelopment() {
+        String env = System.getenv("TSI_DX_NODE_ENV");
+        return "local".equalsIgnoreCase(env) || "development".equalsIgnoreCase(env) || "dev".equalsIgnoreCase(env);
+    }
+
+    /**
+     * SIGNING KEY:
+     * Read from TSI_DX_NODE_JWT_SECRET (at least 32 bytes). There is no built-in default: outside a
+     * local/development environment the node refuses to start without a proper secret. In local or
+     * development mode a random per-process key is generated and sessions end when the node restarts.
+     */
+    private static Key getSigningKey() {
+        String secret = System.getenv("TSI_DX_NODE_JWT_SECRET");
+        boolean usable = secret != null && !secret.trim().isEmpty() && !isPlaceholder(secret)
+                && secret.getBytes(StandardCharsets.UTF_8).length >= MIN_SECRET_BYTES;
+
+        if (!usable) {
+            if (!isDevelopment()) {
+                throw new IllegalStateException("TSI_DX_NODE_JWT_SECRET must be set to a unique value of at least "
+                        + MIN_SECRET_BYTES + " characters (set TSI_DX_NODE_ENV=development only for local testing).");
+            }
+            System.err.println("[JWTUtil] WARNING: TSI_DX_NODE_JWT_SECRET is not set to a usable value; using a random "
+                    + "per-process key. Admin sessions will not survive a restart.");
+            byte[] random = new byte[48];
+            new java.security.SecureRandom().nextBytes(random);
+            return Keys.hmacShaKeyFor(random);
         }
-        
-        return Keys.hmacShaKeyFor(keyBytes);
+        return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
     private static final Key SECRET_KEY = getSigningKey();
+
+    /** Forces the signing key to be resolved now, so a misconfigured node fails at start-up. */
+    public static void assertConfigured() {
+        if (SECRET_KEY == null) throw new IllegalStateException("JWT signing key unavailable.");
+    }
 
     public static String generateAppLoginToken(String email, String type, String username, String role, String state, String city) {
         Map<String, Object> claims = new HashMap<>();
