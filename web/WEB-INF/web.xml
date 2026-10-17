@@ -55,6 +55,12 @@
 </filter-mapping>
 <filter-mapping>
 	<filter-name>CONSOLE_AUTH_FILTER</filter-name>
+	<url-pattern>/consent.html</url-pattern>
+	<dispatcher>REQUEST</dispatcher>
+	<dispatcher>FORWARD</dispatcher>
+</filter-mapping>
+<filter-mapping>
+	<filter-name>CONSOLE_AUTH_FILTER</filter-name>
 	<url-pattern>/apikeys.html</url-pattern>
 	<dispatcher>REQUEST</dispatcher>
 	<dispatcher>FORWARD</dispatcher>

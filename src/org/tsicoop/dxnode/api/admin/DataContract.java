@@ -63,6 +63,7 @@ public class DataContract implements Action {
 
                 case "invite_node": {
                     if (contractId == null) throw new IllegalArgumentException("contract_id required.");
+                    requireNotSystem(contractId);
                     String nodeId = getString(input, "node_id");
                     if (nodeId.isEmpty()) throw new IllegalArgumentException("node_id required.");
                     inviteNode(contractId, nodeId);
@@ -146,6 +147,7 @@ public class DataContract implements Action {
 
                 case "update_contract": {
                     if (contractId == null) throw new IllegalArgumentException("contract_id required.");
+                    requireNotSystem(contractId);
                     JSONObject updated = updateContract(contractId, input);
                     JSONObject auditDetails = new JSONObject();
                     auditDetails.put("changed", updated.get("changed"));
@@ -165,6 +167,7 @@ public class DataContract implements Action {
 
                 case "deactivate_participant": {
                     if (contractId == null) throw new IllegalArgumentException("contract_id required.");
+                    requireNotSystem(contractId);
                     String nodeId = getString(input, "node_id");
                     if (nodeId.isEmpty()) throw new IllegalArgumentException("node_id required.");
                     deactivateParticipant(contractId, nodeId);
@@ -178,6 +181,7 @@ public class DataContract implements Action {
 
                 case "deactivate_contract":
                     if (contractId == null) throw new IllegalArgumentException("contract_id required.");
+                    requireNotSystem(contractId);
                     deactivateContract(contractId);
                     logAudit("CONTRACT_SUSPENDED", "INFO", resolveActor(req),
                             contractId.toString(), new JSONObject(), req);
@@ -254,7 +258,14 @@ public class DataContract implements Action {
         return out;
     }
 
+    /** The built-in CEF-EVENTS contract is read-only: it is never edited, suspended or given invitations. */
+    private void requireNotSystem(UUID contractId) throws SQLException {
+        if (CefEvents.isSystemContract(contractId))
+            throw new IllegalStateException("CEF-EVENTS is a built-in system contract and cannot be changed.");
+    }
+
     private JSONArray listContracts() throws SQLException {
+        CefEvents.sync();   // the built-in CEF-EVENTS contracts are created on first use
         String sql =
             "SELECT dc.contract_id, dc.name, dc.status, dc.interaction_type, " +
             "       dc.receiver_node_id, dc.updated_at, " +

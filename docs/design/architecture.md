@@ -18,6 +18,7 @@ How TSI DX Node is built and why. This is the single design reference; how-to ma
 | [12. Design decisions](#12-design-decisions) | Why it is shaped this way, and how it got here |
 | [13. Limits and known gaps](#13-limits-and-known-gaps) | Stated plainly |
 | [14. Code map](#14-code-map) | Where each concern lives |
+| [15. Consent channel (CEF-EVENTS)](#15-consent-channel-cef-events) | Consent, consent changes and erasure between nodes, separate from data |
 
 ---
 
@@ -338,6 +339,8 @@ Keep large or PII-heavy data on the async lane. Use sync only where something is
 | `audit_logs` | Administrative and protocol events (logins, contract changes, rejections, payload inspection) |
 | `users` and roles | Console users |
 
+The built-in `CEF-EVENTS` contracts (§15) are ordinary rows in `data_contracts` and `contract_participants`; no table was added for them.
+
 `retry_count` and `next_retry_at` are added by `db/05_transfer_retry.sql`, and also applied by the node at start-up, so existing databases need no manual step.
 
 ## 10. Audit and evidence
@@ -425,3 +428,51 @@ Full checklist: [Security Hardening Guide](../guides/security-hardening-guide.md
 | Path confinement | `framework/SafeFilePath` |
 | Outbound peer client | `framework/P2PClient` |
 | Schemas and migrations | `db/`, `web/WEB-INF/validator/` |
+| Consent channel: system contract, ids, schema, sync with partners | `framework/CefEvents` (called from `api/admin/DXManager`, `DataContract`, `Partners`, `AppManager`) |
+| Consent Channel console screen | `web/consent.html` |
+
+---
+
+## 15. Consent channel (CEF-EVENTS)
+
+Consent and erasure travel on their own channel, separate from data, so that data contracts, the engines and the validation of data transfers stay exactly as they were. Use is in the [Consent and Erasure Guide](../guides/consent-and-erasure-guide.md); the format is the [Consent Exchange Format spec](../guides/consent-exchange-format.md).
+
+### 15.1 Model
+
+Every node owns one built-in async contract named `CEF-EVENTS`, read-only and open to every **Active** partner. A fiduciary's system sends [CEF](../guides/consent-exchange-format.md) JSON documents (consent granted, modified or withdrawn, erasure requested) to a processor node's `CEF-EVENTS`. The processor sends `ERASURE_CONFIRMED` to the fiduciary node's `CEF-EVENTS`, so one contract per node serves both directions. A data record and its consent are joined by the receiving application on `principal_id`, which data contracts carry as an ordinary, unmasked field.
+
+The node does two things with a CEF document: it checks the **shape** (valid JSON, `cef_version` `1.x`, a non-empty `events` array, and `event_id`, `event_type`, `event_time`, `fiduciary_id` and `principal_id` on each event), and it delivers it like any async transfer. It does **not** decide whether a consent is granted, withdrawn or expired, it adds no consent rule to data transfers, and it does not delete a processor's data. Those belong to the processor's application.
+
+### 15.2 How it is built on the existing contract model
+
+- **Contract ids are derived from the owning node.** The id of a node's `CEF-EVENTS` is the name-based UUID of `tsi-dx-cef-events:<node_id>`. A sender can therefore address a partner's contract without a lookup or an invitation, and two nodes never create the same id.
+- **Each node keeps copies.** A sender governs and records a transfer against its own copy of the contract, as for any invited contract. `CefEvents.sync()` makes sure each node has its own `CEF-EVENTS` and a read-only copy of each Active partner's, and keeps participants in step with partner status: an Active partner is an Active participant of the node's own contract, any other partner is suspended, and the node is an Active participant of each partner's copy. No invite/accept handshake is involved.
+- **When it runs.** After a partner status change (handshake, termination), and lazily before listing contracts, creating an application, sending to a `CEF-EVENTS` contract, and checking a sender on the receive path. It is idempotent and cheap.
+- **What is unchanged.** The receive path's participant check, signature verification, replay protection, sequence numbers and the transfer engine run as for any contract. `CEF-EVENTS` is the same kind of contract, with a fixed schema and no retention limit (payloads are kept so the consent screen and processors can re-read them).
+- **Read-only.** Editing, suspending, or inviting nodes to a system contract is refused with `403`.
+
+### 15.3 Console
+
+The **Consent Channel** screen (`web/consent.html`) is a separate page. It sends events (guided form or pasted/uploaded JSON, with a live check), lists sent and received files, shows the latest consent state per consent and the erasure requests joined to their confirmations. It reads transfers with `list_transfers` (which accepts an optional `contract_name` and `limit`, and returns `contract_id` and `contract_name`) and `get_transfer_payload`, and parses them in the browser. The state view is for inspection and testing, not a consent store.
+
+### 15.4 Decisions
+
+**Separate channel, not consent in the data path.** Embedding consent in each record, or in a transfer header, would have put consent rules into data validation, a side file or header into every bulk push, and a consent flag on every contract. A separate channel leaves data transfers untouched; the cost is that the node cannot guarantee consent arrives before data. That guarantee belongs to the processor's application, and the audit trail shows the order afterwards.
+
+**Full state per event, latest wins.** Every consent event carries the whole current state of one consent and replaces the earlier one, so there are no merge rules for two implementations to read differently.
+
+**A system contract rather than a new message type.** Adding peer functions would have changed the peer channel. Reusing the contract model gave signing, ordering, retry, audit and the console's existing transfer views for free; the only new code is the seeding and the shape check.
+
+**JSON only, async only, DX Nodes only.** CSV, the sync lane, and partners without a node are out of scope for this channel.
+
+### 15.5 Limits
+
+| Area | Limit |
+|---|---|
+| Shape only | Per-type fields (for example `consent_id` on a consent event) are checked by the receiving application |
+| Whole document | A document is accepted or rejected as a whole; no per-event error report |
+| Duplicates | The node does not track `event_id` or `request_id`; the processor ignores repeats |
+| Ordering vs data | Consent is not guaranteed to arrive before the data it covers |
+| Erasure | The processor deletes and confirms; the node cannot reach the processor's other systems |
+| Console view | Reads the 200 most recent `CEF-EVENTS` transfers and parses them in the browser |
+

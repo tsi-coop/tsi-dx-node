@@ -11,7 +11,7 @@
 set -uo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")" || exit 1
 for s in ./01-node-setup.sh ./02-identity-and-partners.sh ./03-define-contract.sh \
-         ./04-async-transfer.sh ./05-sync-call.sh "./05-sync-call.sh --invalid" ./06-negative-tests.sh; do
+         ./04-async-transfer.sh ./05-sync-call.sh "./05-sync-call.sh --invalid" ./06-negative-tests.sh ./07-consent-exchange.sh; do
   $s || { echo "FAILED: $s" >&2; exit 1; }
 done
 printf '\n\033[32mAll example steps passed.\033[0m\n'

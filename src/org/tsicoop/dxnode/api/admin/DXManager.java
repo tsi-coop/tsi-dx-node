@@ -143,6 +143,9 @@ public class DXManager implements Action {
             String fileDataBase64 = (String) input.get("file_data");
             SafeFilePath.requireSafeName(fileName);
 
+            // The consent channel (CEF-EVENTS) needs no invitation: make sure its contract copies exist.
+            CefEvents.syncIfCef(UUID.fromString(contractId));
+
             // Derive receiver from contract (not from UI input)
             String receiverNodeId;
             pstmt = conn.prepareStatement(
@@ -209,6 +212,9 @@ public class DXManager implements Action {
         if (input.get("sequence_number") != null) {
             sequenceNumber = (long) input.get("sequence_number");
         }
+
+        // The consent channel (CEF-EVENTS) is open to Active partners: make sure they are participants.
+        CefEvents.syncIfCef(UUID.fromString(contractId));
 
         // Participant authorisation check
         {
@@ -378,10 +384,17 @@ public class DXManager implements Action {
                 for (int i = 0; i < statuses.length; i++) sql.append(i == 0 ? "?" : ",?");
                 sql.append(")");
             }
-            sql.append(" ORDER BY t.start_time DESC LIMIT 50");
+            // Optional narrowing used by the Consent screen: one contract by name, and a larger page.
+            String contractName = (input != null && input.get("contract_name") != null) ? input.get("contract_name").toString() : "";
+            if (!contractName.isEmpty()) sql.append(" AND c.name = ?");
+            int limit = 50;
+            if (input != null && input.get("limit") instanceof Number) limit = (int) Math.max(1, Math.min(500, ((Number) input.get("limit")).longValue()));
+            sql.append(" ORDER BY t.start_time DESC LIMIT ").append(limit);
 
             pstmt = conn.prepareStatement(sql.toString());
-            if (statuses != null) for (int i = 0; i < statuses.length; i++) pstmt.setString(i + 1, statuses[i]);
+            int pi = 1;
+            if (statuses != null) for (String st : statuses) pstmt.setString(pi++, st);
+            if (!contractName.isEmpty()) pstmt.setString(pi++, contractName);
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 JSONObject t = new JSONObject();
@@ -389,6 +402,8 @@ public class DXManager implements Action {
                 boolean isOutgoing = sender != null && sender.equals(localId);
                 t.put("transfer_id", rs.getString("transfer_id"));
                 t.put("file_name", rs.getString("file_name"));
+                t.put("contract_id", rs.getString("contract_id"));
+                t.put("contract_name", rs.getString("contract_name"));
                 t.put("status", rs.getString("status"));
                 t.put("error_message", rs.getString("error_message"));
                 t.put("direction", isOutgoing ? "Outgoing" : "Incoming");

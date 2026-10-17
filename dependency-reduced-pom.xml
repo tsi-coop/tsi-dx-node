@@ -5,7 +5,7 @@
   <artifactId>tsi_dx_node</artifactId>
   <packaging>war</packaging>
   <name>TSI_DX_Node</name>
-  <version>0.2.1</version>
+  <version>0.3.0</version>
   <description>TSI DX Node</description>
   <build>
     <sourceDirectory>src</sourceDirectory>

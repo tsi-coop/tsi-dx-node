@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consent Channel | TSI DX Node</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+        
+        :root { --dx-primary: #0f172a; --dx-accent: #3b82f6; --sidebar-width: 280px; }
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .sidebar { width: var(--sidebar-width); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .sidebar.collapsed { width: 80px; }
+        .sidebar.collapsed .nav-text, .sidebar.collapsed .brand-full { display: none; }
+        .nav-item { display: flex; align-items: center; padding: 0.75rem 1rem; color: #94a3b8; border-radius: 0.5rem; margin: 0.25rem 0.75rem; transition: all 0.2s; }
+        .nav-item:hover, .nav-item.active { background-color: rgba(255, 255, 255, 0.05); color: white; }
+        .nav-item.active { background-color: var(--dx-accent); color: white; }
+        .card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; }
+        .modal-backdrop { background-color: rgba(15, 23, 42, 0.7); backdrop-filter: blur(4px); }
+        .tab-btn.active { color: var(--dx-accent); border-bottom: 2px solid var(--dx-accent); }
+        .flt-btn { background: #f1f5f9; color: #64748b; }
+        .flt-btn:hover { background: #e2e8f0; }
+        .flt-btn.active { background: var(--dx-accent); color: white; }
+        .payload-viewer { background-color: #0f172a; color: #38bdf8; font-family: 'JetBrains Mono', monospace; font-size: 11px; line-height: 1.6; }
+        .inp { width: 100%; border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 0.5rem 0.75rem; font-size: 0.75rem; background: white; outline: none; }
+        .inp:focus { border-color: var(--dx-accent); box-shadow: 0 0 0 2px rgba(59,130,246,0.15); }
+        .lbl { display: block; font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem; }
+        .smp { background: #f1f5f9; color: #475569; border-radius: 0.5rem; padding: 0.35rem 0.6rem; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+        .smp:hover { background: #e2e8f0; }
+        .thr { font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.1em; background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden">
+
+    <!-- Sidebar Navigation -->
+    <aside id="sidebar" class="sidebar bg-slate-900 flex flex-col z-20">
+        <div class="p-6 mb-4">
+            <div class="flex items-center gap-3 brand-container">
+                <div class="brand-icon bg-blue-600 p-2.5 rounded-xl shadow-lg shadow-blue-900/20 flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                    </svg>
+                </div>
+                <div class="brand-full flex flex-col overflow-hidden">
+                    <span class="font-black text-white tracking-tighter text-xl leading-none uppercase">TSI DX NODE</span>
+                    <span class="text-[9px] text-blue-400 font-bold uppercase tracking-[0.2em] mt-1">Direct Exchange</span>
+                </div>
+            </div>
+        </div>
+
+        <nav class="flex-1 overflow-y-auto">
+            <div class="px-8 mb-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest nav-text">Operational Hub</div>
+            <a href="dashboard.html" class="nav-item">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6z" /></svg>
+                <span class="nav-text">Dashboard</span>
+            </a>
+            
+            <div class="px-8 mt-6 mb-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest nav-text">Partnership</div>
+            <a href="partners.html" class="nav-item">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                <span class="nav-text">Partner Nodes</span>
+            </a>
+            <a href="contracts.html" class="nav-item">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                <span class="nav-text">Data Contracts</span>
+            </a>
+            <a href="transfers.html" class="nav-item">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
+                <span class="nav-text">Transfer Logs</span>
+            </a>
+
+            <a href="consent.html" class="nav-item active">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.001z" /></svg>
+                <span class="nav-text">Consent Channel</span>
+            </a>
+
+            <div class="px-8 mt-6 mb-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest nav-text">System</div>
+            <a href="audit.html" class="nav-item">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 00-2 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
+                <span class="nav-text">Audit Trail</span>
+            </a>
+            <a href="users.html" class="nav-item">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                <span class="nav-text">Users & Roles</span>
+            </a>
+             <a href="apikeys.html" class="nav-item">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                <span class="nav-text">Apps & API Keys</span>
+            </a>
+            <a href="settings.html" class="nav-item">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                <span class="nav-text">Node Settings</span>
+            </a>
+        </nav>
+
+        <div class="p-4 border-t border-slate-800">
+            <button onclick="logout()" class="nav-item w-full text-left hover:bg-red-500/10 hover:text-red-400">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                <span class="nav-text">Sign Out</span>
+            </button>
+        </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col min-w-0">
+        <!-- Re-branded Header -->
+        <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 z-10">
+            <div class="flex items-center gap-4">
+                <button onclick="toggleSidebar()" class="p-2 text-slate-500 hover:bg-slate-100 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+                </button>
+                <div class="h-8 w-px bg-slate-200 mx-2"></div>
+                <div class="flex flex-col">
+                    <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none">Current Node Instance</span>
+                    <span class="text-xs font-black text-slate-900 leading-tight" id="header-node-id">...</span>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="flex flex-col items-end">
+                    <span class="text-xs font-bold text-slate-900" id="header-username">...</span>
+                    <span class="text-[10px] text-slate-400 font-medium uppercase tracking-tighter" id="header-role">...</span>
+                </div>
+                <div class="h-10 w-10 bg-slate-200 rounded-xl border-2 border-white shadow-sm overflow-hidden">
+                    <img src="" id="header-avatar" alt="Avatar">
+                </div>
+            </div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-8">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                <div>
+                    <h1 class="text-2xl font-black text-slate-900 uppercase tracking-tight">Consent Channel</h1>
+                    <p class="text-xs text-slate-500 font-medium">Send and receive consent events (CEF v1) over the built-in <span class="font-mono">CEF-EVENTS</span> contract. Consent travels separately from data and links to it by <span class="font-mono">principal_id</span>.</p>
+                </div>
+                <button onclick="reloadAll()" class="p-2.5 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 shadow-sm self-start" title="Refresh"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg></button>
+            </div>
+
+            <div id="banner" class="hidden mb-4 p-3 rounded-xl text-xs font-bold"></div>
+
+            <div class="mb-6 border-b border-slate-200 flex gap-8 overflow-x-auto">
+                <button data-tab="send" onclick="showTab('send')" class="tab-btn active px-1 py-4 text-xs font-black uppercase">Send</button>
+                <button data-tab="sent" onclick="showTab('sent')" class="tab-btn px-1 py-4 text-xs font-black uppercase text-slate-400">Sent</button>
+                <button data-tab="received" onclick="showTab('received')" class="tab-btn px-1 py-4 text-xs font-black uppercase text-slate-400">Received</button>
+                <button data-tab="state" onclick="showTab('state')" class="tab-btn px-1 py-4 text-xs font-black uppercase text-slate-400">Consent State</button>
+                <button data-tab="erasure" onclick="showTab('erasure')" class="tab-btn px-1 py-4 text-xs font-black uppercase text-slate-400">Erasure</button>
+            </div>
+
+            <!-- SEND -->
+            <section id="tab-send" class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                <div class="card p-6">
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Compose event</p>
+                    <div class="grid grid-cols-2 gap-4">
+                        <label class="block col-span-2"><span class="lbl">Send to partner</span>
+                            <select id="f-partner" class="inp"></select></label>
+                        <label class="block"><span class="lbl">Event type</span>
+                            <select id="f-type" class="inp" onchange="onTypeChange()">
+                                <option>CONSENT_GRANTED</option><option>CONSENT_MODIFIED</option><option>CONSENT_WITHDRAWN</option>
+                                <option>ERASURE_REQUESTED</option><option>ERASURE_CONFIRMED</option>
+                            </select></label>
+                        <label class="block"><span class="lbl">Fiduciary ID</span><input id="f-fid" class="inp" value="f-1001" oninput="build()"></label>
+                        <label class="block col-span-2"><span class="lbl">Principal ID (link key)</span><input id="f-pid" class="inp" placeholder="customer / account / vendor id" oninput="build()"></label>
+                    </div>
+
+                    <div id="grp-consent" class="mt-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <label class="block"><span class="lbl">Consent ID</span><input id="f-cid" class="inp" oninput="build()"></label>
+                            <label class="block"><span class="lbl">Granted at</span><input id="f-granted" class="inp" oninput="build()"></label>
+                        </div>
+                        <div class="flex items-center justify-between mt-4 mb-2">
+                            <span class="lbl mb-0">Purposes (the complete current state of this consent)</span>
+                            <button type="button" onclick="addPurpose()" class="text-[10px] font-black uppercase text-blue-600">+ Add purpose</button>
+                        </div>
+                        <div id="purposes" class="space-y-2"></div>
+                    </div>
+
+                    <div id="grp-erasure-req" class="mt-4 hidden">
+                        <div class="grid grid-cols-2 gap-4">
+                            <label class="block"><span class="lbl">Request ID</span><input id="f-rid" class="inp" oninput="build()"></label>
+                            <label class="block"><span class="lbl">Trigger</span>
+                                <select id="f-trigger" class="inp" onchange="build()"><option>ErasureRequest</option><option>ConsentWithdrawal</option><option>RetentionPolicyExpiry</option></select></label>
+                            <label class="block"><span class="lbl">Deadline (set by sender)</span><input id="f-deadline" class="inp" oninput="build()"></label>
+                            <label class="block"><span class="lbl">Purpose IDs (comma, empty = all)</span><input id="f-epurposes" class="inp" oninput="build()"></label>
+                            <label class="block col-span-2"><span class="lbl">Data categories (comma, empty = all)</span><input id="f-ecats" class="inp" oninput="build()"></label>
+                        </div>
+                    </div>
+
+                    <div id="grp-erasure-conf" class="mt-4 hidden">
+                        <div class="grid grid-cols-2 gap-4">
+                            <label class="block"><span class="lbl">Request ID</span><input id="f-crid" class="inp" oninput="build()"></label>
+                            <label class="block"><span class="lbl">Reply status</span>
+                                <select id="f-rstatus" class="inp" onchange="build()"><option>COMPLETED</option><option>ACKNOWLEDGED</option><option>REJECTED</option><option>UNDER_LEGAL_HOLD</option><option>FAILED</option></select></label>
+                            <label class="block"><span class="lbl">Records affected</span><input id="f-count" type="number" min="0" class="inp" value="0" oninput="build()"></label>
+                            <label class="block"><span class="lbl">Confirmed by</span><input id="f-by" class="inp" value="processor-ops" oninput="build()"></label>
+                            <label class="block col-span-2"><span class="lbl">Details</span><input id="f-details" class="inp" oninput="build()"></label>
+                        </div>
+                    </div>
+
+                    <div class="mt-5 flex flex-wrap gap-2 items-center">
+                        <span class="lbl mb-0 mr-1">Samples</span>
+                        <button type="button" onclick="loadSample('grant')" class="smp">Grant (2 purposes)</button>
+                        <button type="button" onclick="loadSample('withdraw')" class="smp">Withdraw one</button>
+                        <button type="button" onclick="loadSample('erasure')" class="smp">Erasure request</button>
+                        <button type="button" onclick="loadSample('confirm')" class="smp">Erasure confirmed</button>
+                    </div>
+                </div>
+
+                <div class="card p-6 flex flex-col">
+                    <div class="flex items-center justify-between mb-3">
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">CEF JSON to send (editable, batches allowed)</p>
+                        <label class="text-[10px] font-black uppercase text-blue-600 cursor-pointer">Upload file<input type="file" accept=".json,application/json" class="hidden" onchange="uploadFile(this)"></label>
+                    </div>
+                    <textarea id="f-json" spellcheck="false" class="payload-viewer w-full flex-1 min-h-[360px] p-4 rounded-xl outline-none resize-y" oninput="validateJson()"></textarea>
+                    <p id="f-check" class="text-xs font-mono mt-3 min-h-[1.5rem]"></p>
+                    <button id="f-send" onclick="sendCef()" class="mt-3 px-4 py-3 bg-blue-600 text-white rounded-xl text-xs font-black uppercase shadow-lg shadow-blue-500/20 hover:bg-blue-700">Send to partner</button>
+                    <p class="text-[10px] text-slate-400 mt-3">The node checks only that the file is CEF v1 JSON with <span class="font-mono">event_id, event_type, event_time, fiduciary_id, principal_id</span> on every event. It never judges whether a consent is valid. A batch is accepted or rejected as a whole.</p>
+                </div>
+            </section>
+
+            <!-- SENT / RECEIVED -->
+            <section id="tab-sent" class="hidden"><div class="card overflow-hidden"><div class="overflow-x-auto"><table class="w-full text-left text-sm">
+                <thead><tr class="thr"><th class="px-6 py-4">Time</th><th class="px-6 py-4">Partner</th><th class="px-6 py-4">Events</th><th class="px-6 py-4">Status</th><th class="px-6 py-4 text-right">View</th></tr></thead>
+                <tbody id="body-sent" class="divide-y divide-slate-100"></tbody></table></div></div></section>
+            <section id="tab-received" class="hidden"><div class="card overflow-hidden"><div class="overflow-x-auto"><table class="w-full text-left text-sm">
+                <thead><tr class="thr"><th class="px-6 py-4">Time</th><th class="px-6 py-4">Partner</th><th class="px-6 py-4">Events</th><th class="px-6 py-4">Status</th><th class="px-6 py-4 text-right">View</th></tr></thead>
+                <tbody id="body-received" class="divide-y divide-slate-100"></tbody></table></div></div>
+                <p class="text-[10px] text-slate-400 mt-3">Files that fail the node's check are refused and never stored; those refusals are recorded in the Audit Trail.</p></section>
+
+            <!-- STATE -->
+            <section id="tab-state" class="hidden">
+                <div class="flex flex-wrap items-center gap-3 mb-4">
+                    <label class="text-[10px] font-black uppercase text-slate-500">Built from
+                        <select id="state-src" class="inp !w-auto ml-2 inline-block" onchange="renderState()"><option value="Incoming">Received events</option><option value="Outgoing">Sent events</option></select></label>
+                    <input id="state-q" class="inp !w-64" placeholder="Filter by principal / consent / purpose" oninput="renderState()">
+                </div>
+                <div class="card overflow-hidden"><div class="overflow-x-auto"><table class="w-full text-left text-sm">
+                    <thead><tr class="thr"><th class="px-6 py-4">Fiduciary</th><th class="px-6 py-4">Principal</th><th class="px-6 py-4">Consent</th><th class="px-6 py-4">Purposes</th><th class="px-6 py-4">Last event</th></tr></thead>
+                    <tbody id="body-state" class="divide-y divide-slate-100"></tbody></table></div></div>
+                <p class="text-[10px] text-slate-400 mt-3">Latest state per consent: the event with the latest <span class="font-mono">event_time</span> replaces all earlier ones. This view is for inspection and testing. The processor's own application holds the real consent store.</p>
+            </section>
+
+            <!-- ERASURE -->
+            <section id="tab-erasure" class="hidden">
+                <div class="card overflow-hidden"><div class="overflow-x-auto"><table class="w-full text-left text-sm">
+                    <thead><tr class="thr"><th class="px-6 py-4">Request</th><th class="px-6 py-4">Principal</th><th class="px-6 py-4">Partner</th><th class="px-6 py-4">Requested</th><th class="px-6 py-4">Deadline</th><th class="px-6 py-4">Reply</th><th class="px-6 py-4">State</th></tr></thead>
+                    <tbody id="body-erasure" class="divide-y divide-slate-100"></tbody></table></div></div>
+                <p class="text-[10px] text-slate-400 mt-3">Joins <span class="font-mono">ERASURE_REQUESTED</span> with <span class="font-mono">ERASURE_CONFIRMED</span> by <span class="font-mono">request_id</span>. Overdue means the deadline passed without a COMPLETED reply.</p>
+            </section>
+        </div>
+    </main>
+
+    <!-- Event viewer -->
+    <div id="viewModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop">
+        <div class="bg-white w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+            <div class="px-8 py-6 bg-slate-900 flex items-center justify-between">
+                <div><h3 class="text-xl font-black text-white uppercase tracking-tight">CEF File</h3><p id="view-sub" class="text-[10px] text-blue-400 font-bold uppercase tracking-widest mt-1"></p></div>
+                <button onclick="closeView()" class="text-slate-400 hover:text-white text-2xl leading-none">&times;</button>
+            </div>
+            <div class="overflow-y-auto flex-1 p-6 space-y-5">
+                <div class="overflow-x-auto"><table class="w-full text-left text-xs"><thead><tr class="thr"><th class="px-3 py-2">Type</th><th class="px-3 py-2">Event time</th><th class="px-3 py-2">Principal</th><th class="px-3 py-2">Detail</th></tr></thead><tbody id="view-events" class="divide-y divide-slate-100"></tbody></table></div>
+                <textarea id="view-raw" readonly class="payload-viewer w-full min-h-[240px] p-4 rounded-xl outline-none resize-none"></textarea>
+            </div>
+            <div class="px-8 py-4 bg-slate-50 border-t flex justify-end"><button onclick="closeView()" class="px-6 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest">Close</button></div>
+        </div>
+    </div>
+
+    <script>
+        const TRANSFERS_API = '/api/admin/transfers';
+        const CONTRACTS_API = '/api/admin/contracts';
+        const TYPES = ['CONSENT_GRANTED','CONSENT_MODIFIED','CONSENT_WITHDRAWN','ERASURE_REQUESTED','ERASURE_CONFIRMED'];
+        let partners = [];          // [{node_id, contract_id}] : partners this node can send CEF to
+        let transfers = [];         // CEF-EVENTS transfers, newest first
+        const payloads = {};        // transfer_id -> parsed CEF object | null (purged / unreadable)
+        let currentTab = 'send';
+
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        const nowIso = () => new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
+        const uid = p => p + '-' + Math.random().toString(36).slice(2, 10);
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            initIdentity();
+            addPurpose('loan_underwriting');
+            onTypeChange();
+            await reloadAll();
+        });
+
+        function initIdentity() {
+            const nodeId = localStorage.getItem('dx_node_id') || 'DX-DEFAULT';
+            const user = localStorage.getItem('dx_user') || 'Admin User';
+            const role = localStorage.getItem('dx_role') || 'Node Administrator';
+            document.getElementById('header-node-id').innerText = nodeId;
+            document.getElementById('header-username').innerText = user;
+            document.getElementById('header-role').innerText = role;
+            document.getElementById('header-avatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user)}&background=0f172a&color=fff`;
+        }
+
+        async function api(url, data) {
+            try {
+                const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('dx_token')}` }, body: JSON.stringify(data) });
+                let body = null; try { body = await r.json(); } catch (e) {}
+                return { ok: r.ok, status: r.status, body };
+            } catch (e) { return { ok: false, status: 0, body: null }; }
+        }
+
+        function banner(msg, kind) {
+            const b = document.getElementById('banner');
+            if (!msg) { b.classList.add('hidden'); return; }
+            b.className = 'mb-4 p-3 rounded-xl text-xs font-bold ' + (kind === 'err' ? 'bg-red-50 text-red-700 border border-red-100' : 'bg-green-50 text-green-700 border border-green-100');
+            b.textContent = msg;
+        }
+
+        // ---------- loading ----------
+        async function reloadAll() {
+            const c = await api(CONTRACTS_API, { _func: 'list_contracts' });
+            const list = Array.isArray(c.body) ? c.body : (c.body && c.body.data) || [];
+            partners = list.filter(x => x.name === 'CEF-EVENTS' && !x.is_receiver).map(x => ({ node_id: x.receiver_node_id, contract_id: x.contract_id }));
+            const sel = document.getElementById('f-partner'), keep = sel.value;
+            sel.innerHTML = partners.length ? partners.map(p => `<option value="${esc(p.contract_id)}">${esc(p.node_id)}</option>`).join('')
+                                            : '<option value="">No active partners yet</option>';
+            if (keep) sel.value = keep;
+
+            const t = await api(TRANSFERS_API, { _func: 'list_transfers', contract_name: 'CEF-EVENTS', limit: 200 });
+            transfers = (t.body && t.body.data) || [];
+            await loadPayloads();
+            renderAll();
+        }
+
+        async function loadPayloads() {
+            const need = transfers.filter(t => !(t.transfer_id in payloads) && ['Delivered', 'Received'].includes(t.status));
+            for (let i = 0; i < need.length; i += 8) {
+                await Promise.all(need.slice(i, i + 8).map(async t => {
+                    const r = await api(TRANSFERS_API, { _func: 'get_transfer_payload', transfer_id: t.transfer_id });
+                    const raw = r.body && (r.body.payload || (r.body.data && r.body.data.payload));
+                    try { payloads[t.transfer_id] = raw ? JSON.parse(raw) : null; } catch (e) { payloads[t.transfer_id] = null; }
+                }));
+            }
+        }
+
+        const eventsOf = t => { const p = payloads[t.transfer_id]; return p && Array.isArray(p.events) ? p.events : []; };
+
+        // ---------- tabs ----------
+        function showTab(name) {
+            currentTab = name;
+            document.querySelectorAll('.tab-btn').forEach(b => {
+                const on = b.dataset.tab === name;
+                b.classList.toggle('active', on); b.classList.toggle('text-slate-400', !on);
+            });
+            ['send', 'sent', 'received', 'state', 'erasure'].forEach(n => document.getElementById('tab-' + n).classList.toggle('hidden', n !== name));
+        }
+
+        function renderAll() { renderList('Outgoing', 'body-sent'); renderList('Incoming', 'body-received'); renderState(); renderErasure(); }
+
+        function statusBadge(s) {
+            const cls = s === 'Failed' ? 'bg-red-100 text-red-700' : (s === 'Delivered' || s === 'Received') ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700';
+            return `<span class="px-2 py-1 rounded text-[10px] font-black uppercase ${cls}">${esc(s)}</span>`;
+        }
+
+        function renderList(direction, bodyId) {
+            const rows = transfers.filter(t => t.direction === direction);
+            const body = document.getElementById(bodyId);
+            if (!rows.length) { body.innerHTML = '<tr><td colspan="5" class="px-6 py-10 text-center text-xs text-slate-400">Nothing here yet.</td></tr>'; return; }
+            body.innerHTML = rows.map(t => {
+                const ev = eventsOf(t);
+                const types = [...new Set(ev.map(e => e.event_type))].join(', ');
+                const evCell = t.transfer_id in payloads ? (payloads[t.transfer_id] ? `${ev.length} &middot; <span class="text-slate-400">${esc(types)}</span>` : '<span class="text-slate-400">payload unavailable</span>') : '<span class="text-slate-400">&ndash;</span>';
+                const err = t.status === 'Failed' && t.error_message ? `<div class="text-[10px] text-red-600 font-mono mt-1 break-words max-w-md">${esc(t.error_message)}</div>` : '';
+                return `<tr class="hover:bg-slate-50"><td class="px-6 py-4 text-xs text-slate-600 whitespace-nowrap">${esc(t.start_time)}</td>
+                    <td class="px-6 py-4 text-xs font-bold text-slate-900">${esc(t.peer_node_id)}</td>
+                    <td class="px-6 py-4 text-xs">${evCell}</td>
+                    <td class="px-6 py-4">${statusBadge(t.status)}${err}</td>
+                    <td class="px-6 py-4 text-right"><button onclick="openView('${esc(t.transfer_id)}')" class="text-[10px] font-black uppercase text-blue-600">Open</button></td></tr>`;
+            }).join('');
+        }
+
+        // ---------- viewer ----------
+        function detailOf(e) {
+            const bits = [];
+            if (e.consent_id) bits.push('consent ' + e.consent_id);
+            if (Array.isArray(e.purposes)) bits.push(e.purposes.map(p => `${p.purpose_id}:${p.status}`).join(', '));
+            if (e.request_id) bits.push('request ' + e.request_id);
+            if (e.reply_status) bits.push(e.reply_status);
+            if (e.deadline_at) bits.push('deadline ' + e.deadline_at);
+            return bits.join(' · ');
+        }
+        function openView(id) {
+            const t = transfers.find(x => x.transfer_id === id); if (!t) return;
+            const p = payloads[id];
+            document.getElementById('view-sub').textContent = `${t.direction === 'Outgoing' ? 'To' : 'From'} ${t.peer_node_id} · ${t.start_time} · ${t.status}`;
+            document.getElementById('view-events').innerHTML = eventsOf(t).map(e =>
+                `<tr><td class="px-3 py-2 font-bold">${esc(e.event_type)}</td><td class="px-3 py-2 whitespace-nowrap">${esc(e.event_time)}</td><td class="px-3 py-2">${esc(e.principal_id)}</td><td class="px-3 py-2 text-slate-600">${esc(detailOf(e))}</td></tr>`).join('')
+                || '<tr><td colspan="4" class="px-3 py-6 text-center text-slate-400">No events to show (payload purged or not yet available).</td></tr>';
+            document.getElementById('view-raw').value = p ? JSON.stringify(p, null, 2) : '';
+            document.getElementById('viewModal').classList.remove('hidden');
+        }
+        function closeView() { document.getElementById('viewModal').classList.add('hidden'); }
+
+        // ---------- consent state ----------
+        function renderState() {
+            const dir = document.getElementById('state-src').value;
+            const q = document.getElementById('state-q').value.trim().toLowerCase();
+            const latest = new Map();
+            // oldest transfer first, so a tie on event_time goes to the later event
+            [...transfers].filter(t => t.direction === dir).reverse().forEach(t => eventsOf(t).forEach(e => {
+                if (!String(e.event_type || '').startsWith('CONSENT_') || !e.consent_id) return;
+                const key = [e.fiduciary_id, e.principal_id, e.consent_id].join('|');
+                const cur = latest.get(key);
+                if (!cur || String(e.event_time) >= String(cur.event_time)) latest.set(key, e);
+            }));
+            let rows = [...latest.values()];
+            if (q) rows = rows.filter(e => JSON.stringify([e.principal_id, e.consent_id, (e.purposes || []).map(p => p.purpose_id)]).toLowerCase().includes(q));
+            rows.sort((a, b) => String(b.event_time).localeCompare(String(a.event_time)));
+            const body = document.getElementById('body-state');
+            body.innerHTML = rows.length ? rows.map(e => {
+                const badges = (e.purposes || []).map(p => {
+                    const cls = p.status === 'granted' ? 'bg-green-100 text-green-700' : 'bg-slate-200 text-slate-600';
+                    const exp = p.expires_at ? ` title="expires ${esc(p.expires_at)}"` : '';
+                    return `<span${exp} class="inline-block mr-1 mb-1 px-2 py-1 rounded text-[10px] font-bold ${cls}">${esc(p.purpose_id)} &middot; ${esc(p.status)}</span>`;
+                }).join('') || '<span class="text-slate-400 text-xs">no purposes</span>';
+                return `<tr class="hover:bg-slate-50"><td class="px-6 py-4 text-xs">${esc(e.fiduciary_id)}</td><td class="px-6 py-4 text-xs font-bold text-slate-900">${esc(e.principal_id)}</td>
+                    <td class="px-6 py-4 text-xs font-mono">${esc(e.consent_id)}</td><td class="px-6 py-4">${badges}</td>
+                    <td class="px-6 py-4 text-xs text-slate-600 whitespace-nowrap">${esc(e.event_type)}<br>${esc(e.event_time)}</td></tr>`;
+            }).join('') : '<tr><td colspan="5" class="px-6 py-10 text-center text-xs text-slate-400">No consent events yet.</td></tr>';
+        }
+
+        // ---------- erasure ----------
+        function renderErasure() {
+            const reqs = new Map(), replies = new Map();
+            [...transfers].reverse().forEach(t => eventsOf(t).forEach(e => {
+                if (!e.request_id) return;
+                const key = [e.fiduciary_id, e.principal_id, e.request_id].join('|');
+                if (e.event_type === 'ERASURE_REQUESTED') reqs.set(key, { e, t });
+                else if (e.event_type === 'ERASURE_CONFIRMED') {
+                    const cur = replies.get(key);
+                    if (!cur || String(e.event_time) >= String(cur.e.event_time)) replies.set(key, { e, t });
+                }
+            }));
+            const rows = [...reqs.entries()].sort((a, b) => String(b[1].e.event_time).localeCompare(String(a[1].e.event_time)));
+            const now = new Date().toISOString();
+            document.getElementById('body-erasure').innerHTML = rows.length ? rows.map(([key, { e, t }]) => {
+                const rep = replies.get(key);
+                const rs = rep ? rep.e.reply_status : '';
+                let state, cls;
+                if (rs === 'COMPLETED') { state = 'Completed'; cls = 'bg-green-100 text-green-700'; }
+                else if (rs === 'REJECTED' || rs === 'FAILED') { state = rs === 'FAILED' ? 'Failed' : 'Rejected'; cls = 'bg-red-100 text-red-700'; }
+                else if (rs === 'UNDER_LEGAL_HOLD') { state = 'Legal hold'; cls = 'bg-slate-200 text-slate-700'; }
+                else if (e.deadline_at && String(e.deadline_at) < now) { state = 'Overdue'; cls = 'bg-red-100 text-red-700'; }
+                else { state = rs ? 'In progress' : 'Open'; cls = 'bg-amber-100 text-amber-700'; }
+                const who = (t.direction === 'Outgoing' ? 'we asked ' : 'asked by ') + t.peer_node_id;
+                return `<tr class="hover:bg-slate-50"><td class="px-6 py-4 text-xs font-mono">${esc(e.request_id)}</td><td class="px-6 py-4 text-xs font-bold text-slate-900">${esc(e.principal_id)}</td>
+                    <td class="px-6 py-4 text-xs">${esc(who)}</td><td class="px-6 py-4 text-xs whitespace-nowrap">${esc(e.event_time)}</td>
+                    <td class="px-6 py-4 text-xs whitespace-nowrap">${esc(e.deadline_at || '–')}</td>
+                    <td class="px-6 py-4 text-xs">${rep ? esc(rs) + '<br><span class="text-slate-400">' + esc(rep.e.event_time) + '</span>' : '–'}</td>
+                    <td class="px-6 py-4"><span class="px-2 py-1 rounded text-[10px] font-black uppercase ${cls}">${state}</span></td></tr>`;
+            }).join('') : '<tr><td colspan="7" class="px-6 py-10 text-center text-xs text-slate-400">No erasure requests yet.</td></tr>';
+        }
+
+        // ---------- compose ----------
+        function onTypeChange() {
+            const t = document.getElementById('f-type').value;
+            document.getElementById('grp-consent').classList.toggle('hidden', !t.startsWith('CONSENT_'));
+            document.getElementById('grp-erasure-req').classList.toggle('hidden', t !== 'ERASURE_REQUESTED');
+            document.getElementById('grp-erasure-conf').classList.toggle('hidden', t !== 'ERASURE_CONFIRMED');
+            const set = (id, v) => { const el = document.getElementById(id); if (!el.value) el.value = v; };
+            set('f-cid', uid('c')); set('f-granted', nowIso()); set('f-rid', uid('r')); set('f-crid', document.getElementById('f-rid').value);
+            set('f-deadline', new Date(Date.now() + 10 * 864e5).toISOString().replace(/\.\d{3}Z$/, 'Z'));
+            build();
+        }
+
+        function addPurpose(id, status, cats, exp) {
+            const d = document.createElement('div');
+            d.className = 'grid grid-cols-12 gap-2 items-center prow';
+            d.innerHTML = `<input class="inp col-span-3 p-id" placeholder="purpose_id" value="${esc(id || '')}" oninput="build()">
+                <select class="inp col-span-3 p-st" onchange="build()"><option>granted</option><option>denied</option><option>withdrawn</option><option>expired</option></select>
+                <input class="inp col-span-3 p-exp" placeholder="expires_at (opt)" value="${esc(exp || '')}" oninput="build()">
+                <input class="inp col-span-2 p-cat" placeholder="categories" value="${esc(cats || '')}" oninput="build()">
+                <button type="button" class="col-span-1 text-slate-400 hover:text-red-600 text-lg" onclick="this.parentElement.remove();build()">&times;</button>`;
+            document.getElementById('purposes').appendChild(d);
+            if (status) d.querySelector('.p-st').value = status;
+            build();
+        }
+
+        const csv = v => v.split(',').map(s => s.trim()).filter(Boolean);
+
+        function build() {
+            const type = document.getElementById('f-type').value;
+            const ev = { event_id: uid('e'), event_type: type, event_time: nowIso(),
+                fiduciary_id: document.getElementById('f-fid').value.trim(), principal_id: document.getElementById('f-pid').value.trim() };
+            if (type.startsWith('CONSENT_')) {
+                ev.consent_id = document.getElementById('f-cid').value.trim();
+                ev.granted_at = document.getElementById('f-granted').value.trim();
+                ev.purposes = [...document.querySelectorAll('.prow')].map(r => {
+                    const p = { purpose_id: r.querySelector('.p-id').value.trim(), status: r.querySelector('.p-st').value };
+                    const exp = r.querySelector('.p-exp').value.trim(), cats = csv(r.querySelector('.p-cat').value);
+                    if (exp) p.expires_at = exp; if (cats.length) p.data_categories = cats;
+                    return p;
+                }).filter(p => p.purpose_id);
+            } else if (type === 'ERASURE_REQUESTED') {
+                ev.request_id = document.getElementById('f-rid').value.trim();
+                ev.trigger = document.getElementById('f-trigger').value;
+                const pu = csv(document.getElementById('f-epurposes').value), ca = csv(document.getElementById('f-ecats').value);
+                if (pu.length) ev.purpose_ids = pu; if (ca.length) ev.data_categories = ca;
+                ev.deadline_at = document.getElementById('f-deadline').value.trim();
+            } else {
+                ev.request_id = document.getElementById('f-crid').value.trim();
+                ev.reply_status = document.getElementById('f-rstatus').value;
+                ev.records_affected_count = Number(document.getElementById('f-count').value) || 0;
+                const d = document.getElementById('f-details').value.trim(); if (d) ev.details = d;
+                ev.confirmed_by = document.getElementById('f-by').value.trim(); ev.confirmed_at = nowIso();
+            }
+            document.getElementById('f-json').value = JSON.stringify({ cef_version: '1.0', events: [ev] }, null, 2);
+            validateJson();
+        }
+
+        // Mirrors the node's check (CEF-EVENTS schema) so mistakes show before sending.
+        function validateJson() {
+            const out = document.getElementById('f-check');
+            let o;
+            try { o = JSON.parse(document.getElementById('f-json').value); }
+            catch (e) { out.className = 'text-xs font-mono mt-3 text-red-600'; out.textContent = 'Not valid JSON: ' + e.message; return false; }
+            const bad = [];
+            if (!o || typeof o !== 'object' || Array.isArray(o)) bad.push('top level must be an object');
+            else {
+                if (!/^1\.\d+$/.test(o.cef_version || '')) bad.push('cef_version must be 1.x');
+                if (!Array.isArray(o.events) || !o.events.length) bad.push('events must be a non-empty array');
+                else o.events.forEach((e, i) => {
+                    ['event_id', 'event_type', 'event_time', 'fiduciary_id', 'principal_id'].forEach(k => { if (!e || typeof e[k] !== 'string' || !e[k]) bad.push(`events[${i}].${k} is required`); });
+                    if (e && e.event_type && !TYPES.includes(e.event_type)) bad.push(`events[${i}].event_type is not a CEF type`);
+                });
+            }
+            out.className = 'text-xs font-mono mt-3 ' + (bad.length ? 'text-red-600' : 'text-green-700');
+            out.textContent = bad.length ? bad.slice(0, 4).join('; ') : 'Passes the node check (' + o.events.length + ' event' + (o.events.length > 1 ? 's' : '') + ').';
+            return !bad.length;
+        }
+
+        function loadSample(kind) {
+            const pid = document.getElementById('f-pid').value.trim() || 'p-' + Math.floor(Date.now() / 1000);
+            const fid = document.getElementById('f-fid').value.trim() || 'f-1001';
+            const t = nowIso(), cid = 'c-' + pid, rid = 'r-' + pid;
+            const base = { fiduciary_id: fid, principal_id: pid, event_time: t };
+            const grant = { purposes: [{ purpose_id: 'loan_underwriting', status: 'granted', data_categories: ['income', 'pan'] }, { purpose_id: 'credit_marketing', status: 'granted', data_categories: ['email'] }] };
+            const events = {
+                grant: { event_id: uid('e'), event_type: 'CONSENT_GRANTED', ...base, consent_id: cid, granted_at: t, ...grant },
+                withdraw: { event_id: uid('e'), event_type: 'CONSENT_WITHDRAWN', ...base, consent_id: cid, granted_at: t,
+                    purposes: [{ purpose_id: 'loan_underwriting', status: 'granted', data_categories: ['income', 'pan'] }, { purpose_id: 'credit_marketing', status: 'withdrawn', data_categories: ['email'] }] },
+                erasure: { event_id: uid('e'), event_type: 'ERASURE_REQUESTED', ...base, request_id: rid, trigger: 'ErasureRequest', purpose_ids: ['credit_marketing'], deadline_at: new Date(Date.now() + 10 * 864e5).toISOString().replace(/\.\d{3}Z$/, 'Z') },
+                confirm: { event_id: uid('e'), event_type: 'ERASURE_CONFIRMED', ...base, request_id: rid, reply_status: 'COMPLETED', records_affected_count: 4, details: 'Records deleted', confirmed_by: 'processor-ops', confirmed_at: t }
+            };
+            document.getElementById('f-pid').value = pid;
+            document.getElementById('f-json').value = JSON.stringify({ cef_version: '1.0', events: [events[kind]] }, null, 2);
+            validateJson();
+        }
+
+        function uploadFile(inp) {
+            const f = inp.files[0]; if (!f) return;
+            const r = new FileReader();
+            r.onload = () => { document.getElementById('f-json').value = r.result; validateJson(); inp.value = ''; };
+            r.readAsText(f);
+        }
+
+        async function sendCef() {
+            banner('');
+            const contract = document.getElementById('f-partner').value;
+            if (!contract) { banner('Pick a partner. Partners appear here once the partnership is Active.', 'err'); return; }
+            if (!validateJson()) { banner('Fix the JSON first. The node would refuse this file.', 'err'); return; }
+            const text = document.getElementById('f-json').value;
+            const btn = document.getElementById('f-send'); btn.disabled = true; btn.textContent = 'Sending...';
+            const bytes = new TextEncoder().encode(text);
+            let bin = ''; bytes.forEach(b => bin += String.fromCharCode(b));
+            const r = await api(TRANSFERS_API, { _func: 'initiate_transfer', contract_id: contract, file_name: `cef-${Date.now()}.json`, file_data: btoa(bin) });
+            btn.disabled = false; btn.textContent = 'Send to partner';
+            if (!r.ok) { banner((r.body && (r.body.message || r.body.error)) || ('Send failed (HTTP ' + r.status + ')'), 'err'); return; }
+            banner('Accepted. Transfer ' + (r.body && r.body.transfer_id) + ' is on its way; watch the Sent tab.', 'ok');
+            setTimeout(reloadAll, 1500); setTimeout(reloadAll, 5000);
+            build();
+        }
+
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
+        function logout() {
+            fetch('/api/admin/login', { method: 'DELETE' }).catch(() => {}).finally(() => { localStorage.clear(); window.location.href = 'index.html'; });
+        }
+    </script>
+</body>
+</html>

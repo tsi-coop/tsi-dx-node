@@ -112,6 +112,9 @@ public class AppManager implements Action {
         String name = (String) input.get("name");
         JSONArray contractIds = (JSONArray) input.get("authorized_contract_ids");
 
+        // CEF-EVENTS contracts (the consent channel) may not exist yet on a node that predates them.
+        CefEvents.sync();
+
         try {
             conn = pool.getConnection();
             conn.setAutoCommit(false);

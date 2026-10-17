@@ -56,7 +56,8 @@ To stop or remove the nodes and the example data, see [Teardown](#teardown).
 | [`04-async-transfer.sh`](04-async-transfer.sh) | Send a governed package, track it to `Delivered`, show what the receiver stored | `create_app`, `generate_api_key`, client `initiate_transfer`, `get_transfer_status`, `list_transfers`, `get_transfer_payload` |
 | [`05-sync-call.sh`](05-sync-call.sh) | Real-time request/response through the responder; shows the audit row on both nodes. `--invalid` demonstrates L1 rejection | client `execute_sync_request`, `list_sync_audit_logs` |
 | [`06-negative-tests.sh`](06-negative-tests.sh) | Things that must be refused, for both lanes: bad input, missing authority, unsafe file names, replays, responder failures, contract lifecycle, node security. Asserts the expected status for each and exits non-zero on any surprise. **[Full test case list](#negative-test-scenarios-06-negative-testssh)** | client API, plus partner-endpoint calls as a peer node would make them |
-| [`run-all.sh`](run-all.sh) | Runs 01-06 in order and stops at the first failure | |
+| [`07-consent-exchange.sh`](07-consent-exchange.sh) | Consent channel: Node A sends a CEF consent grant (two purposes), a withdrawal and an erasure request to Node B's built-in `CEF-EVENTS` contract (no contract setup); Node B replies with `ERASURE_CONFIRMED`. Also checks that malformed events are not delivered and that `CEF-EVENTS` cannot be edited or suspended. Needs only 01 and 02 | `list_contracts`, `initiate_transfer`, `list_transfers`, `get_transfer_payload`, `update_contract`, `deactivate_contract` |
+| [`run-all.sh`](run-all.sh) | Runs 01-07 in order and stops at the first failure | |
 
 
 ## Roles

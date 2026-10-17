@@ -252,6 +252,7 @@ public class Partners implements Action {
             
             if (pstmt.executeUpdate() > 0) {
                 refreshMtlsClient();
+                refreshCefChannel();
                 return new JSONObject() {{ put("success", true); put("message", "Identity Verified."); }};
             } else {
                 throw new SQLException("Handshake rejected: Peer node '" + senderNodeId + "' is not registered in our baseline.");
@@ -363,6 +364,7 @@ public class Partners implements Action {
             pstmt.setString(1, (String) input.get("sender_node_id"));
             pstmt.executeUpdate();
         } finally { pool.cleanup(null, pstmt, conn); }
+        refreshCefChannel();
     }
 
     private void finalizeTermination(UUID partnerId, boolean accepted, HttpServletRequest req) throws Exception {
@@ -462,6 +464,12 @@ public class Partners implements Action {
         try (PreparedStatement pstmt = conn.prepareStatement("UPDATE partners SET status = ?, updated_at = NOW() WHERE partner_id = ?")) {
             pstmt.setString(1, status); pstmt.setObject(2, id); pstmt.executeUpdate();
         }
+        refreshCefChannel();
+    }
+
+    /** Keeps the built-in CEF-EVENTS contracts in step with partner status (see CefEvents). */
+    private void refreshCefChannel() {
+        try { CefEvents.sync(); } catch (Exception e) { System.err.println("[CEF] channel sync failed: " + e.getMessage()); }
     }
 
     private void deletePartnerFromDb(UUID id) throws SQLException {
@@ -471,6 +479,7 @@ public class Partners implements Action {
             pstmt = conn.prepareStatement("DELETE FROM partners WHERE partner_id = ?");
             pstmt.setObject(1, id); pstmt.executeUpdate();
         } finally { pool.cleanup(null, pstmt, conn); }
+        refreshCefChannel();
     }
 
     private String normalizeUrl(String fqdn) {

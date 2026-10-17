@@ -4,6 +4,27 @@ All notable changes to TSI DX Node are recorded here. The format follows [Keep a
 
 Releases before 0.2.1 were not formally versioned and are not itemised.
 
+## [0.3.0] - Unreleased
+
+Adds the consent channel: nodes can now exchange consent and erasure events as well as data, which extends the node from data exchange into consent-aware data exchange. No database migration; existing data contracts and transfers are unchanged.
+
+### Added
+
+- **Consent channel (`CEF-EVENTS`).** Every node has a built-in, read-only async contract that carries Consent Exchange Format (CEF) v1 JSON between Active partners: consent granted, modified or withdrawn, erasure requested and confirmed. It needs no invitation or acceptance. The node checks only the shape of a CEF document and never judges consent; data contracts and data-transfer validation are unchanged. See [Architecture §15](docs/design/architecture.md#15-consent-channel-cef-events).
+- **Consent Channel screen** (`/consent.html`): send events, see sent and received files, the latest consent state per consent, and erasure requests with their confirmations. No existing page changed.
+- **Documentation:** [Consent Exchange Format spec](docs/guides/consent-exchange-format.md), [Consent and Erasure Guide](docs/guides/consent-and-erasure-guide.md), [CEF to CMS Mapping](docs/guides/cef-cms-mapping.md).
+- **Example script** `examples/scripts/07-consent-exchange.sh`, included in `run-all.sh`.
+- `list_transfers` accepts optional `contract_name` and `limit` (up to 500) and now also returns `contract_id` and `contract_name`.
+
+### Changed
+
+- Editing, suspending or inviting nodes to a built-in system contract is refused with `403`.
+
+### Upgrade notes
+
+- No database migration. The `CEF-EVENTS` contracts are created automatically: when a partnership becomes Active, or, on a node with partnerships already Active, the first time the contract list is opened, an application is created, or a CEF file is sent or received.
+- Both nodes of a partnership need 0.3.0 to exchange CEF documents.
+
 ## [0.2.1] - 2026-10-12
 
 First formally versioned release. It hardens authentication on both the console and the node-to-node channel, makes the receiver enforce its own contracts, adds delivery reliability to the async lane and idempotency to the sync lane, and reorganises the documentation.
@@ -66,4 +87,5 @@ Read these before upgrading a running node.
 - `docs/` reorganised into `design/` (single `architecture.md`, replacing the transfer, sync and async design documents and the two historical plans) and `guides/` (local testing, security hardening, asynchronous and synchronous integration). `Local_Testing_Guide.md` moved to `docs/guides/local-testing-guide.md`.
 - README: two exchange lanes, getting started with prerequisites and a setup-token step, documentation table, security section. The security guide documents the setup token's lifecycle (set, initialise, remove).
 
+[0.3.0]: https://github.com/tsi-coop/tsi-dx-node/releases/tag/v0.3.0
 [0.2.1]: https://github.com/tsi-coop/tsi-dx-node/releases/tag/v0.2.1

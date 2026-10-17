@@ -6,14 +6,67 @@ TSI DX Node is open source. It eliminates the need for centralized intermediarie
 
 For a high-level functional overview and the rationale behind this architecture, read our [soft launch post](https://techadvisory.substack.com/p/tsi-dx-node-open-source-b2b-data).
 
-## Installation
+## Why TSI DX Node
 
-To begin your evaluation of the TSI DX Node, clone the repository to a local directory:
+When two organisations exchange data (a lender and a loan service provider, a bank and a fintech, a clinic and a lab) the data usually moves through a shared platform, a bespoke API or a file drop, and nobody can answer afterwards: what exactly was sent, in what form, to whom, under what agreement, and was it allowed?
 
-```bash
-git clone https://github.com/tsi-coop/tsi-dx-node.git tsi-dx-node-eval
-```
+With TSI DX Node each organisation runs its own node. The two nodes agree a **data contract**, which the receiver writes: what fields are accepted and which personal data must be masked or hashed before it leaves. Both nodes enforce it, and both keep the evidence. Nothing sits in the middle, and your data stays on your own infrastructure.
+
+The exchange can also be **consent aware**. Consent travels on its own channel beside the data: the sender shares each person's consent, any change or withdrawal, and any erasure request, and the receiver respects them and confirms back. Everyone in the chain works from the same record of what the person agreed to.
+
+## Key Features
+
+- **Contracts the receiver defines.** The organisation that receives the data states the schema and the anonymisation rules. Senders are invited to take part and do not write the terms.
+- **Enforced at both ends.** The sender validates and anonymises at source, so raw personal data does not leave. The receiver checks again against its own copy of the contract and never trusts the sender's word.
+- **Batch and real-time.** Push governed packages for loan files and reconciliations, or make governed request/response calls for eligibility, KYC and OTP checks.
+- **Consent and erasure travel with the relationship.** A built-in channel carries consent, consent changes and erasure requests, and the confirmations back, in an open JSON format, separate from the data. See [Consent Exchange Format](docs/guides/consent-exchange-format.md).
+- **Signed, replay-protected messages** between nodes, using identity keys each node already holds.
+- **Reliable delivery.** Retry with backoff, duplicate suppression, ordered sequence numbers and a configurable retention period for stored payloads.
+- **Evidence you can stand behind.** An immutable audit trail and a transfer log on both nodes, with the governed payload inspectable.
+
+In short: governed, auditable exchange between organisations, without an intermediary.
+
+## Quick Start
+
+You need Docker with Docker Compose v2, and a terminal. The scripted route below takes two fresh nodes through setup, partner handshake, a data contract, an async transfer, a sync call and the consent channel in a few minutes.
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/tsi-coop/tsi-dx-node.git tsi-dx-node-eval
+   cd tsi-dx-node-eval
+   ```
+2. Start two nodes (details, ports and the setup token are in [Getting Started](#getting-started) below):
+   ```bash
+   docker network create tsi-p2p-net      # once; ignore "already exists"
+   docker compose -f docker-compose.yml -f docker-compose.p2p.yml --project-name node-a --env-file .env.node-a up --build -d
+   docker compose -f docker-compose.yml -f docker-compose.p2p.yml --project-name node-b --env-file .env.node-b up --build -d
+   ```
+3. Run the example scripts (needs `curl`, `jq`, `openssl` and `base64`):
+   ```bash
+   cd examples/scripts && ./run-all.sh
+   ```
+4. Open Node A at <http://localhost:8082> and Node B at <http://localhost:8083>, sign in as `admin@example.org` with the example password from the scripts README, and look at **Partner Nodes**, **Data Contracts**, **Transfer Logs** and **Consent Channel**.
+
+## Developer Guides
+
+New here? Work down this table in order.
+
+| Stage | I want to... | Go to |
+|---|---|---|
+| **1. Install** | Start two nodes on one machine and walk through the console | [Local Testing Guide](docs/guides/local-testing-guide.md) |
+| | Run the whole exchange from scripts | [Example scripts](examples/scripts/README.md) |
+| **2. Understand** | See how it fits together and why | [Architecture](docs/design/architecture.md) |
+| | Choose between batch and real-time | [Two Exchange Lanes](#two-exchange-lanes) |
+| **3. Integrate** | Send governed packages from my application | [Asynchronous Integration Guide](docs/guides/asynchronous-integration-guide.md) |
+| | Make real-time governed calls | [Synchronous Integration Guide](docs/guides/synchronous-integration-guide.md) |
+| **4. Share consent** | Send consent, withdrawals and erasure requests, and act on them | [Consent and Erasure Guide](docs/guides/consent-and-erasure-guide.md) |
+| | Build to the consent format, or map it from a CMS | [CEF spec](docs/guides/consent-exchange-format.md), [CEF to CMS Mapping](docs/guides/cef-cms-mapping.md) |
+| **5. Production** | Set the setup token and JWT secret, and review the deployment checklist | [Security Hardening Guide](docs/guides/security-hardening-guide.md) |
+| **Reference** | See what changed and how to upgrade | [Changelog](CHANGELOG.md) |
+
 ## Two Exchange Lanes
+
+Every exchange is either batch or real time. Choose per contract.
 
 Every exchange runs under a receiver-authored data contract with the same mTLS transport, L1 structural validation, L2 PII anonymization and immutable audit trail. What differs is the delivery lane, chosen per contract:
 
@@ -28,6 +81,8 @@ Every exchange runs under a receiver-authored data contract with the same mTLS t
 The real-time lane is synchronous request/response between two nodes: the calling application invokes `execute_sync_request` on its own node, the node governs the payload, calls the partner node, which forwards it to an internal responder service and returns a governed response - all within a per-contract timeout (default 10 s). It includes a circuit breaker per partner and is not a streaming or pub/sub channel. See the [Architecture](docs/design/architecture.md) for the design, and the [Synchronous](docs/guides/synchronous-integration-guide.md) and [Asynchronous](docs/guides/asynchronous-integration-guide.md) integration guides for the API, error behaviour and limits of each.
 
 ## Getting Started
+
+The Quick Start above in full: prerequisites, the setup token, and what each command does.
 
 ### 1. Prerequisites
 
@@ -87,18 +142,6 @@ Explore the core capabilities of the TSI DX Node through this step-by-step techn
 | 03 | **Data Contracts** | Defining governance boundaries. Implementing L1 structural validation and L2 PII anonymization (Hashing/Masking) to enforce the Digital Agreement at the source. | [Watch Video](https://youtu.be/iSkrnkcbZzY) |
 | 04 | **Transfer Service** | Executing the 'Single Package' routing. Monitoring sequences, message timestamps, and forensic mirroring of the transmitted data payloads. | [Watch Video](https://youtu.be/5Lu0wGrjoIM) |
 | 05 | **API Integration** | Bridging internal systems. Registering applications (CRM/ERP), generating Client API credentials, and restricting access to specific authorized data contracts. | [Watch Video](https://youtu.be/MNuQCFofpdc) |
-
-## Documentation
-
-| Document | Covers |
-|----------|--------|
-| [Architecture](docs/design/architecture.md) | The design reference: trust model, receiver-authored contracts, governance, async and sync lanes, data model, design decisions, limits |
-| [Local Testing Guide](docs/guides/local-testing-guide.md) | Two-node setup on one machine; async (§10) and sync (§11) walk-throughs |
-| [Asynchronous Integration Guide](docs/guides/asynchronous-integration-guide.md) | Submitting and tracking batch transfers: Client API, statuses, failures, retention |
-| [Synchronous Integration Guide](docs/guides/synchronous-integration-guide.md) | Real-time calls: contract setup, responder requirements, Client API, idempotency, errors |
-| [Security Hardening Guide](docs/guides/security-hardening-guide.md) | Setup token, JWT secret, peer signatures, deployment checklist |
-| [Changelog](CHANGELOG.md) | What changed in each release, with upgrade notes |
-| [Example Scripts](examples/scripts/README.md) | Runnable scripts for node setup, partner handshake, contracts, async transfer, sync call, 95 negative test scenarios, teardown |
 
 ## Use Cases
 
