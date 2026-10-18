@@ -33,7 +33,7 @@ services:
     #  dockerfile: Dockerfile
 
     # PRODUCTION: override with a pre-built image by setting IMAGE_NAME in .env
-    image: "${IMAGE_NAME:-tsicoop/tsi-dx-node:latest}"
+    #image: "${IMAGE_NAME:-tsicoop/tsi-dx-node:latest}"
     
     user: "root"
     # REMOVED: container_name to allow multiple instances via project flags

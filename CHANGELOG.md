@@ -4,7 +4,7 @@ All notable changes to TSI DX Node are recorded here. The format follows [Keep a
 
 Releases before 0.2.1 were not formally versioned and are not itemised.
 
-## [0.3.0] - Unreleased
+## [0.3.0] - 2026-10-18
 
 Adds the consent channel: nodes can now exchange consent and erasure events as well as data, which extends the node from data exchange into consent-aware data exchange. No database migration; existing data contracts and transfers are unchanged.
 
