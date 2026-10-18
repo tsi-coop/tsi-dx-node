@@ -26,6 +26,12 @@ The exchange can also be **consent aware**. Consent travels on its own channel b
 
 In short: governed, auditable exchange between organisations, without an intermediary.
 
+## Functional Walkthrough
+
+Setting up two nodes, the partner handshake, a data contract, async and sync exchange, the consent channel, and the audit trail.
+
+[Watch the functional walkthrough](https://youtu.be/dEHe4t-Cb-E)
+
 ## Quick Start
 
 You need Docker with Docker Compose v2, and a terminal. The scripted route below takes two fresh nodes through setup, partner handshake, a data contract, an async transfer, a sync call and the consent channel in a few minutes.
@@ -129,19 +135,7 @@ Either run the [example scripts](examples/scripts/README.md), which take two fre
 cd examples/scripts && ./run-all.sh
 ```
 
-or follow the [**Local Testing Guide**](docs/guides/local-testing-guide.md) step by step through the console (use the setup token from step 2 on the setup page). The video tutorials below cover each stage in depth.
-
-## Guided Tour
-
-Explore the core capabilities of the TSI DX Node through this step-by-step technical journey. Each stage includes a video tutorial to guide you through the process.
-
-| Step | Milestone | Description | Documentation & Demo |
-|------|-----------|-------------|----------------------|
-| 01 | **Node Bootstrap** | Initialization of independent node instances. Setting the immutable Node ID, configuring the public FQDN, and establishing the root administrative identity. | [Watch Video](https://youtu.be/kieEhDHei-Q) |
-| 02 | **Partner Handshake** | Executing the bidirectional identity protocol. Exchanging public keys, verifying mTLS endpoints, and establishing the verified link between independent nodes. | [Watch Video](https://youtu.be/0G5NrmXAtXM) |
-| 03 | **Data Contracts** | Defining governance boundaries. Implementing L1 structural validation and L2 PII anonymization (Hashing/Masking) to enforce the Digital Agreement at the source. | [Watch Video](https://youtu.be/iSkrnkcbZzY) |
-| 04 | **Transfer Service** | Executing the 'Single Package' routing. Monitoring sequences, message timestamps, and forensic mirroring of the transmitted data payloads. | [Watch Video](https://youtu.be/5Lu0wGrjoIM) |
-| 05 | **API Integration** | Bridging internal systems. Registering applications (CRM/ERP), generating Client API credentials, and restricting access to specific authorized data contracts. | [Watch Video](https://youtu.be/MNuQCFofpdc) |
+or follow the [**Local Testing Guide**](docs/guides/local-testing-guide.md) step by step through the console (use the setup token from step 2 on the setup page).
 
 ## Use Cases
 

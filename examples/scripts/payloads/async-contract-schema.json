@@ -3,8 +3,8 @@
   "type": "object",
   "required": ["applicant_id", "mobile", "product", "amount"],
   "properties": {
-    "applicant_id": { "type": "string" },
-    "mobile":       { "type": "string" },
+    "applicant_id": { "type": "string", "x-pii": true },
+    "mobile":       { "type": "string", "x-pii": true },
     "product":      { "type": "string", "enum": ["loan", "credit_card", "insurance"] },
     "amount":       { "type": "number" },
     "pincode":      { "type": "string" }

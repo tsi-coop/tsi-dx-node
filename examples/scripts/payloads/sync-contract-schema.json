@@ -3,8 +3,8 @@
   "type": "object",
   "required": ["customer_id", "mobile", "product"],
   "properties": {
-    "customer_id": { "type": "string" },
-    "mobile":      { "type": "string" },
+    "customer_id": { "type": "string", "x-pii": true },
+    "mobile":      { "type": "string", "x-pii": true },
     "product":     { "type": "string" }
   }
 }
