@@ -47,17 +47,16 @@ Identifiers (`event_id`, `fiduciary_id`, `principal_id`, `consent_id`, `request_
 
 | `event_type` | Sent by | Meaning |
 |---|---|---|
-| `CONSENT_GRANTED` | Fiduciary | A consent was given. Carries its full state. |
-| `CONSENT_MODIFIED` | Fiduciary | A consent changed. Carries its new full state. |
+| `CONSENT_GRANTED` | Fiduciary | A consent was given or changed. Carries its full state, which replaces any earlier state. |
 | `CONSENT_WITHDRAWN` | Fiduciary | A consent was withdrawn, in whole or in part. Carries its new full state. |
 | `ERASURE_REQUESTED` | Fiduciary | The principal's data is to be erased. |
 | `ERASURE_CONFIRMED` | Processor | Reply to an erasure request. |
 
-The three consent types differ only in why the state changed. A reader MUST apply all three the same way (section 4).
+The two consent types differ only in why the state changed. A reader MUST apply both the same way (section 4).
 
 ### 3.3 Consent events
 
-`CONSENT_GRANTED`, `CONSENT_MODIFIED` and `CONSENT_WITHDRAWN` carry:
+`CONSENT_GRANTED` and `CONSENT_WITHDRAWN` carry:
 
 | Field | Required | Meaning |
 |---|---|---|
@@ -193,7 +192,7 @@ This is the schema DX Node applies (JSON Schema draft-07). It checks only the sh
         "required": ["event_id", "event_type", "event_time", "fiduciary_id", "principal_id"],
         "properties": {
           "event_id":     { "type": "string", "minLength": 1 },
-          "event_type":   { "type": "string", "enum": ["CONSENT_GRANTED", "CONSENT_MODIFIED", "CONSENT_WITHDRAWN", "ERASURE_REQUESTED", "ERASURE_CONFIRMED"] },
+          "event_type":   { "type": "string", "enum": ["CONSENT_GRANTED", "CONSENT_WITHDRAWN", "ERASURE_REQUESTED", "ERASURE_CONFIRMED"] },
           "event_time":   { "type": "string", "minLength": 1 },
           "fiduciary_id": { "type": "string", "minLength": 1 },
           "principal_id": { "type": "string", "minLength": 1 }

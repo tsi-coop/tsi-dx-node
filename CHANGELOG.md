@@ -10,8 +10,8 @@ Adds the consent channel: nodes can now exchange consent and erasure events as w
 
 ### Added
 
-- **Consent channel (`CEF-EVENTS`).** Every node has a built-in, read-only async contract that carries Consent Exchange Format (CEF) v1 JSON between Active partners: consent granted, modified or withdrawn, erasure requested and confirmed. It needs no invitation or acceptance. The node checks only the shape of a CEF document and never judges consent; data contracts and data-transfer validation are unchanged. See [Architecture §15](docs/design/architecture.md#15-consent-channel-cef-events).
-- **Consent Channel screen** (`/consent.html`): send events, see sent and received files, the latest consent state per consent, and erasure requests with their confirmations. No existing page changed.
+- **Consent channel (`CEF-EVENTS`).** Every node has a built-in, read-only async contract that carries Consent Exchange Format (CEF) v1 JSON between Active partners: consent granted or withdrawn, erasure requested and confirmed. It needs no invitation or acceptance. The node checks only the shape of a CEF document and never judges consent; data contracts and data-transfer validation are unchanged. See [Architecture §15](docs/design/architecture.md#15-consent-channel-cef-events).
+- **Consent Channel screen** (`/consent.html`): send events and see the files sent and received, with their delivery status. The node delivers; it does not track consent state. Linked from the sidebar of every console page.
 - **Documentation:** [Consent Exchange Format spec](docs/guides/consent-exchange-format.md), [Consent and Erasure Guide](docs/guides/consent-and-erasure-guide.md), [CEF to CMS Mapping](docs/guides/cef-cms-mapping.md).
 - **Example script** `examples/scripts/07-consent-exchange.sh`, included in `run-all.sh`.
 - `list_transfers` accepts optional `contract_name` and `limit` (up to 500) and now also returns `contract_id` and `contract_name`.

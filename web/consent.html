@@ -131,8 +131,9 @@
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                 <div>
                     <h1 class="text-2xl font-black text-slate-900 uppercase tracking-tight">Consent Channel</h1>
-                    <p class="text-xs text-slate-500 font-medium">Send and receive consent events (CEF v1) over the built-in <span class="font-mono">CEF-EVENTS</span> contract. Consent travels separately from data and links to it by <span class="font-mono">principal_id</span>.</p>
+                    <p class="text-xs text-slate-500 font-medium">Reliable, signed delivery of consent and erasure events (CEF v1) between partners over the built-in <span class="font-mono">CEF-EVENTS</span> contract. Consent travels separately from data and links to it by <span class="font-mono">principal_id</span>.</p>
                 </div>
+                <span id="updated-at" class="text-[10px] font-bold text-slate-400 uppercase self-start mt-3"></span>
                 <button onclick="reloadAll()" class="p-2.5 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 shadow-sm self-start" title="Refresh"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg></button>
             </div>
 
@@ -142,8 +143,6 @@
                 <button data-tab="send" onclick="showTab('send')" class="tab-btn active px-1 py-4 text-xs font-black uppercase">Send</button>
                 <button data-tab="sent" onclick="showTab('sent')" class="tab-btn px-1 py-4 text-xs font-black uppercase text-slate-400">Sent</button>
                 <button data-tab="received" onclick="showTab('received')" class="tab-btn px-1 py-4 text-xs font-black uppercase text-slate-400">Received</button>
-                <button data-tab="state" onclick="showTab('state')" class="tab-btn px-1 py-4 text-xs font-black uppercase text-slate-400">Consent State</button>
-                <button data-tab="erasure" onclick="showTab('erasure')" class="tab-btn px-1 py-4 text-xs font-black uppercase text-slate-400">Erasure</button>
             </div>
 
             <!-- SEND -->
@@ -155,7 +154,7 @@
                             <select id="f-partner" class="inp"></select></label>
                         <label class="block"><span class="lbl">Event type</span>
                             <select id="f-type" class="inp" onchange="onTypeChange()">
-                                <option>CONSENT_GRANTED</option><option>CONSENT_MODIFIED</option><option>CONSENT_WITHDRAWN</option>
+                                <option>CONSENT_GRANTED</option><option>CONSENT_WITHDRAWN</option>
                                 <option>ERASURE_REQUESTED</option><option>ERASURE_CONFIRMED</option>
                             </select></label>
                         <label class="block"><span class="lbl">Fiduciary ID</span><input id="f-fid" class="inp" value="f-1001" oninput="build()"></label>
@@ -168,7 +167,7 @@
                             <label class="block"><span class="lbl">Granted at</span><input id="f-granted" class="inp" oninput="build()"></label>
                         </div>
                         <div class="flex items-center justify-between mt-4 mb-2">
-                            <span class="lbl mb-0">Purposes (the complete current state of this consent)</span>
+                            <span class="lbl mb-0">Purposes (the full list for this consent)</span>
                             <button type="button" onclick="addPurpose()" class="text-[10px] font-black uppercase text-blue-600">+ Add purpose</button>
                         </div>
                         <div id="purposes" class="space-y-2"></div>
@@ -219,33 +218,13 @@
 
             <!-- SENT / RECEIVED -->
             <section id="tab-sent" class="hidden"><div class="card overflow-hidden"><div class="overflow-x-auto"><table class="w-full text-left text-sm">
-                <thead><tr class="thr"><th class="px-6 py-4">Time</th><th class="px-6 py-4">Partner</th><th class="px-6 py-4">Events</th><th class="px-6 py-4">Status</th><th class="px-6 py-4 text-right">View</th></tr></thead>
+                <thead><tr class="thr"><th class="px-6 py-4">Time</th><th class="px-6 py-4">Partner</th><th class="px-6 py-4">Principal ID</th><th class="px-6 py-4">Events</th><th class="px-6 py-4">Status</th><th class="px-6 py-4 text-right">View</th></tr></thead>
                 <tbody id="body-sent" class="divide-y divide-slate-100"></tbody></table></div></div></section>
             <section id="tab-received" class="hidden"><div class="card overflow-hidden"><div class="overflow-x-auto"><table class="w-full text-left text-sm">
-                <thead><tr class="thr"><th class="px-6 py-4">Time</th><th class="px-6 py-4">Partner</th><th class="px-6 py-4">Events</th><th class="px-6 py-4">Status</th><th class="px-6 py-4 text-right">View</th></tr></thead>
+                <thead><tr class="thr"><th class="px-6 py-4">Time</th><th class="px-6 py-4">Partner</th><th class="px-6 py-4">Principal ID</th><th class="px-6 py-4">Events</th><th class="px-6 py-4">Status</th><th class="px-6 py-4 text-right">View</th></tr></thead>
                 <tbody id="body-received" class="divide-y divide-slate-100"></tbody></table></div></div>
                 <p class="text-[10px] text-slate-400 mt-3">Files that fail the node's check are refused and never stored; those refusals are recorded in the Audit Trail.</p></section>
 
-            <!-- STATE -->
-            <section id="tab-state" class="hidden">
-                <div class="flex flex-wrap items-center gap-3 mb-4">
-                    <label class="text-[10px] font-black uppercase text-slate-500">Built from
-                        <select id="state-src" class="inp !w-auto ml-2 inline-block" onchange="renderState()"><option value="Incoming">Received events</option><option value="Outgoing">Sent events</option></select></label>
-                    <input id="state-q" class="inp !w-64" placeholder="Filter by principal / consent / purpose" oninput="renderState()">
-                </div>
-                <div class="card overflow-hidden"><div class="overflow-x-auto"><table class="w-full text-left text-sm">
-                    <thead><tr class="thr"><th class="px-6 py-4">Fiduciary</th><th class="px-6 py-4">Principal</th><th class="px-6 py-4">Consent</th><th class="px-6 py-4">Purposes</th><th class="px-6 py-4">Last event</th></tr></thead>
-                    <tbody id="body-state" class="divide-y divide-slate-100"></tbody></table></div></div>
-                <p class="text-[10px] text-slate-400 mt-3">Latest state per consent: the event with the latest <span class="font-mono">event_time</span> replaces all earlier ones. This view is for inspection and testing. The processor's own application holds the real consent store.</p>
-            </section>
-
-            <!-- ERASURE -->
-            <section id="tab-erasure" class="hidden">
-                <div class="card overflow-hidden"><div class="overflow-x-auto"><table class="w-full text-left text-sm">
-                    <thead><tr class="thr"><th class="px-6 py-4">Request</th><th class="px-6 py-4">Principal</th><th class="px-6 py-4">Partner</th><th class="px-6 py-4">Requested</th><th class="px-6 py-4">Deadline</th><th class="px-6 py-4">Reply</th><th class="px-6 py-4">State</th></tr></thead>
-                    <tbody id="body-erasure" class="divide-y divide-slate-100"></tbody></table></div></div>
-                <p class="text-[10px] text-slate-400 mt-3">Joins <span class="font-mono">ERASURE_REQUESTED</span> with <span class="font-mono">ERASURE_CONFIRMED</span> by <span class="font-mono">request_id</span>. Overdue means the deadline passed without a COMPLETED reply.</p>
-            </section>
         </div>
     </main>
 
@@ -267,11 +246,20 @@
     <script>
         const TRANSFERS_API = '/api/admin/transfers';
         const CONTRACTS_API = '/api/admin/contracts';
-        const TYPES = ['CONSENT_GRANTED','CONSENT_MODIFIED','CONSENT_WITHDRAWN','ERASURE_REQUESTED','ERASURE_CONFIRMED'];
+        const TYPES = ['CONSENT_GRANTED','CONSENT_WITHDRAWN','ERASURE_REQUESTED','ERASURE_CONFIRMED'];
         let partners = [];          // [{node_id, contract_id}] : partners this node can send CEF to
         let transfers = [];         // CEF-EVENTS transfers, newest first
         const payloads = {};        // transfer_id -> parsed CEF object | null (purged / unreadable)
         let currentTab = 'send';
+
+        // Same display as the Transfer Logs page, e.g. "18 OCT, 10:22".
+        function fmtTime(ts) {
+            if (!ts) return '---';
+            const date = new Date(ts);
+            if (isNaN(date)) return String(ts);
+            return date.toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }).toUpperCase();
+        }
+        const timeTag = v => `<span title="${esc(v)}">${esc(fmtTime(v))}</span>`;
 
         const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
         const nowIso = () => new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
@@ -296,7 +284,7 @@
 
         async function api(url, data) {
             try {
-                const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('dx_token')}` }, body: JSON.stringify(data) });
+                const r = await fetch(url, { method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('dx_token')}` }, body: JSON.stringify(data) });
                 let body = null; try { body = await r.json(); } catch (e) {}
                 return { ok: r.ok, status: r.status, body };
             } catch (e) { return { ok: false, status: 0, body: null }; }
@@ -310,7 +298,14 @@
         }
 
         // ---------- loading ----------
+        let reloading = false;
         async function reloadAll() {
+            if (reloading) return;
+            reloading = true;
+            try { await doReload(); } finally { reloading = false; }
+        }
+
+        async function doReload() {
             const c = await api(CONTRACTS_API, { _func: 'list_contracts' });
             const list = Array.isArray(c.body) ? c.body : (c.body && c.body.data) || [];
             partners = list.filter(x => x.name === 'CEF-EVENTS' && !x.is_receiver).map(x => ({ node_id: x.receiver_node_id, contract_id: x.contract_id }));
@@ -323,10 +318,12 @@
             transfers = (t.body && t.body.data) || [];
             await loadPayloads();
             renderAll();
+            const u = document.getElementById('updated-at');
+            if (u) u.textContent = 'Updated ' + new Date().toLocaleTimeString();
         }
 
         async function loadPayloads() {
-            const need = transfers.filter(t => !(t.transfer_id in payloads) && ['Delivered', 'Received'].includes(t.status));
+            const need = transfers.filter(t => !payloads[t.transfer_id] && ['Delivered', 'Received'].includes(t.status));
             for (let i = 0; i < need.length; i += 8) {
                 await Promise.all(need.slice(i, i + 8).map(async t => {
                     const r = await api(TRANSFERS_API, { _func: 'get_transfer_payload', transfer_id: t.transfer_id });
@@ -345,10 +342,15 @@
                 const on = b.dataset.tab === name;
                 b.classList.toggle('active', on); b.classList.toggle('text-slate-400', !on);
             });
-            ['send', 'sent', 'received', 'state', 'erasure'].forEach(n => document.getElementById('tab-' + n).classList.toggle('hidden', n !== name));
+            ['send', 'sent', 'received'].forEach(n => document.getElementById('tab-' + n).classList.toggle('hidden', n !== name));
+            if (name !== 'send') reloadAll();
         }
 
-        function renderAll() { renderList('Outgoing', 'body-sent'); renderList('Incoming', 'body-received'); renderState(); renderErasure(); }
+        // keep Sent and Received current while the page is open
+        setInterval(() => { if (!document.hidden && currentTab !== 'send') reloadAll(); }, 10000);
+        document.addEventListener('visibilitychange', () => { if (!document.hidden && currentTab !== 'send') reloadAll(); });
+
+        function renderAll() { renderList('Outgoing', 'body-sent'); renderList('Incoming', 'body-received'); }
 
         function statusBadge(s) {
             const cls = s === 'Failed' ? 'bg-red-100 text-red-700' : (s === 'Delivered' || s === 'Received') ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700';
@@ -358,14 +360,19 @@
         function renderList(direction, bodyId) {
             const rows = transfers.filter(t => t.direction === direction);
             const body = document.getElementById(bodyId);
-            if (!rows.length) { body.innerHTML = '<tr><td colspan="5" class="px-6 py-10 text-center text-xs text-slate-400">Nothing here yet.</td></tr>'; return; }
+            if (!rows.length) { body.innerHTML = '<tr><td colspan="6" class="px-6 py-10 text-center text-xs text-slate-400">Nothing here yet.</td></tr>'; return; }
             body.innerHTML = rows.map(t => {
                 const ev = eventsOf(t);
                 const types = [...new Set(ev.map(e => e.event_type))].join(', ');
-                const evCell = t.transfer_id in payloads ? (payloads[t.transfer_id] ? `${ev.length} &middot; <span class="text-slate-400">${esc(types)}</span>` : '<span class="text-slate-400">payload unavailable</span>') : '<span class="text-slate-400">&ndash;</span>';
+                const evCell = t.transfer_id in payloads ? (payloads[t.transfer_id] ? `<span class="text-slate-700">${esc(types)}</span>` : '<span class="text-slate-400">payload unavailable</span>') : '<span class="text-slate-400">&ndash;</span>';
+                const pids = [...new Set(ev.map(e => e.principal_id).filter(Boolean))];
+                const pidCell = pids.length
+                    ? pids.slice(0, 3).map(x => `<div class="font-mono">${esc(x)}</div>`).join('') + (pids.length > 3 ? `<div class="text-slate-400">+${pids.length - 3} more</div>` : '')
+                    : '<span class="text-slate-400">&ndash;</span>';
                 const err = t.status === 'Failed' && t.error_message ? `<div class="text-[10px] text-red-600 font-mono mt-1 break-words max-w-md">${esc(t.error_message)}</div>` : '';
-                return `<tr class="hover:bg-slate-50"><td class="px-6 py-4 text-xs text-slate-600 whitespace-nowrap">${esc(t.start_time)}</td>
+                return `<tr class="hover:bg-slate-50"><td class="px-6 py-4 text-[10px] font-bold text-slate-600 whitespace-nowrap">${timeTag(t.start_time)}</td>
                     <td class="px-6 py-4 text-xs font-bold text-slate-900">${esc(t.peer_node_id)}</td>
+                    <td class="px-6 py-4 text-xs text-slate-700">${pidCell}</td>
                     <td class="px-6 py-4 text-xs">${evCell}</td>
                     <td class="px-6 py-4">${statusBadge(t.status)}${err}</td>
                     <td class="px-6 py-4 text-right"><button onclick="openView('${esc(t.transfer_id)}')" class="text-[10px] font-black uppercase text-blue-600">Open</button></td></tr>`;
@@ -379,80 +386,20 @@
             if (Array.isArray(e.purposes)) bits.push(e.purposes.map(p => `${p.purpose_id}:${p.status}`).join(', '));
             if (e.request_id) bits.push('request ' + e.request_id);
             if (e.reply_status) bits.push(e.reply_status);
-            if (e.deadline_at) bits.push('deadline ' + e.deadline_at);
+            if (e.deadline_at) bits.push('deadline ' + fmtTime(e.deadline_at));
             return bits.join(' · ');
         }
         function openView(id) {
             const t = transfers.find(x => x.transfer_id === id); if (!t) return;
             const p = payloads[id];
-            document.getElementById('view-sub').textContent = `${t.direction === 'Outgoing' ? 'To' : 'From'} ${t.peer_node_id} · ${t.start_time} · ${t.status}`;
+            document.getElementById('view-sub').textContent = `${t.direction === 'Outgoing' ? 'To' : 'From'} ${t.peer_node_id} · ${fmtTime(t.start_time)} · ${t.status}`;
             document.getElementById('view-events').innerHTML = eventsOf(t).map(e =>
-                `<tr><td class="px-3 py-2 font-bold">${esc(e.event_type)}</td><td class="px-3 py-2 whitespace-nowrap">${esc(e.event_time)}</td><td class="px-3 py-2">${esc(e.principal_id)}</td><td class="px-3 py-2 text-slate-600">${esc(detailOf(e))}</td></tr>`).join('')
+                `<tr><td class="px-3 py-2 font-bold">${esc(e.event_type)}</td><td class="px-3 py-2 whitespace-nowrap">${timeTag(e.event_time)}</td><td class="px-3 py-2">${esc(e.principal_id)}</td><td class="px-3 py-2 text-slate-600">${esc(detailOf(e))}</td></tr>`).join('')
                 || '<tr><td colspan="4" class="px-3 py-6 text-center text-slate-400">No events to show (payload purged or not yet available).</td></tr>';
             document.getElementById('view-raw').value = p ? JSON.stringify(p, null, 2) : '';
             document.getElementById('viewModal').classList.remove('hidden');
         }
         function closeView() { document.getElementById('viewModal').classList.add('hidden'); }
-
-        // ---------- consent state ----------
-        function renderState() {
-            const dir = document.getElementById('state-src').value;
-            const q = document.getElementById('state-q').value.trim().toLowerCase();
-            const latest = new Map();
-            // oldest transfer first, so a tie on event_time goes to the later event
-            [...transfers].filter(t => t.direction === dir).reverse().forEach(t => eventsOf(t).forEach(e => {
-                if (!String(e.event_type || '').startsWith('CONSENT_') || !e.consent_id) return;
-                const key = [e.fiduciary_id, e.principal_id, e.consent_id].join('|');
-                const cur = latest.get(key);
-                if (!cur || String(e.event_time) >= String(cur.event_time)) latest.set(key, e);
-            }));
-            let rows = [...latest.values()];
-            if (q) rows = rows.filter(e => JSON.stringify([e.principal_id, e.consent_id, (e.purposes || []).map(p => p.purpose_id)]).toLowerCase().includes(q));
-            rows.sort((a, b) => String(b.event_time).localeCompare(String(a.event_time)));
-            const body = document.getElementById('body-state');
-            body.innerHTML = rows.length ? rows.map(e => {
-                const badges = (e.purposes || []).map(p => {
-                    const cls = p.status === 'granted' ? 'bg-green-100 text-green-700' : 'bg-slate-200 text-slate-600';
-                    const exp = p.expires_at ? ` title="expires ${esc(p.expires_at)}"` : '';
-                    return `<span${exp} class="inline-block mr-1 mb-1 px-2 py-1 rounded text-[10px] font-bold ${cls}">${esc(p.purpose_id)} &middot; ${esc(p.status)}</span>`;
-                }).join('') || '<span class="text-slate-400 text-xs">no purposes</span>';
-                return `<tr class="hover:bg-slate-50"><td class="px-6 py-4 text-xs">${esc(e.fiduciary_id)}</td><td class="px-6 py-4 text-xs font-bold text-slate-900">${esc(e.principal_id)}</td>
-                    <td class="px-6 py-4 text-xs font-mono">${esc(e.consent_id)}</td><td class="px-6 py-4">${badges}</td>
-                    <td class="px-6 py-4 text-xs text-slate-600 whitespace-nowrap">${esc(e.event_type)}<br>${esc(e.event_time)}</td></tr>`;
-            }).join('') : '<tr><td colspan="5" class="px-6 py-10 text-center text-xs text-slate-400">No consent events yet.</td></tr>';
-        }
-
-        // ---------- erasure ----------
-        function renderErasure() {
-            const reqs = new Map(), replies = new Map();
-            [...transfers].reverse().forEach(t => eventsOf(t).forEach(e => {
-                if (!e.request_id) return;
-                const key = [e.fiduciary_id, e.principal_id, e.request_id].join('|');
-                if (e.event_type === 'ERASURE_REQUESTED') reqs.set(key, { e, t });
-                else if (e.event_type === 'ERASURE_CONFIRMED') {
-                    const cur = replies.get(key);
-                    if (!cur || String(e.event_time) >= String(cur.e.event_time)) replies.set(key, { e, t });
-                }
-            }));
-            const rows = [...reqs.entries()].sort((a, b) => String(b[1].e.event_time).localeCompare(String(a[1].e.event_time)));
-            const now = new Date().toISOString();
-            document.getElementById('body-erasure').innerHTML = rows.length ? rows.map(([key, { e, t }]) => {
-                const rep = replies.get(key);
-                const rs = rep ? rep.e.reply_status : '';
-                let state, cls;
-                if (rs === 'COMPLETED') { state = 'Completed'; cls = 'bg-green-100 text-green-700'; }
-                else if (rs === 'REJECTED' || rs === 'FAILED') { state = rs === 'FAILED' ? 'Failed' : 'Rejected'; cls = 'bg-red-100 text-red-700'; }
-                else if (rs === 'UNDER_LEGAL_HOLD') { state = 'Legal hold'; cls = 'bg-slate-200 text-slate-700'; }
-                else if (e.deadline_at && String(e.deadline_at) < now) { state = 'Overdue'; cls = 'bg-red-100 text-red-700'; }
-                else { state = rs ? 'In progress' : 'Open'; cls = 'bg-amber-100 text-amber-700'; }
-                const who = (t.direction === 'Outgoing' ? 'we asked ' : 'asked by ') + t.peer_node_id;
-                return `<tr class="hover:bg-slate-50"><td class="px-6 py-4 text-xs font-mono">${esc(e.request_id)}</td><td class="px-6 py-4 text-xs font-bold text-slate-900">${esc(e.principal_id)}</td>
-                    <td class="px-6 py-4 text-xs">${esc(who)}</td><td class="px-6 py-4 text-xs whitespace-nowrap">${esc(e.event_time)}</td>
-                    <td class="px-6 py-4 text-xs whitespace-nowrap">${esc(e.deadline_at || '–')}</td>
-                    <td class="px-6 py-4 text-xs">${rep ? esc(rs) + '<br><span class="text-slate-400">' + esc(rep.e.event_time) + '</span>' : '–'}</td>
-                    <td class="px-6 py-4"><span class="px-2 py-1 rounded text-[10px] font-black uppercase ${cls}">${state}</span></td></tr>`;
-            }).join('') : '<tr><td colspan="7" class="px-6 py-10 text-center text-xs text-slate-400">No erasure requests yet.</td></tr>';
-        }
 
         // ---------- compose ----------
         function onTypeChange() {

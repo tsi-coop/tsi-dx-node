@@ -11,7 +11,7 @@ Consent and data travel on **two separate channels** between the same two nodes.
 Sender app  ── records carry principal_id ──────────────▶  Processor app
                                                               │ joins on principal_id
 Sender CMS  ── CEF-EVENTS (built in) ───────────────────▶  Processor consent store
-               CONSENT_GRANTED / MODIFIED / WITHDRAWN
+               CONSENT_GRANTED / WITHDRAWN
                ERASURE_REQUESTED
             ◀── ERASURE_CONFIRMED ──────────────────────────┘
                  CONSENT CHANNEL
@@ -89,7 +89,7 @@ What to send:
 | Situation | Send |
 |---|---|
 | A principal gives consent | One `CONSENT_GRANTED` event with the full `purposes` list |
-| The principal changes it | `CONSENT_MODIFIED` with the **new full** `purposes` list |
+| The principal changes it | `CONSENT_GRANTED` with the **new full** `purposes` list (it replaces the earlier state) |
 | One purpose is withdrawn | `CONSENT_WITHDRAWN` with the full list, that purpose set to `withdrawn` |
 | Everything is withdrawn | `CONSENT_WITHDRAWN` with every purpose `withdrawn` |
 | The principal asks for erasure | `ERASURE_REQUESTED` with a `request_id` and a `deadline_at` |
@@ -150,17 +150,15 @@ A processor should act only on principals whose data it received from that fiduc
 
 ## 7. The Consent Channel screen
 
-An administrator can do all of this by hand at `/consent.html` (**Consent Channel** screen). It is reached by its URL, and uses the same login as the rest of the console.
+An administrator can do all of this by hand at `/consent.html` (**Consent Channel** screen). It is in the sidebar under Partnership, and uses the same login as the rest of the console.
 
 | Tab | What it does |
 |---|---|
 | **Send** | Pick a partner and an event type, fill in the fields (a purposes grid for consent events), see the exact CEF JSON, and send. You can also paste or upload a hand-written or batch file, or load a sample. The page shows whether the file passes the node's check before you send. |
 | **Sent** | Files this node sent: partner, time, event types, status, with the failure reason if any. Open one to see the events and the raw JSON. |
 | **Received** | Files this node received, same layout. Files that fail the node's check are refused and never stored; those refusals are in the Audit Trail. |
-| **Consent State** | The latest state per consent, built in the browser from received (or sent) events using the latest-wins rule. For inspection and testing. The processor's own application holds the real consent store. |
-| **Erasure** | Requests joined to their confirmations by `request_id`, with the state: Open, In progress, Completed, Rejected, Failed, Legal hold, or Overdue (deadline passed without `COMPLETED`). |
 
-To test between two nodes: on node A open **Send**, pick node B, load the *Grant (2 purposes)* sample and send. On node B, **Received** shows the file and **Consent State** shows the person with both purposes granted. Send *Withdraw one* from A: B's state now shows one purpose withdrawn. Send *Erasure request* from A, then *Erasure confirmed* from B: both **Erasure** tabs show it Completed.
+To test between two nodes: on node A open **Send**, pick node B, load the *Grant (2 purposes)* sample and send. On node B, **Received** shows the file; open it to see the events. Send *Withdraw one* from A and *Erasure request* from A, then *Erasure confirmed* from B: each shows in the **Sent** tab of its sender and the **Received** tab of its receiver. The screen shows delivery only. It does not show consent state; the processor's application keeps that.
 
 ## 8. What the node does and does not do
 
@@ -177,7 +175,7 @@ To test between two nodes: on node A open **Send**, pick node B, load the *Grant
 - Async lane only. `CEF-EVENTS` is not available for sync calls.
 - Only between DX Nodes. A partner without a node is not reached by this channel.
 - A document is processed whole. There is no partial acceptance and no per-event error report.
-- The Consent State and Erasure tabs read up to the 200 most recent `CEF-EVENTS` transfers and parse them in the browser. They are an inspection aid, not a consent store.
+- The Sent and Received tabs read up to the 200 most recent `CEF-EVENTS` transfers and parse them in the browser.
 - Payload size follows the normal async limits ([Architecture §6.6](../design/architecture.md#66-payload-size)).
 
 ## 10. Try it end to end

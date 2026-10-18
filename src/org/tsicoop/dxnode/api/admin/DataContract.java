@@ -129,6 +129,7 @@ public class DataContract implements Action {
                     // Inbound P2P: receiver has suspended this node on the contract
                     if (contractId == null) throw new IllegalArgumentException("contract_id required.");
                     requirePeerIsReceiver(contractId, req);
+                    requireNotSystem(contractId);
                     applyParticipantSuspension(contractId);
                     logAudit("CONTRACT_PARTICIPANT_SUSPENDED", "INFO", "P2P_PROTOCOL",
                             contractId.toString(), new JSONObject(), req);
@@ -139,6 +140,7 @@ public class DataContract implements Action {
                     // Inbound P2P: receiver has suspended the contract
                     if (contractId == null) throw new IllegalArgumentException("contract_id required.");
                     requirePeerIsReceiver(contractId, req);
+                    requireNotSystem(contractId);
                     applyContractSuspension(contractId);
                     logAudit("CONTRACT_SUSPENDED", "INFO", "P2P_PROTOCOL",
                             contractId.toString(), new JSONObject(), req);
@@ -160,6 +162,7 @@ public class DataContract implements Action {
                     // Inbound P2P: the receiver changed operational settings of a contract we participate in
                     if (contractId == null) throw new IllegalArgumentException("contract_id required.");
                     requirePeerIsReceiver(contractId, req);
+                    requireNotSystem(contractId);
                     applyContractUpdate(contractId, input);
                     logAudit("CONTRACT_UPDATED", "INFO", "P2P_PROTOCOL", contractId.toString(), new JSONObject(), req);
                     OutputProcessor.send(res, 200, ok());

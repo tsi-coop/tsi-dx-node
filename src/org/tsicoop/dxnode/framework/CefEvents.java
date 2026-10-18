@@ -69,7 +69,7 @@ public final class CefEvents {
                     "\"required\":[\"event_id\",\"event_type\",\"event_time\",\"fiduciary_id\",\"principal_id\"]," +
                     "\"properties\":{" +
                       "\"event_id\":{\"type\":\"string\",\"minLength\":1}," +
-                      "\"event_type\":{\"type\":\"string\",\"enum\":[\"CONSENT_GRANTED\",\"CONSENT_MODIFIED\"," +
+                      "\"event_type\":{\"type\":\"string\",\"enum\":[\"CONSENT_GRANTED\"," +
                         "\"CONSENT_WITHDRAWN\",\"ERASURE_REQUESTED\",\"ERASURE_CONFIRMED\"]}," +
                       "\"event_time\":{\"type\":\"string\",\"minLength\":1}," +
                       "\"fiduciary_id\":{\"type\":\"string\",\"minLength\":1}," +

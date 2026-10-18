@@ -453,7 +453,7 @@ The node does two things with a CEF document: it checks the **shape** (valid JSO
 
 ### 15.3 Console
 
-The **Consent Channel** screen (`web/consent.html`) is a separate page. It sends events (guided form or pasted/uploaded JSON, with a live check), lists sent and received files, shows the latest consent state per consent and the erasure requests joined to their confirmations. It reads transfers with `list_transfers` (which accepts an optional `contract_name` and `limit`, and returns `contract_id` and `contract_name`) and `get_transfer_payload`, and parses them in the browser. The state view is for inspection and testing, not a consent store.
+The **Consent Channel** screen (`web/consent.html`) is a separate page. It sends events (guided form or pasted/uploaded JSON, with a live check), lists sent and received files with their delivery status. It reads transfers with `list_transfers` (which accepts an optional `contract_name` and `limit`, and returns `contract_id` and `contract_name`) and `get_transfer_payload`, and parses them in the browser. The screen shows delivery, not consent state: the node is a reliable courier and holds no consent store.
 
 ### 15.4 Decisions
 

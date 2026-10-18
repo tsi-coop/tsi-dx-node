@@ -33,8 +33,7 @@ The CMS exporter turns CMS changes into CEF events and submits them to the proce
 
 | CMS action | CEF `event_type` |
 |---|---|
-| `record_consent` for a principal with no earlier consent for this fiduciary | `CONSENT_GRANTED` |
-| `record_consent` that changes an existing consent | `CONSENT_MODIFIED` |
+| `record_consent`, new or changing an existing consent | `CONSENT_GRANTED` |
 | `withdraw_consent` (all purposes, or the `purpose_ids` given) | `CONSENT_WITHDRAWN` |
 
 **Stable `consent_id`.** The CMS keeps one active consent per principal and fiduciary and writes a **new** `consent_records` row (new `id`) on every change, marking the old one inactive. CEF replaces state per `consent_id`, so if the exporter used the row `id`, the processor would keep the old consent's `granted` state forever. Use one `consent_id` for the principal-and-fiduciary pair for as long as it lives, for example the `id` of the first `consent_records` row for that `(user_id, fiduciary_id)`. Every later change then replaces the previous state.

@@ -12,7 +12,7 @@ Sender app  ── contract: loan-data  ─────────────�
                 records carry principal_id                    │ joins on
                                                               │ principal_id
 Sender CMS  ── CEF-EVENTS (built in) ─────────────▶  Processor consent store
-                CONSENT_GRANTED / MODIFIED / WITHDRAWN        │
+                CONSENT_GRANTED / WITHDRAWN        │
                 ERASURE_REQUESTED                             │
             ◀── ERASURE_CONFIRMED ────────────────────────────┘
                   CONSENT CHANNEL
@@ -48,12 +48,12 @@ A request holds one or many events, so consents can be shared in batches. A batc
 | Field | Required | Notes |
 |---|---|---|
 | `event_id` | yes | Unique per sender. A repeat has no extra effect. |
-| `event_type` | yes | `CONSENT_GRANTED`, `CONSENT_MODIFIED`, `CONSENT_WITHDRAWN`, `ERASURE_REQUESTED`, `ERASURE_CONFIRMED` |
+| `event_type` | yes | `CONSENT_GRANTED`, `CONSENT_WITHDRAWN`, `ERASURE_REQUESTED`, `ERASURE_CONFIRMED` |
 | `event_time` | yes | ISO 8601 UTC |
 | `fiduciary_id` | yes | A unique string identifying the data fiduciary the consent belongs to. |
 | `principal_id` | yes | The CMS `user_id`, the link key across all systems. An opaque id such as customer id, account id or vendor id. |
 | `consent_id` | consent events | `consent_records.id`. One consent can cover several purposes. |
-| `granted_at` | `CONSENT_GRANTED`, `CONSENT_MODIFIED` | ISO 8601 UTC |
+| `granted_at` | `CONSENT_GRANTED` | ISO 8601 UTC |
 | `purposes` | consent events | Array of purposes, see 3.3. |
 | `request_id` | erasure events | `purge_requests.id` |
 | `trigger` | `ERASURE_REQUESTED` | `ErasureRequest`, `ConsentWithdrawal`, `RetentionPolicyExpiry` |
@@ -78,7 +78,7 @@ A consent carries a list of purposes, so one consent can cover several uses.
 How consent events are read:
 
 - **Every consent event carries the complete current state of its `consent_id`**: the full `purposes` list with a status on each. The latest event for a `consent_id` replaces all earlier ones. Nothing is merged.
-- `CONSENT_GRANTED`, `CONSENT_MODIFIED` and `CONSENT_WITHDRAWN` are labels for why the state changed. They are informational. The processor applies them all the same way.
+- `CONSENT_GRANTED` and `CONSENT_WITHDRAWN` are labels for why the state changed. They are informational. The processor applies them all the same way.
 - To withdraw one purpose, send the full state with that purpose set to `withdrawn`. To withdraw everything, send every purpose as `withdrawn`.
 - A purpose that is not in the latest state is not consented.
 
@@ -119,7 +119,7 @@ Reply:
 2. **Give consent.** The sender's CMS sends `CONSENT_GRANTED` events to the partner's `CEF-EVENTS`, one per consent, or a batch of many. The processor stores them by `principal_id` and `purpose_id`.
 3. **Share data.** The sender sends data as today. The node does no consent check.
 4. **Respect.** The processor application joins each record to the consent for its `principal_id` and the contract's purpose, and acts on it: use only for the agreed purpose, stop at `expires_at`, hold or reject records with no granted consent. This is the processor's duty, not the node's.
-5. **Modify or withdraw.** `CONSENT_MODIFIED` or `CONSENT_WITHDRAWN` events on the same channel, for the whole consent or for chosen purposes. The processor updates its view.
+5. **Modify or withdraw.** `CONSENT_GRANTED` (with the new state) or `CONSENT_WITHDRAWN` events on the same channel, for the whole consent or for chosen purposes. The processor updates its view.
 6. **Erase.** `ERASURE_REQUESTED` goes to the processor's `CEF-EVENTS`. The processor deletes the person's data and sends `ERASURE_CONFIRMED` to the sender's `CEF-EVENTS`. The CMS maps it to `confirm_purge_status`.
 7. **Evidence.** Every event is a normal signed, audited transfer. The record of who sent which consent event to whom, and when, is already kept.
 
@@ -145,23 +145,21 @@ Because the channels are decoupled, the node cannot guarantee that consent reach
 
 One new page, `web/consent.html`, holds everything. **No existing screen is changed.** It uses only existing API functions (`list_partners`, `list_contracts`, `initiate_transfer`, `list_transfers`, `get_transfer_payload`), so there is no new backend work. It finds the built-in `CEF-EVENTS` contract by its fixed name.
 
-It is reached by its URL. Adding a sidebar link means a one-line edit in each existing page, so that is left as an optional follow-up.
+It is linked from the sidebar of every console page, under Partnership.
 
 | Tab | What it does |
 |---|---|
 | **Send** | Manual sending of consent events, mainly for testing. Pick the partner and event type, then fill in fiduciary, principal, consent id and a purposes grid (purpose, status, expiry, categories). A live JSON preview shows the exact CEF file. A paste or upload mode sends a hand-written or batch file. A **Send** button calls `initiate_transfer` on `CEF-EVENTS`. A "Load sample" button fills in the examples from section 3.4, including a withdrawal and an erasure request. |
 | **Sent** | Events this node sent: partner, time, event count, event types, transfer status. A row opens the parsed events and the raw JSON. |
 | **Received** | Events this node received, same columns, plus the result of the node's check for each file (accepted, or why it was refused). A row opens the parsed events and the raw JSON. |
-| **Consent state** | A view built in the browser from the **Received** events: the latest state per `fiduciary_id`, `principal_id` and `consent_id`, with each purpose, its status, expiry and the last event time. This applies the "latest `event_time` wins" rule of section 5. It is for inspection and testing, not a source of truth. The processor's own application holds the real consent store. |
-| **Erasure** | Joins `ERASURE_REQUESTED` events with `ERASURE_CONFIRMED` events by `request_id`: principal, partner, deadline, reply status. Requests past `deadline_at` without a `COMPLETED` reply are marked Overdue. |
 
 **Manual end-to-end test, with two nodes (A sender, B processor):**
 
 1. On A, open **Send**, choose partner B, load the sample `CONSENT_GRANTED` with two purposes, and send.
-2. On B, open **Received**: the file appears, accepted. Open **Consent state**: the person shows two granted purposes.
-3. On A, send a `CONSENT_WITHDRAWN` event with one purpose set to `withdrawn`. On B, **Consent state** now shows that purpose as withdrawn, and the event time is later.
-4. On A, send an `ERASURE_REQUESTED`. On B, **Erasure** shows it as open.
-5. On B, send an `ERASURE_CONFIRMED` for that `request_id` to A. On A, **Erasure** shows it as completed.
+2. On B, open **Received**: the file appears, accepted. Open it to see the two granted purposes in the events.
+3. On A, send a `CONSENT_WITHDRAWN` event with one purpose set to `withdrawn`. On B, **Received** shows the second file; opening it shows that purpose as withdrawn.
+4. On A, send an `ERASURE_REQUESTED`. On B, **Received** shows it.
+5. On B, send an `ERASURE_CONFIRMED` for that `request_id` to A. On A, **Received** shows it. The screen shows delivery only, not consent or erasure state.
 6. Negative checks: send a file with a missing `principal_id` or an unknown `event_type`. A shows it refused, B shows nothing received.
 
 **Notes**
@@ -181,7 +179,7 @@ It is reached by its URL. Adding a sidebar link means a one-line edit in each ex
 | 5 | Example script | `examples/scripts/07-consent-exchange.sh`: grant (several purposes), send data, partially withdraw, erase, confirm, using existing functions. |
 | 6 | CMS mapping note | CEF fields to `tsi-dpdp-cms` tables and functions. |
 | 7 | Reference reader (optional) | Parses CEF JSON, prints current state per person and purpose. |
-| 8 | Consent screen | `web/consent.html`: Send, Sent, Received, Consent state, Erasure tabs (section 7). No other page changes. |
+| 8 | Consent screen | `web/consent.html`: Send, Sent, Received tabs (section 7). No other page changes. |
 | 9 | Tests | Malformed JSON, unknown `event_type`, missing `principal_id`, duplicate `event_id`, partner not Active. Added to the negative tests. |
 
 ## 9. Phases
@@ -205,7 +203,7 @@ Each step is small and leaves the node working. Steps 1 to 4 are the node change
 | 3 | **Seed `CEF-EVENTS`** | Add a database migration (`db/06_*.sql`) or start-up seeding that creates the system contract on every node: fixed name, async, read-only, the schema from step 2, no retention limit. Mark it as a system contract so edit, suspend and delete are refused. | A fresh and an upgraded database both start, and `list_contracts` shows `CEF-EVENTS`. |
 | 4 | **Open it to Active partners** | Apply the change found in step 1: for `CEF-EVENTS` only, a sender that is an Active partner is accepted as a participant on both the sending and receiving side, with no invitation. All other contracts keep today's rules. | Node A sends a valid event file to node B with no contract setup. A non-partner and a suspended partner are refused. Existing example scripts still pass. |
 | 5 | **Example script and negative tests** | `examples/scripts/07-consent-exchange.sh` (grant with two purposes, send data, withdraw, erase, confirm). Add negative cases to `06-negative-tests.sh`: malformed JSON, unknown `event_type`, missing `fiduciary_id` or `principal_id`, duplicate `event_id`, inactive partner. | `run-all.sh` passes, including the new cases. |
-| 6 | **Consent screen** | Build `web/consent.html` in this order: Send (with preview and samples), Sent, Received, Consent state, Erasure. Existing pages are not touched. | The manual two-node test in section 7 passes. |
+| 6 | **Consent screen** | Build `web/consent.html` in this order: Send (with preview and samples), Sent, Received. Existing pages are not touched. | The manual two-node test in section 7 passes. |
 | 7 | **Spec, guide and CMS mapping** | Write the CEF spec, the guide with `curl` examples, and the CMS field mapping. Link the spec from the architecture document. Add the `CHANGELOG.md` entry. | Docs reviewed, links work. |
 | 8 | **Pilot with the CMS** | The `tsi-dpdp-cms` team exports consent events in CEF, sends them to a processor node, and sends an erasure request. The processor replies with a confirmation, and the CMS records it in its purge tracker. | One real grant, one withdrawal and one erasure complete end to end. |
 
@@ -267,7 +265,7 @@ What the spike found and how the code differs from the plan's wording:
 - **Local copies.** Each node keeps its own `CEF-EVENTS` plus a read-only local copy of each Active partner's, created by `CefEvents.sync()`. Step 7 added calls when a partner's status changes (handshake, termination, deletion) and when an application is created, so the contracts exist as soon as a partnership is Active. They are also created lazily before listing contracts, before sending to a `CEF-EVENTS` contract and before checking a sender on the receive path, which covers nodes upgraded with partnerships already Active. Participants are kept in step with partner status: an Active partner is an Active participant, any other partner is suspended.
 - **Code touched.** New `framework/CefEvents.java` (ids, schema, sync). `DXManager` calls `syncIfCef` on the send and receive paths. `DataContract` calls `sync()` when listing and refuses edit, invite and suspend on a system contract (`403`). The receive-path participant check, replay protection, sequence numbers and the transfer engine are unchanged.
 - **Schema check.** In addition to the five event fields, the node checks `cef_version` is `1.x` and `events` is a non-empty array. The sender runs the same check before sending, so a bad file ends as a `Failed` transfer on the sender and never reaches the receiver. The receiver repeats the check, as it does for any contract.
-- **Console.** `web/consent.html` (Send, Sent, Received, Consent State, Erasure) and a login gate for it in `web.xml`. No existing page is changed. The Consent link is in the sidebar of the new page only. To support it, `list_transfers` now also returns `contract_id` and `contract_name`, and accepts optional `contract_name` and `limit` (up to 500). Existing callers are unaffected.
+- **Console.** `web/consent.html` (Send, Sent, Received) and a login gate for it in `web.xml`. No existing page is changed. The Consent link is in the sidebar of the new page only. To support it, `list_transfers` now also returns `contract_id` and `contract_name`, and accepts optional `contract_name` and `limit` (up to 500). Existing callers are unaffected.
 - **Tests.** `examples/scripts/07-consent-exchange.sh` covers the flow and the negative cases (missing `principal_id`, unknown `event_type`, wrong version, empty events, not JSON, edit and suspend of the system contract). It is part of `run-all.sh`. The 92 existing negative scenarios and the async example still pass. The screen was exercised in a headless browser across two nodes: send, receive, latest-state view, erasure request, confirmation and the reply on the sender.
 
 Not done yet: duplicate `event_id` handling and an inactive-partner test are processor concerns (the node does not track `event_id`). Step 7 (spec, guide, CMS mapping, architecture link, changelog) and step 8 (CMS pilot) are open.
